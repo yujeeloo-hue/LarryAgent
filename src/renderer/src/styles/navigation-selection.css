@@ -1,0 +1,37 @@
+/* Settings' secondary navigation is the shared selection language for
+ * application navigation and the currently viewed sidebar session. */
+:is(
+  .agent-nav-item.is-active,
+  .setting-category-tab[aria-selected="true"],
+  .tools-category-tab[aria-selected="true"],
+  .coco-nav-item.active,
+  .workspace-sessions .session-row.is-viewing
+) {
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+  font-weight: 500;
+  border-radius: 7px;
+}
+
+:is(
+  .agent-nav-item.is-active,
+  .setting-category-tab[aria-selected="true"],
+  .tools-category-tab[aria-selected="true"],
+  .coco-nav-item.active,
+  .workspace-sessions .session-row.is-viewing
+)::before {
+  content: "";
+  position: absolute;
+  inset: 11px auto 11px 0;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+/* Sidebar labels and leading icons have their own colors, including Light
+ * theme ink. Keep them in step with the selected row in either theme. */
+:is(.agent-nav-item.is-active, .workspace-sessions .session-row.is-viewing)
+  :is(.agent-nav-icon, .agent-nav-label, .session-leading, .session-title) {
+  color: var(--accent);
+}

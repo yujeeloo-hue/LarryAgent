@@ -1,0 +1,164 @@
+/*
+ * Background notification popup card (docs/demo/app-notify, signed off).
+ * Opaque surface in both themes — Light pure white + theme border (chrome
+ * rule), Dark #1b1b1b + neutral border. One card design shared with the
+ * in-app toast. The countdown hint mirrors the main-process hard timer,
+ * whose duration arrives as --np-lifetime (part of the popup URL).
+ */
+
+.notify-popup-window,
+.notify-popup-window html,
+.notify-popup-window body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+}
+
+.notify-popup-window {
+  --np-card-bg: #1b1b1b;
+  --np-card-border: rgba(255, 255, 255, 0.09);
+  --np-card-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  font-family: var(--font-ui);
+  box-sizing: border-box;
+  display: grid;
+  align-items: start;
+  padding: 0 12px;
+}
+
+html[data-theme="light"] .notify-popup-window {
+  --np-card-bg: #ffffff;
+  --np-card-border: rgba(18, 67, 117, 0.16);
+  --np-card-shadow: 0 10px 28px rgba(23, 32, 43, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.notify-card {
+  position: relative;
+  width: 320px;
+  height: 76px;
+  background: var(--np-card-bg);
+  border: 1px solid var(--np-card-border);
+  border-radius: 10px;
+  box-shadow: var(--np-card-shadow);
+  padding: 10px 12px 11px;
+  color: var(--fg);
+  overflow: hidden;
+  cursor: pointer;
+  animation: np-pop-in 0.18s ease-out;
+}
+
+html[data-platform="win32"] .notify-card {
+  animation-name: np-pop-in-up;
+}
+
+@keyframes np-pop-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes np-pop-in-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.notify-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notify-bell {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--fg-muted);
+}
+
+.notify-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notify-close {
+  width: 18px;
+  height: 18px;
+  margin: -2px -4px 0 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 4.5px;
+  background: transparent;
+  color: var(--fg-dim);
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.14s ease, background 0.14s ease;
+}
+
+.notify-card:hover .notify-close {
+  opacity: 1;
+}
+
+.notify-close:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.notify-close svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.notify-body {
+  margin: 3px 0 0 24px;
+  font-size: 12px;
+  color: var(--fg-muted);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notify-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.55;
+  transform-origin: left;
+  animation: np-countdown var(--np-lifetime, 10s) linear forwards;
+}
+
+@keyframes np-countdown {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notify-card,
+  .notify-progress {
+    animation: none;
+  }
+}

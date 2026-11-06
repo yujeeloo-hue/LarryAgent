@@ -1,0 +1,1092 @@
+@import "./composer-paint.css";
+
+.task-composer {
+  width: min(680px, 100%);
+  /* Anchoring context for the slash command popup (floats above the
+     whole composer). */
+  position: relative;
+  border: 1px solid rgba(var(--tint-rgb), 0.12);
+  border-radius: 16px;
+  /* Cursor `--cursor-bg-input` / `--cursor-editor`.
+     Near-opaque deep black (table-cell family) — dark, only faintly
+     translucent; kills wallpaper bleed-through. */
+  background: var(--bg-elevated);
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* Conversation text scale: the prompt textarea is `font: inherit`, so the
+     composer container carries the single-source base (13px app default).
+     Toolbar/chip children keep their own explicit px (card chrome). */
+  font-size: calc(13px * var(--chat-fs-scale, 1));
+  /* Mode morph: the pill shape animates in lockstep with the collapse
+     (gap). The radius reads as geometry — a cubic curve made it crawl
+     then snap, so it moves linearly while gap/padding keep the shared
+     ease for the height motion. Border/box-shadow follow so mode-color
+     switches cross-fade instead of snapping. */
+  transition:
+    gap 240ms cubic-bezier(0.32, 0.72, 0, 1),
+    border-radius 240ms linear,
+    padding 240ms cubic-bezier(0.32, 0.72, 0, 1),
+    border-color 240ms ease,
+    box-shadow 240ms ease;
+}
+
+/*
+ * Mode identity color (Ask / Plan / custom graphs), shown only while the
+ * composer holds focus. `--composer-accent` is set by TaskComposerView when
+ * the selected mode has a fixed color; Auto leaves it unset so the dynamic
+ * app tint above stays authoritative. The resting (unfocused) border keeps
+ * the default theme color either way.
+ */
+.task-composer.has-accent:focus-within {
+  border-color: color-mix(in srgb, var(--composer-accent) 42%, transparent);
+  box-shadow: none;
+}
+
+:root[data-theme="light"] .task-composer {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(var(--accent-rgb), 0.16);
+  box-shadow: none;
+}
+
+:root[data-theme="light"]
+  .task-composer.has-accent:not(.is-file-drag):focus-within {
+  border-color: color-mix(in srgb, var(--composer-accent) 30%, transparent);
+  box-shadow: none;
+}
+
+/* File drag keeps its stronger emphasis, tinted with the mode color. */
+.task-composer.has-accent.is-file-drag {
+  border-color: color-mix(in srgb, var(--composer-accent) 72%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--composer-accent) 32%, transparent),
+    0 0 20px color-mix(in srgb, var(--composer-accent) 26%, transparent);
+}
+
+/* Files dragged over from Finder — the drop attaches them as chips. */
+.task-composer.is-file-drag {
+  border-color: rgba(var(--tint-rgb), 0.55);
+  box-shadow:
+    0 0 0 1px rgba(var(--tint-rgb), 0.25),
+    0 0 18px rgba(var(--tint-rgb), 0.22);
+}
+
+.composer-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.composer-attachments[hidden] {
+  display: none;
+}
+
+.composer-attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 4px 6px 4px 8px;
+  border-radius: 999px;
+  background: rgba(var(--tint-rgb), 0.07);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.composer-attachment-chip.is-image {
+  border-color: rgba(var(--tint-rgb), 0.14);
+}
+
+.composer-attachment-chip-icon {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+}
+
+.composer-attachment-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+.composer-attachment-chip-remove {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+.composer-attachment-chip-remove:hover {
+  background: rgba(var(--tint-rgb), 0.1);
+  color: var(--fg);
+}
+
+.task-composer-input {
+  width: 100%;
+  resize: none;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  line-height: 1.5;
+  /* Height is driven by TaskComposerView.syncTextareaHeight (1–5 lines). */
+  min-height: 0;
+  height: auto;
+  overflow-y: hidden;
+  padding: 2px 4px;
+  box-sizing: border-box;
+}
+
+.task-composer-input:disabled {
+  opacity: 0.6;
+}
+
+.task-composer-input::placeholder {
+  color: var(--fg-muted);
+}
+
+.task-composer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.task-composer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.composer-plus-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.composer-round-btn {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--tint-rgb), 0.08);
+  color: var(--fg-muted);
+  cursor: pointer;
+  flex: 0 0 auto;
+  padding: 0;
+}
+
+.composer-plus-btn svg {
+  transition: transform 180ms ease;
+}
+
+.composer-plus-btn.is-open,
+.task-composer.is-plus-open .composer-plus-btn {
+  color: var(--fg);
+  background: rgba(var(--tint-rgb), 0.14);
+}
+
+.composer-plus-btn.is-open svg,
+.task-composer.is-plus-open .composer-plus-btn svg {
+  transform: rotate(45deg);
+}
+
+.composer-round-btn:hover {
+  background: rgba(var(--tint-rgb), 0.12);
+  color: var(--fg);
+}
+
+/* Light: the + button's resting/open state is a pure ghost — no fill, no
+ * border (the base-rule tint fill is suppressed here). Hover restores the
+ * circular base: theme pale blue + accent icon. */
+:root[data-theme="light"] .composer-plus-btn,
+:root[data-theme="light"] .composer-plus-btn.is-open,
+:root[data-theme="light"] .task-composer.is-plus-open .composer-plus-btn {
+  background: transparent;
+  box-shadow: none;
+}
+
+:root[data-theme="light"] .composer-plus-btn:hover,
+:root[data-theme="light"] .composer-plus-btn.is-open:hover,
+:root[data-theme="light"] .task-composer.is-plus-open .composer-plus-btn:hover {
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+}
+
+.composer-action-btn.is-active {
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.18);
+}
+
+.composer-action-btn.is-active:hover {
+  background: rgba(var(--accent-rgb), 0.24);
+  color: var(--accent);
+}
+
+.composer-plus-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  min-width: max-content;
+  width: max-content;
+  padding: 4px;
+  border: 1px solid rgba(var(--tint-rgb), 0.11);
+  border-radius: 10px;
+  /* Deep black, near-opaque — floats over the transcript, so only a trace
+     of translucency; dark base kills wallpaper tint bleed. */
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-xl);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  transform: translateY(8px);
+  transform-origin: bottom center;
+  transition:
+    opacity 160ms ease,
+    transform 160ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.composer-plus-menu.is-open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.composer-plus-menu[hidden] {
+  display: none;
+}
+
+.composer-plus-menu-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.composer-plus-menu-separator {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border);
+}
+
+.composer-plus-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.composer-plus-menu-item:hover {
+  background: var(--hover);
+}
+
+.composer-plus-menu-item.is-active,
+.composer-plus-menu-item.is-selected {
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+}
+
+.composer-plus-menu-item-leading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+}
+
+.composer-plus-menu-item.is-selected .composer-plus-menu-item-leading,
+.composer-plus-menu-item.is-active .composer-plus-menu-item-leading {
+  color: var(--accent);
+}
+
+.composer-plus-menu-item-label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+.composer-plus-menu-item-check {
+  display: none;
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.composer-plus-menu-item.is-selected .composer-plus-menu-item-check {
+  display: inline-flex;
+}
+
+.composer-plus-custom-wrap {
+  position: relative;
+}
+
+.composer-plus-custom-trigger .composer-plus-custom-chevron {
+  margin-left: 4px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  opacity: 0.55;
+  color: var(--fg-muted);
+  transform: rotate(-90deg);
+}
+
+.composer-plus-custom-trigger.is-selected .composer-plus-custom-chevron {
+  color: var(--accent);
+}
+
+/* Match `.composer-plus-menu` chrome; overlap parent so the hover path
+   never crosses empty space (absolute children don't expand hit-testing). */
+.composer-plus-custom-submenu {
+  position: absolute;
+  left: calc(100% - 2px);
+  top: -4px;
+  min-width: max-content;
+  width: max-content;
+  max-width: 280px;
+  max-height: 240px;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid rgba(var(--tint-rgb), 0.11);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-xl);
+  z-index: 21;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.composer-plus-custom-submenu[hidden] {
+  display: none;
+}
+
+.composer-plus-custom-item {
+  width: 100%;
+}
+
+.composer-plus-custom-empty {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--fg-muted);
+  cursor: default;
+}
+
+/* ── Slash command autocomplete ───────────────────────────────────
+   Popup above the composer while the prompt starts with "/". Same
+   chrome as the + menu: deep-black float, hairline border, enter
+   fade/slide — and the same 180ms close grace so it never snaps. */
+.composer-slash-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  min-width: max-content;
+  width: max-content;
+  padding: 4px;
+  border: 1px solid rgba(var(--tint-rgb), 0.11);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-xl);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  transform: translateY(8px);
+  transform-origin: bottom center;
+  transition:
+    opacity 160ms ease,
+    transform 160ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.composer-slash-menu.is-open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.composer-slash-menu[hidden] {
+  display: none;
+}
+
+.composer-slash-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  padding: 7px 10px;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+}
+
+.composer-slash-item:hover {
+  background: var(--hover);
+}
+
+.composer-slash-item.is-selected {
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+}
+
+.composer-slash-item-name {
+  flex: 0 0 auto;
+  /* Fixed column so descriptions align across the three commands. */
+  min-width: 8ch;
+  font-weight: 600;
+}
+
+.composer-slash-item-desc {
+  flex: 0 1 auto;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+
+/* Transient command feedback now rides the top context pill's notice
+ * state (ContextPillController.showNotice) — the composer-side floating
+ * hint bar and its rules were removed. */
+
+.composer-plus-permission-item.is-full-option.is-selected {
+  background: rgba(220, 90, 90, 0.16);
+  color: var(--danger-muted);
+}
+
+.composer-plus-permission-item.is-full-option.is-selected .composer-plus-menu-item-leading,
+.composer-plus-permission-item.is-full-option.is-selected .composer-plus-menu-item-check {
+  color: var(--danger-muted);
+}
+
+.composer-plus-permission-item.is-safe-option.is-selected {
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+}
+
+.task-composer-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.composer-provider-wrap {
+  position: relative;
+}
+
+.composer-provider-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 180px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 550;
+}
+
+/* Effort chip visible (MED/HIGH/OFF/MAX) → grow to fit the full name. */
+.composer-provider-btn.has-effort {
+  max-width: none;
+}
+
+.composer-provider-btn:hover,
+.composer-provider-btn.is-open {
+  background: var(--hover);
+  border-color: var(--border);
+}
+
+.composer-provider-health {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--danger-text);
+}
+
+.composer-provider-btn.is-ok .composer-provider-health {
+  background: var(--success);
+}
+
+.composer-provider-btn.is-down .composer-provider-health {
+  background: var(--danger-text);
+}
+
+/* Light: --success (#1a7f37) is tuned for AA text on white and reads muddy
+   at 6px. The status dot gets a vivid green instead — same hue family,
+   ~75% saturation so "connected" pops like the dark theme's #3fb950. */
+:root[data-theme="light"] .composer-provider-btn.is-ok .composer-provider-health {
+  background: #19b04f;
+}
+
+/* Effort badges keep their compact geometry; paint is shared with Relay. */
+.composer-provider-effort-chip {
+  flex: 0 0 auto;
+  margin-left: 1px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0.035em;
+  line-height: 12.5px;
+  text-transform: uppercase;
+}
+.composer-provider-effort-chip[hidden] { display: none; }
+
+.composer-provider-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.composer-provider-btn.has-effort .composer-provider-label {
+  overflow: visible;
+  text-overflow: clip;
+  flex: 0 1 auto;
+  min-width: max-content;
+}
+
+.composer-provider-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  min-width: 240px;
+  max-width: 316px;
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  border: 1px solid rgba(var(--tint-rgb), 0.11);
+  border-radius: 10px;
+  /* Deep black, near-opaque — same fill as the + menu. */
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-xl);
+  z-index: 20;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(8px);
+  transform-origin: bottom center;
+  transition:
+    opacity 160ms ease,
+    transform 160ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.composer-provider-menu.is-open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.composer-provider-menu[hidden] {
+  display: none;
+}
+
+/* Read-only while a turn runs: menu opens for inspection, edits blocked.
+ * The active provider row keeps full opacity — it is what users open the
+ * menu to look at. */
+.composer-provider-locked-hint {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px 4px;
+  font-size: 11px;
+  font-weight: 550;
+  letter-spacing: 0.01em;
+  color: var(--fg-muted);
+}
+
+.composer-provider-locked-hint[hidden] {
+  display: none;
+}
+
+.composer-provider-menu.is-locked .composer-provider-item:not(.is-active) {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.composer-provider-menu.is-locked
+  .composer-provider-item:not(.is-active):hover {
+  background: transparent;
+}
+
+.composer-provider-menu.is-locked .composer-infinite-row {
+  cursor: default;
+}
+
+.composer-provider-menu.is-locked .composer-infinite-row:hover {
+  background: transparent;
+}
+
+.composer-provider-menu.is-locked .composer-switch {
+  opacity: 0.55;
+}
+
+.composer-reasoning-effort-row,
+.composer-infinite-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+  cursor: default;
+  border-radius: 7px;
+}
+
+.composer-reasoning-effort-row {
+  /* The seg handles its own hit targets; the row itself is not a button. */
+  cursor: default;
+}
+
+.composer-infinite-row {
+  cursor: pointer;
+}
+
+.composer-infinite-row:hover {
+  background: var(--hover);
+}
+
+.composer-reasoning-effort-label,
+.composer-infinite-label {
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--fg);
+  min-width: 0;
+}
+
+/* Icon + label group on the left of the Reasoning Max / Infinite rows. */
+.composer-row-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.composer-row-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--fg-muted);
+}
+
+.composer-row-icon svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.composer-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(var(--tint-rgb), 0.16);
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.composer-switch:hover {
+  background: rgba(var(--tint-rgb), 0.22);
+}
+
+.composer-switch.is-on {
+  background: var(--accent);
+}
+
+.composer-switch.is-on:hover {
+  filter: brightness(1.08);
+}
+
+.composer-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 140ms ease;
+  pointer-events: none;
+}
+
+.composer-switch.is-on .composer-switch-thumb {
+  transform: translateX(16px);
+}
+
+/* Light: the off track uses a solid cool grey (the tinted black-grey does
+ * not follow the theme on paper white); the thumb shadow switches to theme
+ * blue-grey and lightens. The on state's accent fill already follows the
+ * theme. */
+:root[data-theme="light"] .composer-switch {
+  background: #d6dee8;
+}
+
+:root[data-theme="light"] .composer-switch:hover {
+  background: #cbd6e2;
+}
+
+:root[data-theme="light"] .composer-switch.is-on {
+  background: var(--accent);
+}
+
+:root[data-theme="light"] .composer-switch-thumb {
+  box-shadow: 0 1px 3px rgba(var(--shadow-rgb), 0.25);
+}
+
+.composer-provider-menu-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 220px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.composer-provider-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+
+.composer-provider-item:hover {
+  background: var(--hover);
+}
+
+.composer-provider-item.is-active {
+  background: rgba(var(--accent-rgb), 0.12);
+}
+
+.composer-provider-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-provider-item-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.composer-provider-item-model {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.composer-send-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+}
+
+.context-usage-ring {
+  position: absolute;
+  inset: 0;
+  width: 40px;
+  height: 40px;
+  transform: rotate(-90deg);
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 160ms ease;
+}
+
+/* Face and ring colors share composer-paint.css with Relay. */
+.composer-send-btn {
+  position: relative;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.context-usage-tooltip {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease;
+  box-shadow: var(--shadow-lg);
+}
+
+.composer-send-wrap:hover .context-usage-tooltip,
+.composer-send-wrap:focus-within .context-usage-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Full-width variant for conversation footer */
+.task-composer.task-composer-wide {
+  width: 100%;
+  max-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .composer-plus-menu,
+  .composer-plus-menu.is-open,
+  .composer-provider-menu,
+  .composer-provider-menu.is-open,
+  .composer-slash-menu,
+  .composer-slash-menu.is-open,
+  .task-composer,
+  .composer-collapse,
+  .composer-plus-wrap,
+  .task-composer-right,
+  .context-usage-ring {
+    transition: none;
+  }
+
+  .task-composer.voice-recording .composer-voice-strip {
+    animation: none;
+  }
+}
+
+/* New Task composer — same auto-grow as conversation (1–5 lines). */
+.task-composer.task-composer-compact {
+  padding: 10px 12px;
+  gap: 8px;
+}
+
+.task-composer.task-composer-compact .task-composer-input {
+  padding: 4px 4px;
+}
+
+/* ── Voice mode ─────────────────────────────────────────────────
+   The textarea + attachments region collapses to zero height via the
+   grid 1fr → 0fr technique — no fixed pixel heights, and the textarea
+   keeps its own autosize height underneath. The action row keeps its
+   exact layout; only the flexible middle swaps to the waveform strip
+   while recording. */
+
+.composer-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 240ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.composer-collapse-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.task-composer-compact .composer-collapse-inner {
+  gap: 8px;
+}
+
+.task-composer.voice-mode {
+  gap: 0;
+  /* Pill form. All control sizes stay exactly as normal mode; only
+     positions move. Frame height: 6px padding + 40px cluster + 6px =
+     52px — close to the normal composer's row height.
+     Radius is exactly h/2 (26px), not 999px: an over-large radius gets
+     clamped to half the box height mid-transition while the height eases
+     on its own curve — the corner then follows the height curve instead
+     of the linear radius transition. An exact fit never clamps, so the
+     linear border-radius transition holds in BOTH directions. */
+  padding: 6px 14px;
+  border-radius: 26px;
+}
+
+.task-composer.voice-mode .composer-collapse {
+  grid-template-rows: 0fr;
+}
+
+/* Cap slide is phase 2 of the voice-mode morph: phase 1 is the frame
+   itself (gap/padding/radius, 240ms) — the caps ride the row vertically
+   and hold their horizontal position. Only once the frame has settled
+   (240ms delay) do the caps slide horizontally into their pill seats.
+   Margins only — every button keeps its exact size. The delay sits on
+   the base selectors so it applies symmetrically on exit (frame grows
+   back first, caps return after). */
+.composer-plus-wrap,
+.task-composer-right {
+  transition:
+    margin-left 200ms cubic-bezier(0.32, 0.72, 0, 1) 240ms,
+    margin-right 200ms cubic-bezier(0.32, 0.72, 0, 1) 240ms;
+}
+
+/* Cap alignment by position, not size. The + button (32px) centers on the
+   left cap's centerline: negative margin pulls it out so its center sits
+   26px from the pill's left edge. Icon and hit target are untouched. */
+.task-composer.voice-mode .task-composer-left .composer-plus-wrap {
+  margin-left: -4px;
+}
+
+/* Right cluster: the 40px wrap sits 8px inside the border — mirrors the
+   + button's visual gap on the left. */
+.task-composer.voice-mode .task-composer-right {
+  margin-right: -8px;
+}
+
+/* Context ring stays visible behind the mic face in voice mode. */
+
+/* Recording strip in the toolbar's flexible middle. */
+.composer-voice-strip {
+  display: none;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.task-composer.voice-recording .composer-voice-strip {
+  display: flex;
+  animation: voice-strip-in 160ms ease;
+}
+
+.task-composer.voice-recording .task-composer-left,
+.task-composer.voice-recording .composer-provider-wrap {
+  display: none;
+}
+
+@keyframes voice-strip-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Live level meter — bar heights driven by VoiceWaveform scaleY(). */
+.composer-voice-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 22px;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 14%,
+    #000 86%,
+    transparent
+  );
+}
+
+.composer-voice-bar {
+  flex: 0 0 auto;
+  width: 2px;
+  height: 100%;
+  border-radius: 1px;
+  background: hsl(var(--bar-hue) 100% 64%);
+  opacity: 0.9;
+  transform: scaleY(0.12);
+  transform-origin: center;
+  will-change: transform;
+}
+
+.composer-voice-status {
+  max-width: 55%;
+  font-size: 11px;
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-voice-status[hidden] {
+  display: none;
+}
+
+.composer-voice-status.is-error {
+  color: var(--danger-text);
+}
+
+/* Recording remains alive without a halo around the mic. */
+.task-composer.voice-recording .composer-send-btn {
+  animation: voice-rec-pulse 1.8s ease-in-out infinite;
+}
+@keyframes voice-rec-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.78; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .task-composer.voice-recording .composer-send-btn { animation: none; }
+}

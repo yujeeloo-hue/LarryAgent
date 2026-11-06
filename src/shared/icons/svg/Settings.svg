@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none">
+  <defs><mask id="Settings-m"><rect width="24" height="24" fill="white" /><circle cx="12" cy="12" r="3.35" fill="black" /></mask></defs>
+  <g fill="currentColor" mask="url(#Settings-m)"><circle cx="12" cy="12" r="8" /><rect id="Settings-t" x="9.9" y="1" width="4.2" height="6.5" rx="1.7" /><use href="#Settings-t" transform="rotate(45 12 12)" /><use href="#Settings-t" transform="rotate(90 12 12)" /><use href="#Settings-t" transform="rotate(135 12 12)" /><use href="#Settings-t" transform="rotate(180 12 12)" /><use href="#Settings-t" transform="rotate(225 12 12)" /><use href="#Settings-t" transform="rotate(270 12 12)" /><use href="#Settings-t" transform="rotate(315 12 12)" /></g>
+</svg>

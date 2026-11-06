@@ -1,0 +1,36 @@
+.check-badge {
+  --check-badge-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: var(--check-badge-size);
+  height: var(--check-badge-size);
+  border-radius: 50%;
+  /* macOS traffic-light zoom green (#28c840) with a slight top-lit falloff. */
+  background: radial-gradient(
+    circle at 50% 20%,
+    #33cf49 0%,
+    #28c840 55%,
+    #1da833 100%
+  );
+  /* Inner ring + top gloss read as a lit edge; outer shadow lifts it off the card. */
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.16),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.14),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/*
+ * Color is set on the SVG itself (not inherited): status containers such as
+ * .content-card-tool-outcome.is-ok still set a green `color` on the badge.
+ */
+.check-badge > svg {
+  display: block;
+  color: #ffffff;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

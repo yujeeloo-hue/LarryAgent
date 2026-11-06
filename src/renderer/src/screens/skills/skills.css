@@ -1,0 +1,51 @@
+/* Page-specific layout; Tools retains its own card and toolbar styling. */
+.skills-screen { max-width: 920px; container: skills / inline-size; }
+.skills-screen .tools-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 22px; }
+.skills-screen .screen-title { margin: 0; }
+.skills-header-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.skills-screen .skills-install-btn { background: transparent; font-weight: 500; }
+.skills-screen .skills-install-btn:hover { background: var(--hover); }
+.skills-screen .tools-search-field { width: 100%; }
+.skills-screen .tools-search-input { width: 100%; max-width: none; background: rgba(var(--tint-rgb), 0.03); }
+.skills-screen .tools-skills-section { display: flex; flex-direction: column; gap: 10px; }
+.skills-screen .tools-group-header { display: flex; flex-direction: row; align-items: center; gap: 8px; padding: 0; }
+.skills-screen .tools-group-title { font-size: 13px; font-weight: 600; }
+.skills-count { color: var(--fg-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.skills-screen .tools-mcp-list { gap: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: rgba(var(--tint-rgb), 0.03); }
+.skills-screen .skills-card { gap: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.skills-card + .skills-card { border-top: 1px solid var(--border); }
+.skills-card .tools-mcp-card-top { min-height: 76px; padding: 14px 16px; align-items: center; gap: 12px; }
+.skills-card-info { min-width: 0; flex: 1; }
+.skills-card-name-row { min-width: 0; }
+.skills-card-name { margin: 0; font-size: 13px; font-weight: 500; line-height: 1.4; color: var(--fg); overflow-wrap: anywhere; }
+.skills-card-summary { margin: 0; min-width: 0; font-size: 12px; line-height: 1.4; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.skills-card.is-disabled > .tools-mcp-card-top > .library-icon-badge { opacity: 0.65; }
+.skills-card .tools-mcp-actions { gap: 4px; }
+.skills-card .tools-mcp-enabled { min-height: 28px; margin-right: 8px; }
+.skills-card .tools-mcp-icon-btn, .skills-card-expand-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--fg-muted); cursor: pointer; flex: none; }
+.skills-card .tools-mcp-icon-btn:hover, .skills-card-expand-btn:hover { color: var(--fg); background: var(--hover); }
+.skills-card .tools-mcp-icon-btn[aria-label^="Delete "]:hover { color: var(--danger-text); }
+.skills-card.is-expanded .skills-card-summary { display: none; }
+.skills-card-expand-btn svg { transition: transform 0.15s ease; }
+.skills-card.is-expanded .skills-card-expand-btn svg { transform: rotate(180deg); }
+.skills-card-details { display: flex; flex-direction: column; gap: 10px; margin: 0 16px; padding: 14px 0 16px 44px; border-top: 1px solid var(--border); }
+.skills-card-details[hidden] { display: none; }
+.skills-card-description, .skills-card-files-meta { margin: 0; font-size: 12px; line-height: 1.45; color: var(--fg-muted); overflow-wrap: anywhere; }
+.skills-card-body { margin: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; line-height: 1.5; color: var(--fg-muted); background: rgba(var(--shade-rgb), 0.18); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; }
+.skills-screen .tools-mcp-empty { margin: 0; padding: 24px 16px; text-align: center; }
+.skills-screen :is(button, input):focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+:root[data-theme="light"] .skills-screen :is(.tools-mcp-list, .tools-search-input) { background: #fff; }
+:root[data-theme="light"] .skills-screen .skills-card { background: transparent; }
+@container skills (max-width: 460px) {
+  .skills-card .tools-mcp-card-top { flex-wrap: wrap; padding: 12px; gap: 10px; }
+  .skills-card-info { flex-basis: calc(100% - 44px); }
+  .skills-card .tools-mcp-actions { margin-left: auto; }
+  .skills-card-details { padding-left: 0; }
+}
+@media (max-width: 560px) {
+  .skills-screen { padding: 20px 16px 28px; }
+  .skills-screen .tools-header { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skills-card-expand-btn svg { transition: none; }
+}

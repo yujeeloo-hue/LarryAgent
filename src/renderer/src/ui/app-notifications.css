@@ -1,0 +1,381 @@
+/*
+ * Self-owned notifications renderer chrome (docs/demo/app-notify, signed
+ * off): in-app toast stack + bell inbox popover. Opaque surfaces both
+ * themes — Light pure white + theme border (chrome rule), Dark #1b1b1b +
+ * neutral border. One card design shared with the background popup
+ * (notify-popup.css). z-order: inbox 70 (session-dropdown family), toast
+ * 62 (above Quick Open 60, under dropdowns).
+ */
+
+.app-notify-toast-stack {
+  position: fixed;
+  top: calc(var(--titlebar-height, 32px) + 12px);
+  right: 12px;
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+  z-index: var(--z-pop-toast);
+  pointer-events: none;
+}
+
+.app-notify-card {
+  --anc-card-bg: #1b1b1b;
+  --anc-card-border: rgba(255, 255, 255, 0.09);
+  --anc-card-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  position: relative;
+  width: 320px;
+  background: var(--anc-card-bg);
+  border: 1px solid var(--anc-card-border);
+  border-radius: 10px;
+  box-shadow: var(--anc-card-shadow);
+  padding: 10px 12px 11px;
+  color: var(--fg);
+  overflow: hidden;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: opacity 0.16s ease-in, transform 0.16s ease-in;
+}
+
+html[data-theme="light"] .app-notify-card {
+  --anc-card-bg: #ffffff;
+  --anc-card-border: rgba(18, 67, 117, 0.16);
+  --anc-card-shadow: 0 10px 28px rgba(23, 32, 43, 0.16);
+}
+
+.app-notify-card.is-entering {
+  animation: anc-toast-in 0.18s ease-out;
+}
+
+.app-notify-card.is-leaving {
+  opacity: 0;
+  transform: translateX(14px);
+}
+
+@keyframes anc-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.app-notify-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-notify-bell {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--fg-muted);
+}
+
+.app-notify-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-notify-close {
+  width: 18px;
+  height: 18px;
+  margin: -2px -4px 0 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 4.5px;
+  background: transparent;
+  color: var(--fg-dim);
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.14s ease, background 0.14s ease;
+}
+
+.app-notify-card:hover .app-notify-close {
+  opacity: 1;
+}
+
+.app-notify-close:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.app-notify-close svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.app-notify-body {
+  margin: 3px 0 0 24px;
+  font-size: 12px;
+  color: var(--fg-muted);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Countdown hint mirrors the auto-dismiss timer (visual only). The duration
+ * arrives per card as --anc-lifetime (renderer TOAST_MS) — never hardcode it
+ * here or the bar will drift from the timer again. */
+.app-notify-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.55;
+  transform-origin: left;
+  animation: anc-countdown var(--anc-lifetime, 10s) linear forwards;
+}
+
+@keyframes anc-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* ---- bell inbox popover ---------------------------------------------- */
+
+.app-notify-inbox {
+  --anc-card-bg: #1b1b1b;
+  --anc-card-border: rgba(255, 255, 255, 0.09);
+  --anc-card-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  /* One message row's height — the popover floor. The empty state sizes
+   * itself against this token, so the popover keeps the one-message height
+   * even with zero notifications (rows pin to the same token). */
+  --anc-row-h: 45px;
+  /* Head height while the action chip is visible (17px padding + ~20px
+   * chip). Clearing the ledger hides the chip — without this floor the
+   * head collapses by the chip/title height delta and the title shifts
+   * with it (the popover visibly jumps on Clear all). */
+  --anc-head-h: 37px;
+  position: fixed;
+  width: 320px;
+  z-index: var(--z-pop-pop);
+  background: var(--anc-card-bg);
+  border: 1px solid var(--anc-card-border);
+  border-radius: 10px;
+  box-shadow: var(--anc-card-shadow);
+  color: var(--fg);
+  opacity: 0;
+  transform: scale(0.97) translateY(-3px);
+  transform-origin: top right;
+  transition: opacity 0.14s ease-out, transform 0.14s ease-out;
+}
+
+html[data-theme="light"] .app-notify-inbox {
+  --anc-card-border: rgba(18, 67, 117, 0.16);
+  --anc-card-shadow: 0 10px 28px rgba(23, 32, 43, 0.16);
+}
+
+/* ===== Light: frosted-glass inbox popover (Light only; Dark keeps the
+ * opaque elevated fill). The rows list scrolls — WebKit freezes descendant
+ * panning when an ancestor paints backdrop-filter — so the frost lives on
+ * a z-index:-1 ::before layer (same carrier pattern as the QUEUED card).
+ * Alpha 0.8: readability first — 0.45 went translucent over busy chat
+ * content and the row text washed out; 0.8 + blur(16px) still reads as
+ * frosted but holds a near-solid surface under the text. ===== */
+html[data-theme="light"] .app-notify-inbox {
+  isolation: isolate;
+  background: transparent;
+}
+
+html[data-theme="light"] .app-notify-inbox::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+}
+
+/* ===== Dark: frosted inbox popover — user-signed-off
+ * variant D from docs/demo/app-notify/dark-frost.html. Same ::before
+ * carrier mechanics as Light (the rows list scrolls inside). ===== */
+html:not([data-theme="light"]) .app-notify-inbox {
+  isolation: isolate;
+  background: transparent;
+}
+
+html:not([data-theme="light"]) .app-notify-inbox::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: rgba(20, 20, 20, 0.65);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+}
+
+.app-notify-inbox.is-open {
+  opacity: 1;
+  transform: none;
+}
+
+.app-notify-inbox-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* Height floor: the chip is the tallest child; when Clear all empties
+   * the ledger the chip hides and the head must not shrink (title would
+   * slide up and the popover bottom would retract — see --anc-head-h). */
+  min-height: var(--anc-head-h);
+  padding: 9px 12px 8px;
+}
+
+.app-notify-inbox-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Quiet text resting state; hover = capsule bg (no link affordance). */
+.app-notify-inbox-mark {
+  border: 0;
+  background: none;
+  padding: 3px 10px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  cursor: pointer;
+  border-radius: 999px;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.app-notify-inbox-mark:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.app-notify-inbox-list {
+  max-height: 208px;
+  overflow: auto;
+  padding: 0 5px 5px;
+  display: grid;
+  gap: 1px;
+}
+
+/* Author `display: grid` outranks the UA [hidden] rule — without this
+ * guard the "hidden" empty list still paints its 5px bottom padding and
+ * shoves the empty state text 5px below the signed-off optical center. */
+.app-notify-inbox-list[hidden] {
+  display: none;
+}
+
+.app-notify-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: var(--anc-row-h);
+  padding: 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.app-notify-row:hover {
+  background: var(--hover);
+}
+
+.app-notify-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.app-notify-row.is-read .app-notify-dot {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.app-notify-row-body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+
+.app-notify-row-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-notify-row.is-read .app-notify-row-title {
+  font-weight: 500;
+  color: var(--fg-muted);
+}
+
+.app-notify-row-snippet {
+  font-size: 11px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.app-notify-row-time {
+  font-size: 10.5px;
+  color: var(--fg-dim);
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.app-notify-inbox-empty {
+  /* One-message height parity: the empty zone matches one row (45px) plus
+   * the list's 5px bottom padding, so the popover renders at the same
+   * height as with a single message (min-height floor keeps it there even
+   * if font metrics shift). 17/19 re-centers the text (~48:52, the
+   * signed-off optical placement) inside the shorter box (was 18/25). */
+  min-height: calc(var(--anc-row-h) + 5px);
+  padding: 17px 12px 19px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--fg-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-notify-card,
+  .app-notify-progress,
+  .app-notify-inbox,
+  .app-notify-inbox-mark {
+    animation: none;
+    transition: none;
+  }
+}

@@ -1,0 +1,18 @@
+:root {
+  --mono-icon-ink: #abb3bf;
+  --mono-icon-badge: #30353d;
+}
+
+:root[data-theme="light"] {
+  --mono-icon-ink: #5b6573;
+  --mono-icon-badge: #f0f2f5;
+}
+
+.app-mono-icon {
+  display: inline-block;
+  flex: none;
+  background: currentColor;
+  -webkit-mask: var(--app-mono-source) center / contain no-repeat;
+  mask: var(--app-mono-source) center / contain no-repeat;
+  pointer-events: none;
+}

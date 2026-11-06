@@ -1,0 +1,261 @@
+/* display_image / display_pdf cards */
+
+/* display_image — image-only tool card */
+.content-card-display-image {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.content-card-display-image-figure {
+  margin: 0;
+  max-width: 100%;
+}
+
+/* Display-image card previews: dual-class so this beats the generic
+   `.conversation-image { max-width: 100% }` rule below (same specificity,
+   later wins otherwise). Height stays auto, so the image scales in
+   proportion. */
+.conversation-image.content-card-display-image-preview {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(var(--shade-rgb), 0.2);
+  /* Cap image previews so they never span the whole message width. */
+  max-width: min(100%, 720px);
+}
+
+/* Conversation images — intrinsic size when smaller than the content area */
+.conversation-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  border-radius: 10px;
+}
+
+.conversation-image-inline {
+  margin: 6px 0;
+}
+
+.md-image-figure {
+  margin: 10px 0;
+  max-width: 100%;
+}
+
+.md-image-caption {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+.content-card-display-image-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.content-card-display-image-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.content-card-display-image-action:hover {
+  color: var(--fg);
+  background: rgba(var(--tint-rgb), 0.05);
+}
+
+.content-card-display-image-error,
+.content-card-display-image-pending {
+  margin: 0;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+.content-card-display-image-error {
+  color: var(--danger);
+}
+
+/* generate_image — sized generating placeholder while the request runs.
+   Width is set inline to mirror the final image's rendered width (intrinsic
+   pixel size from the `size` argument, capped at 100%) so it never stretches
+   across the whole message. */
+.content-card-display-image-generating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 160px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: rgba(var(--shade-rgb), 0.12);
+  color: var(--fg-muted);
+}
+
+.content-card-display-image-generating-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--spinner-track);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: content-card-display-image-spin 0.7s linear infinite;
+}
+
+@keyframes content-card-display-image-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.content-card-display-image-generating-label {
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+.content-card-display-image-generating-size {
+  font-size: 11px;
+  color: var(--fg-muted);
+  opacity: 0.7;
+}
+
+/* capture_app_window — collapsed preview until expanded */
+.content-card-display-image-collapsible {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--hairline);
+  padding: 0;
+}
+
+.content-card-display-image-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.content-card-display-image-summary::-webkit-details-marker {
+  display: none;
+}
+
+.content-card-display-image-summary-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.content-card-display-image-summary-icon {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+}
+
+.content-card-display-image-summary-title {
+  flex: 0 0 auto;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--fg);
+}
+
+.content-card-display-image-summary-file {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.content-card-display-image-summary-chevron {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+  transition: transform 0.15s ease;
+}
+
+.content-card-display-image-collapsible[open]
+  > .content-card-display-image-summary
+  .content-card-display-image-summary-chevron {
+  transform: rotate(180deg);
+}
+
+.content-card-display-image-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 10px 10px;
+}
+
+/* display_pdf — PDF-only tool card */
+.content-card-display-pdf {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.content-card-display-pdf-frame {
+  display: block;
+  width: 100%;
+  height: 480px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(var(--shade-rgb), 0.2);
+}
+
+.content-card-display-pdf-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.content-card-display-pdf-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.content-card-display-pdf-action:hover {
+  color: var(--fg);
+  background: rgba(var(--tint-rgb), 0.05);
+}
+
+.content-card-display-pdf-error,
+.content-card-display-pdf-pending {
+  margin: 0;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+.content-card-display-pdf-error {
+  color: var(--danger);
+}

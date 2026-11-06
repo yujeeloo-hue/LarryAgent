@@ -1,0 +1,586 @@
+html.workspace-changes-window,
+body.workspace-changes-window,
+body.workspace-changes-window #app {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg, #141414);
+  color: var(--fg, #e8e8e8);
+}
+
+.workspace-changes-panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg-elevated, var(--bg));
+  font-family: var(--font-ui);
+}
+
+.workspace-changes-panel.is-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.workspace-changes-panel.is-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+/* Full-height columns so the resize rail reaches the window top. */
+.workspace-changes-columns {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.workspace-changes-section {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace-changes-section-list {
+  flex: 0 0 300px;
+  width: 300px;
+}
+
+.workspace-changes-section-preview {
+  flex: 1 1 auto;
+}
+
+.workspace-changes-chrome {
+  flex: 0 0 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  -webkit-app-region: drag;
+  app-region: drag;
+  box-sizing: border-box;
+}
+
+.workspace-changes-chrome-list {
+  justify-content: flex-start;
+  /* Room for macOS traffic lights with hiddenInset. */
+  padding: 0 8px 0 78px;
+}
+
+/* Windows: native title bar hidden — the left chrome owns the top-left
+ * corner, so it carries the brand (dog head + "Changes") instead of the
+ * traffic-light clearance. */
+html.platform-win32 .workspace-changes-chrome-list {
+  padding-left: 12px;
+  gap: 8px;
+}
+
+.workspace-changes-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.workspace-changes-brand-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Windows caption buttons hug the preview chrome's top-right corner:
+ * full-height group, no chrome right padding, small gap from the toolbar. */
+html.platform-win32 .workspace-changes-chrome-preview {
+  padding-right: 0;
+}
+
+html.platform-win32 .workspace-changes-chrome-preview .title-bar-caption-group {
+  align-self: stretch;
+  margin-left: 6px;
+}
+
+.workspace-changes-chrome-preview {
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px 0 12px;
+  border-bottom: 1px solid transparent;
+}
+
+/* Right-aligned toolbar group: compare toggle + refresh. */
+.workspace-changes-chrome-actions {
+  margin-left: auto;
+  flex: 0 0 auto;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.workspace-changes-chrome button {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* Borderless compact control — smaller than title-bar Setting. */
+.workspace-changes-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  padding: 0;
+  line-height: 0;
+  box-sizing: border-box;
+}
+
+.workspace-changes-toolbar-btn:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.workspace-changes-toolbar-btn.is-active {
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--accent);
+}
+
+.workspace-changes-toolbar-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.workspace-changes-toolbar-btn svg {
+  display: block;
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+}
+
+.workspace-changes-toolbar-btn.is-busy svg {
+  animation: workspace-changes-spin 0.8s linear infinite;
+}
+
+@keyframes workspace-changes-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- row context menu (Reveal / Copy Relative Path) --------------------
+ * Same language as the Dev Mode ctx menu (devmode.css .devmode-ctx-*):
+ * fixed body-mounted popover, --z-pop-menu layer. */
+.workspace-changes-ctx-menu {
+  position: fixed;
+  z-index: var(--z-pop-menu);
+  min-width: 200px;
+  max-width: 300px;
+  padding: 4px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+}
+
+.workspace-changes-ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--fg);
+  font: 12px/1.2 var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.workspace-changes-ctx-item:hover {
+  background: var(--hover);
+}
+
+.workspace-changes-ctx-sep {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--border);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .workspace-changes-ctx-menu {
+    animation: workspace-changes-menu-in 120ms ease both;
+  }
+}
+
+@keyframes workspace-changes-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.workspace-changes-preview-filename {
+  font-size: 12px;
+  font-weight: 550;
+  line-height: 22px;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.workspace-changes-preview-filename[hidden] {
+  display: none !important;
+}
+
+.workspace-changes-resize {
+  flex: 0 0 1px;
+  width: 1px;
+  align-self: stretch;
+  position: relative;
+  z-index: 4;
+  cursor: col-resize;
+  touch-action: none;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  background: var(--border);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.workspace-changes-resize::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  width: 7px;
+}
+
+.workspace-changes-resize:hover,
+.workspace-changes-resize:focus-visible,
+.workspace-changes-resize.is-dragging {
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.workspace-changes-resize:focus-visible {
+  outline: none;
+}
+
+.workspace-changes-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+
+.workspace-changes-row {
+  appearance: none;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.workspace-changes-row:hover {
+  background: rgba(var(--tint-rgb), 0.03);
+}
+
+.workspace-changes-row.is-selected {
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.workspace-changes-row.is-selected:hover {
+  background: rgba(var(--accent-rgb), 0.14);
+}
+
+.workspace-changes-row-icon {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--fg-muted);
+}
+
+.workspace-changes-row-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.workspace-changes-row-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.workspace-changes-row-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.workspace-changes-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+  text-transform: capitalize;
+}
+
+.workspace-changes-badge.is-added,
+.workspace-changes-badge.is-untracked {
+  color: var(--success-text);
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.workspace-changes-badge.is-deleted {
+  color: var(--danger-text);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.workspace-changes-badge.is-modified,
+.workspace-changes-badge.is-renamed,
+.workspace-changes-badge.is-copied {
+  color: var(--warn-text);
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+/* +/− labels align with the Patch tool card's red/green labels
+   (.content-card-tool-result-changes): same --success-text/--danger-text
+   colors, same monospace 600. */
+.workspace-changes-diff {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.workspace-changes-diff-ins {
+  color: var(--success-text);
+}
+
+.workspace-changes-diff-del {
+  color: var(--danger-text);
+}
+
+.workspace-changes-row-path {
+  font-size: 11px;
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-changes-preview-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+
+.workspace-changes-preview-body .tool-file-lines {
+  border: none;
+  border-radius: 0;
+  max-height: none;
+  overflow: visible;
+  background: transparent;
+}
+
+.workspace-changes-empty {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: var(--fg-muted);
+  line-height: 1.45;
+}
+
+.workspace-changes-empty.is-error {
+  color: var(--danger-text);
+}
+
+.workspace-changes-notice {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 11.5px;
+  color: var(--fg-muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--hairline);
+}
+
+/* ======================================================================
+   Side-by-side compare view (.tool-file-sbs). Reuses .tool-file-lines
+   typography (12px / 1.55) so the locked del-stripe period stays valid
+   and stripes flow seamlessly across consecutive delete rows.
+   Layout: two half-width panes that scroll horizontally on their own
+   (vertical scrolling stays with the preview body so rows stay paired).
+   ====================================================================== */
+
+.tool-file-sbs-headers {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bg-elevated, var(--bg, #141414));
+  border-bottom: 1px solid var(--code-border);
+}
+
+.tool-file-sbs-headers span {
+  padding: 4px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--code-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tool-file-sbs-headers span + span {
+  border-left: 1px solid var(--code-border);
+}
+
+.tool-file-sbs-panes {
+  display: flex;
+  align-items: stretch;
+}
+
+.tool-file-sbs-pane {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+.tool-file-sbs-pane + .tool-file-sbs-pane {
+  border-left: 1px solid var(--code-border);
+}
+
+.tool-file-sbs-cell {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  min-width: 100%;
+  width: max-content;
+}
+
+.tool-file-sbs-cell.is-odd {
+  background: rgba(var(--tint-rgb), 0.03);
+}
+
+.tool-file-sbs-cell.is-even {
+  background: rgba(var(--tint-rgb), 0.07);
+}
+
+.tool-file-sbs-cell.is-add {
+  background: rgba(63, 185, 80, 0.22);
+}
+
+.tool-file-sbs-cell.is-del {
+  background: var(--danger-soft);
+}
+
+.tool-file-sbs-cell.is-empty {
+  background: rgba(var(--shade-rgb), 0.12);
+}
+
+/* Left edge marker: same treatment as the unified rows (solid green / red stripes, period locked to line height). */
+.tool-file-sbs-cell.is-add::before,
+.tool-file-sbs-cell.is-del::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--diff-bar-w);
+  pointer-events: none;
+}
+
+.tool-file-sbs-cell.is-add::before {
+  background: var(--success);
+}
+
+.tool-file-sbs-cell.is-del::before {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--danger) 0 calc(var(--del-period) / 2),
+    color-mix(in srgb, var(--danger) 30%, transparent)
+      calc(var(--del-period) / 2) var(--del-period)
+  );
+}
+
+.tool-file-sbs-num {
+  flex: 0 0 auto;
+  padding: 0 8px 0 12px;
+  text-align: right;
+  color: var(--code-fg-muted);
+  user-select: none;
+  white-space: pre;
+  background: rgba(var(--shade-rgb), 0.18);
+  border-right: 1px solid var(--code-border);
+}
+
+.tool-file-sbs-code {
+  flex: 1 1 auto;
+  padding: 0 12px 0 10px;
+  white-space: pre;
+  color: var(--code-fg);
+  background: transparent !important;
+}
+
+.tool-file-sbs-code.hljs {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.tool-file-sbs-cell.is-del .tool-file-sbs-code {
+  text-decoration: line-through;
+  text-decoration-color: var(--danger-faint);
+}
+
+.tool-file-sbs-cell.is-empty .tool-file-sbs-code {
+  color: transparent;
+}

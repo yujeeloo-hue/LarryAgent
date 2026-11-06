@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="240" height="240">
+<g transform="translate(12 12) scale(1.033192) translate(-12 -12)">
+  <defs>
+    <linearGradient id="g" x2="1" y2="1"><stop stop-color="#ffbc58"/><stop offset=".5" stop-color="#ff7894"/><stop offset="1" stop-color="#cf4bdc"/></linearGradient>
+    <linearGradient id="p" x2="1" y2="1"><stop stop-color="#f37598"/><stop offset="1" stop-color="#b344d0"/></linearGradient>
+    <path id="shape" d="M12 1.9C6.3 1.9 1.9 6.2 1.9 11.9S6.3 22 12 22h1.2c2.6 0 3.6-2.3 2.2-4.2-.9-1.2-.1-2.7 1.4-2.7h1.4c2.8 0 4-1.8 4-4.2C22.2 5.9 17.8 1.9 12 1.9Z"/>
+    <clipPath id="c"><use href="#shape"/></clipPath>
+    <mask id="m"><rect width="24" height="24" fill="white"/><circle cx="7" cy="8.2" r="1.65" fill="black"/><circle cx="12" cy="6.3" r="1.65" fill="black"/><circle cx="17.1" cy="8.2" r="1.65" fill="black"/></mask>
+  </defs>
+  <g mask="url(#m)"><use href="#shape" fill="url(#g)"/><path d="M0 15.8C7.1 17 14.6 9.7 24 11.8V24H0Z" fill="url(#p)" opacity=".65" clip-path="url(#c)"/></g>
+</g>
+</svg>

@@ -1,0 +1,135 @@
+.edit-workspace-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--scrim);
+  padding: 24px;
+}
+
+.edit-workspace-dialog {
+  width: min(480px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated, var(--bg));
+  box-shadow: var(--shadow-xl);
+}
+
+.edit-workspace-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.edit-workspace-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.edit-workspace-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+
+.edit-workspace-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--hover);
+  color: var(--fg);
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.edit-workspace-input:focus {
+  border-color: rgba(var(--accent-rgb), 0.55);
+}
+
+/* Light: solid white base to avoid the blue-grey hover overlay. */
+:root[data-theme="light"] .edit-workspace-input {
+  background: #ffffff;
+}
+
+.edit-workspace-path-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.edit-workspace-path-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.edit-workspace-browse {
+  appearance: none;
+  flex: 0 0 auto;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-weight: 550;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.edit-workspace-browse:hover {
+  color: var(--fg);
+  background: var(--hover);
+}
+
+.edit-workspace-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.edit-workspace-btn {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.edit-workspace-btn:hover {
+  background: var(--hover);
+}
+
+.edit-workspace-btn-confirm {
+  border-color: transparent;
+  background: var(--accent, #7ec8c8);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.edit-workspace-btn-confirm:hover {
+  filter: brightness(1.05);
+  background: var(--accent, #7ec8c8);
+}

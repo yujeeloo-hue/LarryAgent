@@ -1,0 +1,134 @@
+appId: com.jellybot.app
+productName: Larry Agent
+copyright: Copyright © 2026
+directories:
+  buildResources: build
+  output: release
+# Chromium ships 55 locale .pak files (~49MB) that localize only its built-in
+# UI (native context menus, spellcheck hints, PDF viewer). Keeping en-US plus
+# zh-CN — the two locales this product targets — drops ~47MB of unpacked
+# payload. app.getSystemLocale() reads the OS, not these paks, so the agent's
+# locale reporting (environmentContext) is unaffected.
+electronLanguages:
+  - en-US
+  - zh-CN
+# Creates the yellow Applications alias for Mac DMGs and prunes unused Windows GPU binaries.
+afterPack: after-pack.mjs
+files:
+  - out/**/*
+  - package.json
+  - "!**/.vscode/*"
+  - "!src/*"
+  - "!resources/**"
+  - "!electron.vite.config.*"
+  - "!electron-builder.yml"
+  - "!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,CHANGELOG.md,README.md}"
+  - "!{.env,.env.*,.npmrc,pnpm-lock.yaml}"
+  - "!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}"
+  - "!{release,dist,tmp,report,docs,scripts,demo.js,HANDOFF.md}"
+# Shared by every platform: prompt library + fallback PNG icon.
+extraResources:
+  - from: resources/prompts
+    to: prompts
+  - from: resources/icon.png
+    to: icon.png
+  # Relay server payload for one-click deploy (assembled by build-relay.mjs).
+  - from: resources/relay-server
+    to: relay-server
+mac:
+  category: public.app-category.developer-tools
+  # Prefer the existing macOS icon used in preview/dev.
+  icon: build/icon.icns
+  # Microphone access for the speech transcriber helper (push-to-talk).
+  extendInfo:
+    NSMicrophoneUsageDescription: Larry Agent uses the microphone for voice input in the composer.
+  artifactName: Larry-Agent-${version}-mac-${arch}.${ext}
+  target:
+    - target: dmg
+      arch:
+        - arm64
+    - target: zip
+      arch:
+        - arm64
+  # Local first release — unsigned (Gatekeeper will warn until notarized).
+  identity: null
+  hardenedRuntime: false
+  # macOS-only resources: icns + Swift helpers
+  # (Windows v1 ships none of these — gates in src/platformCaps.ts).
+  extraResources:
+    - from: resources/icon.icns
+      to: icon.icns
+    - from: resources/menubar
+      to: menubar
+    - from: build/helpers/macos-window-capture
+      to: helpers/macos-window-capture
+    - from: build/helpers/macos-speech-transcriber
+      to: helpers/macos-speech-transcriber
+dmg:
+  artifactName: Larry-Agent-${version}-mac-${arch}.${ext}
+  title: ${productName} ${version}
+  # Finder draws dark file labels over image backgrounds. The artwork places
+  # warm ivory surfaces behind the two labels for readable contrast.
+  # The image extends beyond the 540x380 opening window, keeping resized
+  # Finder windows dark; prepare-dmg-window.mjs preserves that opening size.
+  background: build/dmg-background.png
+  window:
+    width: 540
+    height: 380
+  iconSize: 88
+  contents:
+    - x: 135
+      y: 160
+      type: file
+    - x: 405
+      y: 160
+      type: file
+      path: build/Applications.alias
+      name: Applications
+# Windows v1: cross-built from macOS, NSIS x64 only.
+win:
+  icon: build/icon.ico
+  artifactName: Larry-Agent-${version}-win-x64.${ext}
+  target:
+    - target: nsis
+      arch:
+        - x64
+  # Full-bleed multi-size ICO for the window / taskbar button (the macOS
+  # icon.png keeps a transparent margin that Windows would render undersized).
+  extraResources:
+    - from: resources/icon.ico
+      to: icon.ico
+    - from: resources/tray
+      to: tray
+      filter:
+        - "*.ico"
+    - from: resources/lldb-dap
+      to: lldb-dap
+      filter:
+        - "**/*"
+        - "!**/*.zip"
+        - "!**/*.sha256"
+        - "!README.md"
+    - from: resources/rsync
+      to: rsync
+      filter:
+        - "**/*"
+        - "!*.zip"
+        - "!*.sha256"
+        - "!README.md"
+nsis:
+  oneClick: false
+  # English copy and native DPI scaling match the approved installer design.
+  installerLanguages:
+    - en_US
+  include: build/installer.nsh
+  allowToChangeInstallationDirectory: true
+  artifactName: Larry-Agent-${version}-win-x64-setup.${ext}
+  installerIcon: build/installerIcon.ico
+  uninstallerIcon: build/uninstallerIcon.ico
+  installerHeaderIcon: build/installerIcon.ico
+  installerHeader: build/installerHeader.bmp
+  installerSidebar: build/installerSidebar.bmp
+  uninstallerSidebar: build/uninstallerSidebar.bmp
+npmRebuild: false
+asar: true

@@ -1,0 +1,153 @@
+.mcp-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--scrim);
+  padding: 24px;
+}
+
+.mcp-dialog {
+  width: min(520px, 100%);
+  max-height: min(90vh, 720px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated, var(--bg));
+  box-shadow: var(--shadow-xl);
+}
+
+.mcp-dialog-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.mcp-dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mcp-dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mcp-dialog-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+
+.mcp-dialog-input,
+.mcp-dialog-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--hover);
+  color: var(--fg);
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.mcp-dialog-input {
+  height: 36px;
+}
+
+.mcp-dialog-textarea {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.4;
+}
+
+.mcp-dialog-input:focus,
+.mcp-dialog-textarea:focus {
+  border-color: rgba(var(--accent-rgb), 0.55);
+}
+
+/* Light: solid white base to avoid the blue-grey hover overlay. */
+:root[data-theme="light"] .mcp-dialog-input,
+:root[data-theme="light"] .mcp-dialog-textarea {
+  background: #ffffff;
+}
+
+.mcp-dialog-radio-row {
+  display: flex;
+  gap: 16px;
+}
+
+.mcp-dialog-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.mcp-dialog-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mcp-dialog-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.mcp-dialog-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--danger-muted);
+}
+
+.mcp-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.mcp-dialog-btn {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.mcp-dialog-btn:hover {
+  background: var(--hover);
+}
+
+.mcp-dialog-btn-confirm {
+  border-color: transparent;
+  background: var(--accent, #7ec8c8);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.mcp-dialog-btn-confirm:hover {
+  filter: brightness(1.05);
+  background: var(--accent, #7ec8c8);
+}

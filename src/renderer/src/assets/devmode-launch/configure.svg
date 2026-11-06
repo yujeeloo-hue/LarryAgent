@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#00b8ef"/><stop offset="1" stop-color="#3154ff"/></linearGradient>
+    <linearGradient id="knob" x1="0" y1="0" x2="0.8" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#dceaff"/></linearGradient>
+  </defs>
+  <rect x="1.8" y="1.8" width="20.4" height="20.4" rx="3.4" fill="url(#b)"/>
+  <circle cx="12" cy="12.4" r="7.2" fill="#153ac7" opacity=".3"/>
+  <circle cx="12" cy="12" r="7.2" fill="url(#knob)"/>
+  <circle cx="14.7" cy="9.3" r="1.9" fill="#2854c9"/>
+</svg>

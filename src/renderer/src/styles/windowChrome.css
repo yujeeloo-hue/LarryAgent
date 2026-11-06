@@ -1,0 +1,89 @@
+/* Shared window-chrome primitives: the top-left brand mark and the Windows
+ * self-drawn caption buttons. Imported by every window that paints its own
+ * chrome (main shell, Changes window, …) so the caption spec stays single-
+ * source. Layout-specific placement stays in each window's own stylesheet. */
+
+.app-brand-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3.5px;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Filled dog-head mask follows the app's foreground in every theme.
+   Glyph drawn 15% over the box (mask-size vs contain) and nudged 1px down
+   for optical alignment with the 12px app name — win32-only rule; the
+   macOS brand (app-icon.png img) never sees it. */
+html.platform-win32 .app-brand-icon-dog {
+  flex: 0 0 16px;
+  border-radius: 0;
+  color: var(--fg);
+  background-color: currentColor;
+  -webkit-mask-image: var(--dog-head-mask);
+  mask-image: var(--dog-head-mask);
+  -webkit-mask-size: 115%;
+  mask-size: 115%;
+  -webkit-mask-position: center calc(50% + 1px);
+  mask-position: center calc(50% + 1px);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* Windows self-drawn caption buttons. */
+.title-bar-actions.has-caption {
+  padding-right: 0;
+  /* Stretch to the full title-bar height so the caption buttons hug the
+   * window's top edge; the regular 24px buttons stay vertically centered. */
+  align-self: stretch;
+}
+
+.title-bar-caption-group {
+  display: flex;
+  align-self: stretch;
+  margin-left: 2px;
+}
+
+.title-bar-caption-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  align-self: stretch;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.title-bar-caption-btn:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.title-bar-caption-btn:active {
+  background: var(--active);
+}
+
+/* Close hugs the top-right window corner and warns in bright red.
+ * No CSS corner radius on purpose: Win11's DWM clips the window surface to
+ * its own rounded corner (8px normal, square when maximized), so a square
+ * hover fill aligns pixel-perfectly at any DPI / window state — the same
+ * trick native apps (Terminal, Explorer) use. Win10 square windows match
+ * too. A hard-coded CSS radius can never track the system value. */
+.title-bar-caption-btn.caption-close:hover {
+  background: var(--win-close-red);
+  color: #fff;
+}
+
+.title-bar-caption-btn.caption-close:active {
+  background: var(--win-close-red);
+  color: #fff;
+}
+
+.title-bar-caption-btn svg {
+  display: block;
+}

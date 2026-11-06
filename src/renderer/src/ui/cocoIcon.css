@@ -1,0 +1,39 @@
+.coco-icon { --coco-pivot-y:45.4729%; display:inline-flex; flex:none; vertical-align:middle; }
+/* The artwork's threefold center is (12, 10.9135027) in its 24×24 viewBox.
+   Keep that point at the container center in both idle and running states. The
+   independent translation stays fixed while the transform below rotates. */
+.coco-icon>img,.coco-icon>svg { width:100%; height:100%; display:block; translate:0 calc(50% - var(--coco-pivot-y)); }
+/* Keep one SVG mounted: stopping eases its current frame back to emerald and 0°.
+   A restart during that return waits for the same smooth landing. */
+.coco-icon>.coco-icon-idle { display:none; }
+.coco-icon .coco-icon-palette { animation-play-state:var(--coco-play-state, paused); }
+/* Running-state spin: tick rhythm — 3 beats × 120° per turn, each beat moves in its first 45%
+   (eased) and dwells the rest. One turn per --coco-spin-period (single-sourced in cocoIcon.ts).
+   Only the clip-path silhouette rotates: the fill and its palette cycle stay fixed
+   in screen space. Its center precedes the artwork's translate(0 .74), hence y=10.1735.
+   Negative delays restore the role's retained phase when a view remounts. */
+.coco-icon .coco-icon-shape {
+  animation: coco-spin var(--coco-spin-period, 6s) infinite var(--coco-spin-delay, 0s);
+  animation-play-state:var(--coco-play-state, paused);
+  transform-box: view-box;
+  transform-origin: 12px 10.1735027px;
+}
+:root[data-coco-running="true"] .coco-icon--global,
+:root[data-coco-work-running="true"] .coco-icon--work,
+:root[data-coco-chat-running="true"] .coco-icon--chat,
+.coco-icon--animated { --coco-play-state:running; }
+:root .coco-icon.coco-icon--resetting { --coco-play-state:paused; }
+@keyframes coco-spin {
+  0% { transform: rotate(0deg); animation-timing-function: cubic-bezier(.55,.07,.35,1); }
+  15% { transform: rotate(120deg); }
+  33.3333% { transform: rotate(120deg); animation-timing-function: cubic-bezier(.55,.07,.35,1); }
+  48.3333% { transform: rotate(240deg); }
+  66.6667% { transform: rotate(240deg); animation-timing-function: cubic-bezier(.55,.07,.35,1); }
+  81.6667% { transform: rotate(360deg); }
+  100% { transform: rotate(360deg); }
+}
+@media(prefers-reduced-motion:reduce) {
+  :root .coco-icon[data-coco-role]>.coco-icon-idle { display:block; }
+  :root .coco-icon[data-coco-role]>.coco-icon-running { display:none; }
+  :root .coco-icon[data-coco-role] :is(.coco-icon-shape,.coco-icon-palette) { animation:none; }
+}

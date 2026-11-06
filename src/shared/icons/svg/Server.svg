@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none">
+<g transform="translate(12 12) scale(0.999472) translate(-12 -12)">
+  <defs>
+    
+    
+    <clipPath id="Server-c"><rect x="2" y="3" width="20" height="8" rx="3.2" /><rect x="2" y="13" width="20" height="8" rx="3.2" /></clipPath>
+    <mask id="Server-m"><rect width="24" height="24" fill="white" /><circle cx="6.4" cy="7" r="1.35" fill="black" /><circle cx="6.4" cy="17" r="1.35" fill="black" /></mask>
+  </defs>
+  <g clip-path="url(#Server-c)" mask="url(#Server-m)"><rect width="24" height="24" fill="currentColor" /><path d="M0 10.2 24 4.2V24H0Z" fill="currentColor" opacity=".58" /></g>
+</g>
+</svg>

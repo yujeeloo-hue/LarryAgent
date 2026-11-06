@@ -1,0 +1,338 @@
+.log-drawer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: transparent;
+  color: var(--fg);
+}
+
+.log-drawer-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.log-drawer-metrics {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.log-drawer-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.log-drawer-metric-label {
+  color: var(--fg-muted);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.log-drawer-metric-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+
+.log-drawer-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.log-drawer-action-btn {
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg-muted);
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.log-drawer-action-btn:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.log-drawer-action-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.log-drawer-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.log-drawer-icon-btn:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.log-drawer-filters {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+
+.log-drawer-level-toggles {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.log-drawer-level-toggle {
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg-muted);
+  padding: 3px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+  opacity: 0.45;
+}
+
+.log-drawer-level-toggle.is-on {
+  opacity: 1;
+  background: var(--active);
+}
+
+.log-drawer-level-toggle.level-debug.is-on {
+  color: var(--log-debug);
+  border-color: rgba(138, 138, 138, 0.35);
+}
+
+.log-drawer-level-toggle.level-info.is-on {
+  color: var(--log-info);
+  border-color: rgba(138, 180, 200, 0.4);
+}
+
+.log-drawer-level-toggle.level-warn.is-on {
+  color: var(--log-warn);
+  border-color: rgba(212, 176, 106, 0.4);
+}
+
+.log-drawer-level-toggle.level-error.is-on {
+  color: var(--log-error);
+  border-color: rgba(224, 128, 128, 0.4);
+}
+
+.log-drawer-level-toggle:hover {
+  background: var(--hover);
+}
+
+.log-drawer-filter-select {
+  flex: 0 0 auto;
+  max-width: 120px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--hover);
+  color: var(--fg);
+  padding: 4px 8px;
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+}
+
+.log-drawer-filter-select:focus {
+  border-color: var(--focus-border);
+}
+
+:root[data-theme="light"] .log-drawer-filter-select {
+  border-color: rgba(var(--accent-rgb), 0.17);
+  background: #ffffff;
+}
+
+/*
+ * Light: level toggles become opaque, vivid chips.
+ * On  = solid level-brand fill — slate / cyan / amber / red, white
+ *       text (amber keeps near-black like --gold-fill/--on-gold).
+ * Off = quiet near-white chip sharing the accent hairline of the
+ *       sibling select/input, at full opacity — the translucent
+ *       pigment + mud-tone text read washed-out on the paper canvas.
+ * Dark keeps the translucent text-tint look unchanged.
+ */
+:root[data-theme="light"] .log-drawer-level-toggle {
+  opacity: 1;
+  background: #fbfdff;
+  border-color: rgba(var(--accent-rgb), 0.17);
+  color: var(--fg-muted);
+}
+
+:root[data-theme="light"] .log-drawer-level-toggle:hover:not(.is-on) {
+  background: #eef4fa;
+}
+
+:root[data-theme="light"] .log-drawer-level-toggle.is-on {
+  color: #fff;
+  border-color: transparent;
+  background: var(--fg-muted);
+}
+
+:root[data-theme="light"] .log-drawer-level-toggle.is-on:hover {
+  filter: brightness(0.93);
+}
+
+:root[data-theme="light"] .log-drawer-level-toggle.level-debug.is-on {
+  background: #475569;
+}
+
+:root[data-theme="light"] .log-drawer-level-toggle.level-info.is-on {
+  background: #0e7490;
+}
+
+:root[data-theme="light"] .log-drawer-level-toggle.level-warn.is-on {
+  background: #f59e0b;
+  color: #452c00;
+}
+
+:root[data-theme="light"] .log-drawer-level-toggle.level-error.is-on {
+  background: #dc2626;
+}
+
+.log-drawer-filter-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--hover);
+  color: var(--fg);
+  padding: 4px 8px;
+  font-size: 11px;
+  outline: none;
+}
+
+.log-drawer-filter-input::placeholder {
+  color: var(--fg-muted);
+}
+
+.log-drawer-filter-input:focus {
+  border-color: var(--focus-border);
+}
+
+:root[data-theme="light"] .log-drawer-filter-input {
+  background: #ffffff;
+}
+
+.log-drawer-full-request-toggle {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg-muted);
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  opacity: 0.55;
+  white-space: nowrap;
+}
+
+.log-drawer-full-request-toggle.is-on {
+  opacity: 1;
+  background: var(--active);
+  color: var(--fg);
+  border-color: rgba(138, 180, 200, 0.45);
+}
+
+.log-drawer-full-request-toggle:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.log-drawer-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.log-drawer-row {
+  display: grid;
+  grid-template-columns: 64px 44px 68px 1fr;
+  gap: 8px;
+  padding: 3px 12px;
+  color: var(--fg-muted);
+}
+
+.log-drawer-row:nth-child(even) {
+  background: rgba(var(--tint-rgb), 0.03);
+}
+
+.log-drawer-row:hover {
+  background: var(--hover);
+}
+
+.log-drawer-time {
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.log-drawer-level {
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+}
+
+.log-drawer-source {
+  color: var(--fg-muted);
+}
+
+.log-drawer-message {
+  color: var(--fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.log-drawer-row.level-debug .log-drawer-level {
+  color: var(--log-debug);
+}
+
+.log-drawer-row.level-info .log-drawer-level {
+  color: var(--log-info);
+}
+
+.log-drawer-row.level-warn .log-drawer-level {
+  color: var(--log-warn);
+}
+
+.log-drawer-row.level-error .log-drawer-level {
+  color: var(--log-error);
+}
+
+.log-drawer-row.level-error .log-drawer-message {
+  color: var(--danger-muted);
+}

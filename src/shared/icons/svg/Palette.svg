@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none">
+<g transform="translate(12 12) scale(1.033192) translate(-12 -12)">
+  <defs>
+    
+    
+    <path id="Palette-shape" d="M12 1.9C6.3 1.9 1.9 6.2 1.9 11.9S6.3 22 12 22h1.2c2.6 0 3.6-2.3 2.2-4.2-.9-1.2-.1-2.7 1.4-2.7h1.4c2.8 0 4-1.8 4-4.2C22.2 5.9 17.8 1.9 12 1.9Z" />
+    <clipPath id="Palette-c"><use href="#Palette-shape" /></clipPath>
+    <mask id="Palette-m"><rect width="24" height="24" fill="white" /><circle cx="7" cy="8.2" r="1.65" fill="black" /><circle cx="12" cy="6.3" r="1.65" fill="black" /><circle cx="17.1" cy="8.2" r="1.65" fill="black" /></mask>
+  </defs>
+  <g mask="url(#Palette-m)"><use href="#Palette-shape" fill="currentColor" /><path d="M0 15.8C7.1 17 14.6 9.7 24 11.8V24H0Z" fill="currentColor" opacity=".65" clip-path="url(#Palette-c)" /></g>
+</g>
+</svg>

@@ -1,0 +1,74 @@
+/* Paint only. Explicit semantic classes preserve each component's geometry,
+ * visibility, layout and event behavior. Important declarations replace legacy
+ * component gradients/filters, including theme-specific and hover recipes. */
+:root .action-primary,
+:root .action-danger {
+  background: var(--action-bg) !important;
+  color: var(--action-fg) !important;
+  border-color: var(--action-border, transparent) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+:root .action-primary {
+  --action-bg: var(--button-primary-bg);
+  --action-fg: var(--button-primary-fg);
+  --action-border: transparent;
+}
+
+:root .action-danger {
+  --action-bg: var(--button-danger-bg);
+  --action-fg: var(--button-danger-fg);
+  --action-border: var(--button-danger-border);
+}
+
+:root .action-primary:hover:not(:disabled):not([aria-disabled="true"]) {
+  --action-bg: var(--button-primary-bg-hover);
+}
+
+:root .action-danger:hover:not(:disabled):not([aria-disabled="true"]) {
+  --action-bg: var(--button-danger-bg-hover);
+}
+
+:root .action-primary:active:not(:disabled):not([aria-disabled="true"]) {
+  --action-bg: var(--button-primary-bg-active);
+}
+
+:root .action-danger:active:not(:disabled):not([aria-disabled="true"]) {
+  --action-bg: var(--button-danger-bg-active);
+}
+
+/* Row actions stay light: tinted red in Light and the existing red wash
+ * in Dark. Standalone destructive actions retain their original recipe. */
+:root .action-danger.action-danger-list {
+  --action-bg: var(--button-danger-list-bg);
+  --action-fg: var(--button-danger-list-fg);
+}
+
+:root .action-danger.action-danger-list:hover:not(:disabled):not([aria-disabled="true"]) {
+  --action-bg: var(--button-danger-list-bg-hover);
+}
+
+:root .action-danger.action-danger-list:active:not(:disabled):not([aria-disabled="true"]) {
+  --action-bg: var(--button-danger-list-bg-active);
+}
+
+:root :is(.action-primary, .action-danger):is(:disabled, [aria-disabled="true"]):not([aria-busy="true"]) {
+  --action-bg: var(--button-disabled-bg);
+  --action-fg: var(--button-disabled-fg);
+  --action-border: transparent;
+}
+
+:root :is(.action-primary, .action-danger):focus-visible {
+  outline: 2px solid var(--button-focus-ring) !important;
+  outline-offset: 2px;
+}
+
+:root :is(.action-primary, .action-danger)[aria-busy="true"] {
+  opacity: 1 !important;
+}
+
+:root :is(.action-primary, .action-danger) :is(svg, .icon) {
+  color: inherit !important;
+}

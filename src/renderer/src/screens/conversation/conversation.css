@@ -1,0 +1,1228 @@
+.conversation-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  position: relative;
+  /* Card corner radius; also the shared horizontal inset for prose + cards. */
+  --conversation-card-radius: 10px;
+  --conversation-content-max-width: 960px;
+  --conversation-side-inset: 28px;
+  /* Top edge fade height — single source (demo-verified 44px tier). Light
+   * re-tiers to 12px (round 2: 24px still read as a tall white band —
+   * --bg-main is near-opaque white there, while dark surfaces hide the
+   * wash). See the light override below the fade rules. */
+  --conversation-top-fade-h: 44px;
+  /*
+   * Bottom scroll clearance for the overlay footer:
+   * fade (72) + commit row (~32) + gaps + composer (~140) + pad + breathing room.
+   */
+  --conversation-composer-clearance: 300px;
+}
+
+.conversation-messages {
+  /* Follow state and explicit paging restores own the transcript position. */
+  overflow-anchor: none;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: block;
+  overflow-y: auto;
+  overflow-x: clip;
+  padding: 0;
+  /* Keep the side gutters inside the scrollport while centering the content. */
+  padding-inline: max(0px, calc((100% - var(--conversation-content-max-width)) / 2));
+  /* Keep last messages / status above Commit + composer when scrolled to end. */
+  padding-bottom: var(--conversation-composer-clearance);
+  box-sizing: border-box;
+  scrollbar-width: none;
+}
+
+.conversation-messages::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Top edge fade — data-driven: on while the transcript is scrolled below
+ * the top edge (.is-on on the element). The ladder paints --bg-main (the
+ * conversation column's translucent surface), NOT opaque --bg: the column
+ * is translucent over macOS vibrancy, so an opaque --bg top stop renders
+ * as a lighter "milky" band against its own backdrop. */
+.conversation-top-fade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--conversation-top-fade-h);
+  /* Above positioned card content (diff rows are position:relative, and
+   * z-index:auto paints them in tree order — later than this overlay).
+   * Below the footer's z-index 5; the two never overlap anyway. */
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  background: linear-gradient(
+    to bottom,
+    var(--bg-main) 0%,
+    color-mix(in srgb, var(--bg-main) 88%, transparent) 18%,
+    color-mix(in srgb, var(--bg-main) 68%, transparent) 32%,
+    color-mix(in srgb, var(--bg-main) 42%, transparent) 48%,
+    color-mix(in srgb, var(--bg-main) 22%, transparent) 64%,
+    color-mix(in srgb, var(--bg-main) 8%, transparent) 82%,
+    color-mix(in srgb, var(--bg-main) 0%, transparent) 100%
+  );
+}
+
+.conversation-top-fade.is-on {
+  opacity: 1;
+}
+
+/*
+ * Light tier (round-2 demo-verified 12px vs 24px/18px/8px/0px): the fade
+ * paints near-opaque white --bg-main; even 24px read as a tall white band.
+ * Dark keeps the 44px single source above.
+ */
+:root[data-theme="light"] .conversation-screen {
+  --conversation-top-fade-h: 12px;
+}
+
+.conversation-messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  /* Small gap before status; main clearance lives on .conversation-messages. */
+  padding: 24px var(--conversation-side-inset) 12px;
+  box-sizing: border-box;
+}
+
+/*
+ * Progressive window sentinel: quiet affordance above the transcript.
+ * Only present while older turns remain; busy state is a 2px scanning bar.
+ */
+.conversation-load-earlier {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  align-self: center;
+  max-width: 380px;
+  width: 60%;
+  padding: 6px 14px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: default;
+  overflow: hidden;
+  transition: background-color 160ms ease;
+}
+
+.conversation-load-earlier:hover {
+  background: rgba(var(--tint-rgb), 0.05);
+}
+
+.conversation-load-earlier:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.conversation-load-earlier[hidden] {
+  display: none !important;
+}
+
+.conversation-load-earlier-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+/* 2px scanning bar — appears only while a page fetch is in flight. */
+.conversation-load-earlier-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 1px;
+}
+
+.conversation-load-earlier-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  border-radius: inherit;
+  background: var(--accent);
+  opacity: 0.85;
+  animation: conversation-load-earlier-scan 1.1s ease-in-out infinite;
+}
+
+.conversation-load-earlier-bar[hidden] {
+  display: none !important;
+}
+
+@keyframes conversation-load-earlier-scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+.conversation-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.conversation-sticky-segment {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.conversation-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+/* Prompt / Plan segments remain in normal flow. The historical class names
+   are retained for transcript ordering and streaming append hosts only. */
+.conversation-sticky-item {
+  align-self: flex-start;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.conversation-sticky-item--plan {
+  /* No inset — Plan is one radius wider on each side than body/other cards. */
+}
+
+.conversation-msg {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+}
+
+.conversation-msg-user {
+  display: flex;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  /* Left keeps the shared card-radius inset; right matches Plan (full-bleed). */
+  padding-left: var(--conversation-card-radius);
+  padding-right: 0;
+}
+
+.conversation-msg-user .conversation-msg-body {
+  position: relative;
+  max-width: 85%;
+  text-align: left;
+  /* Near-opaque fill from the send-button family; no backdrop-filter. */
+  background: var(--bubble-user-bg);
+  border: 1px solid var(--bubble-user-border);
+  border-radius: 14px;
+  padding: 10px 14px;
+  /* Faint halo in the accent hue keeps the bubble in the same neon story
+     as the send button / highlight color without competing with the text. */
+  box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.12);
+}
+
+:root[data-theme="light"] .conversation-msg-user .conversation-msg-body {
+  box-shadow: 0 1px 5px rgba(18, 52, 86, 0.055);
+}
+
+/* ---- Running-turn prompt reclaim (stop the turn before content) ---- */
+
+/* The whole card is the stop-and-reclaim affordance while the turn is
+   still rollback-eligible (no visible model content yet): subtle
+   border/lift emphasis on hover signals it, no separate button. Click
+   stops the turn; the STOP-rollback hands the prompt back to the
+   composer. Once content streams in the class drops and the card is
+   read-only again. */
+.conversation-msg-user.is-reclaimable-prompt .conversation-msg-body {
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease,
+    background-color 120ms ease;
+}
+
+.conversation-msg-user.is-reclaimable-prompt:hover .conversation-msg-body {
+  border-color: rgba(var(--accent-rgb), 0.6);
+  box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.2);
+}
+
+:root[data-theme="light"]
+  .conversation-msg-user.is-reclaimable-prompt:hover
+  .conversation-msg-body {
+  box-shadow: 0 2px 8px rgba(18, 52, 86, 0.085);
+}
+
+/* Marker for a prompt rewritten mid-turn (persisted with the text part).
+   The mid-turn editor is gone (reclaim replaced it); kept for historical
+   sessions that already carry the marker. */
+.user-prompt-edited {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--fg-muted);
+  opacity: 0.85;
+}
+
+/* Long prompts fold to a 3-line preview (height set inline from line-height). */
+.conversation-prompt-clamp {
+  position: relative;
+  overflow: hidden;
+  transition: max-height 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Fade the cut line into the bubble fill so the clip reads as intentional. */
+.conversation-prompt-clamp.is-clamped::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 22px;
+  pointer-events: none;
+  /* Fade the cut line into the bubble fill (same 0.92 alpha) so the clip
+     reads as intentional. */
+  background: linear-gradient(
+    to bottom,
+    rgb(from var(--bubble-user-bg) r g b / 0),
+    var(--bubble-user-bg)
+  );
+}
+
+.conversation-prompt-clamp-toggle {
+  appearance: none;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.conversation-prompt-clamp-toggle:hover {
+  color: var(--fg);
+}
+
+.conversation-prompt-clamp-toggle[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conversation-prompt-clamp {
+    transition: none;
+  }
+  .conversation-top-fade {
+    transition: none;
+  }
+}
+
+.conversation-msg-role {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: 6px;
+}
+
+.conversation-msg-body {
+  /* Conversation text scale (Settings → Appearance): single-source base,
+     the em-based markdown hierarchy under .md-blocks follows for free. */
+  font-size: calc(14px * var(--chat-fs-scale, 1));
+  line-height: 1.55;
+  word-break: break-word;
+  color: var(--fg);
+}
+
+/* Prose + non-Plan cards inset by card radius; Plan stays full-bleed. */
+.conversation-msg-assistant > .conversation-msg-body {
+  padding-inline: var(--conversation-card-radius);
+  box-sizing: border-box;
+}
+
+.conversation-turn > .turn-modified-files,
+.conversation-flow > .turn-modified-files,
+.conversation-sticky-segment > .turn-modified-files {
+  margin-inline: var(--conversation-card-radius);
+}
+
+/* First row of a prompt-less turn (CoCo automatic replies): structure only. */
+.conversation-turn-boundary {
+  display: none !important;
+}
+
+.conversation-turn > .turn-ended,
+.conversation-flow > .turn-ended,
+.conversation-sticky-segment > .turn-ended {
+  margin-inline: var(--conversation-card-radius);
+  margin-top: 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--fg-muted);
+}
+
+.turn-ended-balance {
+  margin-top: 2px;
+}
+
+.conversation-turn > .conversation-reasoning,
+.conversation-flow > .conversation-reasoning,
+.conversation-sticky-segment > .conversation-reasoning,
+.conversation-msg-body > .conversation-reasoning {
+  margin-inline: var(--conversation-card-radius);
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.conversation-msg-body > .conversation-reasoning {
+  margin-inline: 0;
+}
+
+.conversation-reasoning-toggle {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 2px 4px 2px 2px;
+  margin: 0 0 0 -2px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  user-select: none;
+}
+
+.conversation-reasoning-leading {
+  position: relative;
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+}
+
+.conversation-reasoning-spinner,
+.conversation-reasoning-lightbulb,
+.conversation-reasoning-chevron {
+  position: absolute;
+  inset: 0;
+  width: 12px;
+  height: 12px;
+  color: var(--fg-muted);
+  transition: opacity 140ms ease;
+  pointer-events: none;
+}
+
+.conversation-reasoning-spinner {
+  opacity: 0;
+  transform-box: border-box;
+  transform-origin: center;
+}
+
+.conversation-reasoning[data-mode="streaming"] .conversation-reasoning-spinner {
+  opacity: 0.9;
+  animation: conversation-reasoning-spin 0.85s linear infinite;
+  will-change: transform;
+}
+
+.conversation-reasoning-lightbulb {
+  opacity: 0;
+}
+
+.conversation-reasoning:not([data-mode="streaming"]) .conversation-reasoning-lightbulb {
+  opacity: 0.9;
+}
+
+.conversation-reasoning-chevron {
+  opacity: 0;
+  transform: rotate(0deg);
+  transition:
+    opacity 140ms ease,
+    transform 180ms ease;
+}
+
+.conversation-reasoning.is-open .conversation-reasoning-chevron {
+  transform: rotate(90deg);
+}
+
+/* Hover expand affordance only when not streaming — keep the running spinner
+   visible for the whole Thinking phase (cursor over the row must not hide it). */
+.conversation-reasoning:not([data-mode="streaming"]):not(.is-empty):hover
+  .conversation-reasoning-chevron,
+.conversation-reasoning:not([data-mode="streaming"]):not(.is-empty)
+  .conversation-reasoning-toggle:focus-visible
+  .conversation-reasoning-chevron {
+  opacity: 0.9;
+}
+/* A Thought with no body (pure status / tool-hint-only) is not expandable. */
+.conversation-reasoning.is-empty .conversation-reasoning-toggle {
+  cursor: default;
+}
+
+/* Empty blocks (status-only shell / body-less Thought) never expand — keep
+   the lightbulb on hover so the leading icon doesn't blank out. */
+.conversation-reasoning:not([data-mode="streaming"]):not(.is-empty):hover
+  .conversation-reasoning-lightbulb,
+.conversation-reasoning:not([data-mode="streaming"]):not(.is-empty)
+  .conversation-reasoning-toggle:focus-visible
+  .conversation-reasoning-lightbulb {
+  opacity: 0;
+}
+
+.conversation-reasoning[data-mode="streaming"].is-open .conversation-reasoning-spinner {
+  /* Expanded while streaming: spinner stays; chevron is unused in leading. */
+  opacity: 0.9;
+}
+
+@keyframes conversation-reasoning-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.conversation-reasoning-title {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+  transition: color 140ms ease;
+}
+
+.conversation-reasoning:hover .conversation-reasoning-title,
+.conversation-reasoning-toggle:focus-visible .conversation-reasoning-title {
+  color: var(--fg);
+}
+
+.conversation-reasoning-meta {
+  flex: 0 1 auto; min-width: 0;
+  color: var(--fg-muted);
+  font-weight: 400;
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Stable digit widths while the token count animates. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Thinking tool dock: latest capsule + 24px history circles, with safe edges. */
+.conversation-reasoning-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 160px;
+  min-width: 62px;
+  max-width: 360px;
+  color: var(--fg-muted);
+  font-weight: 400;
+  opacity: 0.85;
+}
+.conversation-reasoning-tools[hidden] { display: none; }
+.conversation-reasoning-tools-sep { flex: 0 0 auto; }
+.conversation-reasoning-chips {
+  position: relative;
+  display: block;
+  flex: 1 1 0;
+  min-width: 30px;
+  height: 26px;
+  overflow: hidden;
+  /* No fade masks: the first circle rests 3px inside the clipping edge. */
+}
+.conversation-reasoning-chips.has-history::before {
+  content: "";
+  position: absolute;
+  left: var(--reasoning-dock-divider, 0px);
+  top: 8px;
+  width: 1px;
+  height: 10px;
+  background: var(--border);
+}
+.conversation-reasoning-chip {
+  box-sizing: border-box;
+  position: absolute;
+  left: 0;
+  top: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(var(--tint-rgb), 0.035);
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-weight: 400;
+  overflow: visible;
+  white-space: nowrap;
+}
+/* Draw the ring independently: fractional border widths must not bias the glyph. */
+.conversation-reasoning-chip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  border: 1px solid rgba(var(--tint-rgb), 0.1);
+  border-radius: inherit;
+  pointer-events: none;
+}
+.conversation-reasoning-chip-glyph {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+}
+.conversation-reasoning-chip.is-icon-only {
+  gap: 0;
+  background: rgba(var(--tint-rgb), 0.035);
+}
+:root[data-theme="light"] .conversation-reasoning-chip:not(.is-current)::after { border-color: var(--border); }
+:root[data-theme="light"] .conversation-reasoning-chip.is-current::after { border-color: rgba(var(--accent-rgb), 0.45); }
+.conversation-reasoning-chip-text {
+  padding-right: 8px;
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.conversation-reasoning-chip.is-icon-only .conversation-reasoning-chip-text {
+  padding-right: 0;
+  flex: 0 0 0;
+  width: 0;
+  opacity: 0;
+}
+.conversation-reasoning-chip-icon {
+  display: block;
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  color: var(--fg-muted);
+}
+/* The CURRENT tool capsule carries the theme accent (light tint fill +
+ * accent glyph/ring) so "what's running now" reads at a glance; history
+ * circles and the +N count stay neutral gray. */
+.conversation-reasoning-chip.is-current {
+  background: rgba(var(--accent-rgb), 0.13);
+  color: var(--accent);
+}
+.conversation-reasoning-chip.is-current::after {
+  border-color: rgba(var(--accent-rgb), 0.45);
+}
+.conversation-reasoning-chip.is-current .conversation-reasoning-chip-icon {
+  color: var(--accent);
+}
+.conversation-reasoning-chips-count {
+  position: absolute;
+  left: calc(100% + 5px);
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  flex: 0 0 auto;
+  min-width: 20px;
+  color: var(--fg-dim);
+  font-size: 11px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.conversation-reasoning-chips-count[hidden] { display: none; }
+
+.conversation-reasoning-body-outer {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 220ms ease;
+}
+
+.conversation-reasoning.is-open .conversation-reasoning-body-outer {
+  grid-template-rows: 1fr;
+}
+
+.conversation-reasoning-body {
+  min-height: 0;
+  overflow: hidden;
+  margin-top: 0;
+  max-height: none;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: rgba(var(--tint-rgb), 0.03);
+  border: 1px solid transparent;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  opacity: 0;
+  transition:
+    opacity 160ms ease,
+    padding 220ms ease,
+    margin-top 220ms ease,
+    border-color 160ms ease;
+}
+
+.conversation-reasoning.is-open .conversation-reasoning-body {
+  overflow: auto;
+  max-height: min(40vh, 320px);
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-color: rgba(var(--tint-rgb), 0.06);
+  opacity: 1;
+  /* Vertical scroll chains to the conversation list at the body's edge. */
+  overscroll-behavior-y: auto;
+}
+
+/* CoT text child — pre-wrap inherited from the body. */
+.conversation-reasoning-cot {
+  white-space: pre-wrap;
+}
+
+/* ===== Thinking tool record (V1 list) — expanded Thought body =====
+ * Approved demo /tmp/thinking-tool-record-demo.html (V1 List): a sectioned
+ * list under the CoT; one row per hidden-tool call, consecutive same
+ * tool+object merged to ×N (durations summed), right-aligned tabular
+ * duration, danger tint on failures. Hidden while streaming — it is a
+ * Thought artifact (finalize shows it), the title dock owns live feedback. */
+.conversation-reasoning-toollog {
+  white-space: normal;
+  margin-top: 8px;
+}
+.conversation-reasoning-toollog[hidden] {
+  display: none;
+}
+.conversation-reasoning-toollog-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px;
+  margin-bottom: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--fg-dim);
+  user-select: none;
+}
+.conversation-reasoning-toollog-head::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: rgba(var(--tint-rgb), 0.07);
+}
+.conversation-reasoning-toollog-count {
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.conversation-reasoning-toollog-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.conversation-reasoning-toollog-row {
+  display: grid;
+  /* icon · name · [detail ×N] · duration — ×N rides inside the detail cell
+   * so it hugs the text instead of floating at the row's right edge. */
+  grid-template-columns: 14px max-content minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 7px;
+  min-height: 22px;
+  padding: 1px 6px 1px 4px;
+  border-radius: 6px;
+}
+.conversation-reasoning-toollog-row:hover {
+  background: var(--row-hover);
+}
+.conversation-reasoning-toollog-icon {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  color: var(--fg-dim);
+}
+.conversation-reasoning-toollog-name {
+  color: var(--fg-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.conversation-reasoning-toollog-detail-cell {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.conversation-reasoning-toollog-detail {
+  color: var(--fg-dim);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.conversation-reasoning-toollog-x {
+  flex: 0 0 auto;
+  color: var(--fg-dim);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.conversation-reasoning-toollog-dur {
+  color: var(--fg-dim);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 3.2em;
+  text-align: right;
+}
+.conversation-reasoning-toollog-row.is-failed .conversation-reasoning-toollog-dur,
+.conversation-reasoning-toollog-row.is-failed .conversation-reasoning-toollog-icon {
+  color: var(--danger-text);
+}
+
+.streaming-markdown {
+  word-break: break-word;
+}
+
+.conversation-msg-tool .conversation-msg-body {
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
+/* Informational system notes (e.g. "Continuing after user pause.").
+   Turn errors render as content-card-error rows instead (cards family). */
+.conversation-msg-system > .conversation-msg-body {
+  color: var(--fg-muted);
+  padding: 2px 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* Compaction markers are system messages but must not use the error chrome. */
+.conversation-msg-system.conversation-msg-compaction {
+  margin-block: 10px;
+}
+
+.conversation-msg-system.conversation-msg-compaction > .conversation-msg-body {
+  color: inherit;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.conversation-msg-system > .conversation-msg-body .message-part-text {
+  margin: 0;
+}
+
+/* Turn error card row: same card-radius inset as the other turn cards. */
+.conversation-turn > .conversation-msg-system[data-turn-error],
+.conversation-flow > .conversation-msg-system[data-turn-error],
+.conversation-sticky-segment > .conversation-msg-system[data-turn-error] {
+  margin-inline: var(--conversation-card-radius);
+  margin-block: 2px 4px;
+}
+
+.conversation-footer {
+  /* Overlay the bottom of the message scrollport (not a flex sibling under it). */
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  --conversation-footer-stack-gap: 12px;
+  gap: var(--conversation-footer-stack-gap);
+  /* Top padding is the transparent→opaque fade zone above the controls. */
+  /* Keep the fade full width while its controls align with the transcript. */
+  padding: 72px max(var(--conversation-side-inset), calc((100% - var(--conversation-content-max-width)) / 2 + var(--conversation-side-inset))) 20px;
+  border-top: 0;
+  box-sizing: border-box;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--bg-main) 0%, transparent) 0%,
+    color-mix(in srgb, var(--bg-main) 8%, transparent) 18%,
+    color-mix(in srgb, var(--bg-main) 22%, transparent) 32%,
+    color-mix(in srgb, var(--bg-main) 42%, transparent) 48%,
+    color-mix(in srgb, var(--bg-main) 68%, transparent) 64%,
+    color-mix(in srgb, var(--bg-main) 88%, transparent) 78%,
+    color-mix(in srgb, var(--bg-main) 96%, transparent) 88%,
+    var(--bg-main) 100%
+  );
+  /* Let wheel/scroll pass through the empty fade; restore on controls. */
+  pointer-events: none;
+}
+
+.conversation-footer > * {
+  pointer-events: auto;
+}
+
+.conversation-footer-actions {
+  /* Shared Commit height; scroll circle diameter matches (radius = half). */
+  --conversation-commit-btn-height: calc(16px + 12px * 1.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  /*
+   * Always reserve this strip. Commit / status / scroll-to-bottom show/hide
+   * must not change footer height (that resizes composer-clearance and
+   * jitters the transcript when stuck at the bottom).
+   */
+  height: var(--conversation-commit-btn-height);
+  min-height: var(--conversation-commit-btn-height);
+  flex: 0 0 auto;
+  box-sizing: border-box;
+}
+
+.conversation-footer-actions-left {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+  min-width: 0;
+  flex: 0 1 auto;
+  height: 100%;
+  overflow: hidden;
+}
+
+.conversation-scroll-bottom-btn {
+  box-sizing: border-box;
+  width: 0;
+  min-width: 0;
+  height: var(--conversation-commit-btn-height);
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: calc(var(--conversation-commit-btn-height) / 2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Footer button family — deep black, faint translucency (composer match). */
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  cursor: pointer;
+  flex: 0 0 auto;
+  opacity: 0;
+  transform: translateX(-10px);
+  overflow: hidden;
+  pointer-events: none;
+  /* Width/margin push Commit so it slides with the circle. */
+  transition:
+    width 220ms ease,
+    margin-right 220ms ease,
+    opacity 220ms ease,
+    transform 220ms ease,
+    border-color 220ms ease;
+}
+
+.conversation-scroll-bottom-btn.is-visible {
+  width: var(--conversation-commit-btn-height);
+  margin-right: 8px;
+  border-color: rgba(var(--tint-rgb), 0.12);
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.conversation-scroll-bottom-btn svg {
+  /* Optical center: Lucide ArrowDown reads slightly left in the circle. */
+  transform: translateX(0.5px);
+}
+
+.conversation-scroll-bottom-btn:hover {
+  background: var(--surface-2);
+  color: var(--fg);
+}
+
+.conversation-scroll-bottom-btn[hidden] {
+  display: none !important;
+}
+
+.conversation-git-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.conversation-git-bar[hidden] {
+  display: none !important;
+}
+
+.conversation-git-bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.conversation-git-changes-btn,
+.conversation-git-commit-btn,
+.conversation-git-push-btn,
+.conversation-git-subagent-btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  height: var(--conversation-commit-btn-height);
+  padding: 0 10px;
+  border: 1px solid rgba(var(--tint-rgb), 0.12);
+  border-radius: calc(var(--conversation-commit-btn-height) / 2);
+  /* Footer button family — deep black, faint translucency (composer match). */
+  background: var(--bg-elevated);
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+/*
+ * Commit's text side needs a touch more air than the shared 10px: the pill's
+ * H/2 curve eats into the padding exactly where the label ends (the icon side
+ * reads square, so an equal value looks tighter on the right).
+ */
+.conversation-git-commit-btn {
+  padding-right: 13px;
+}
+
+.conversation-git-changes-btn {
+  color: var(--fg-muted);
+}
+
+.conversation-git-changes-label {
+  font-weight: 550;
+}
+
+.conversation-git-commit-icon {
+  flex: 0 0 auto;
+  display: block;
+}
+
+.conversation-git-changes-btn:hover:not(:disabled),
+.conversation-git-commit-btn:hover:not(:disabled),
+.conversation-git-push-btn:hover:not(:disabled),
+.conversation-git-subagent-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--fg);
+}
+
+.conversation-git-changes-btn:disabled,
+.conversation-git-commit-btn:disabled,
+.conversation-git-push-btn:disabled,
+.conversation-git-subagent-btn:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.conversation-git-commit-btn.is-loading .conversation-git-commit-label {
+  color: inherit;
+}
+
+.conversation-git-commit-label {
+  font-weight: 550;
+}
+
+.conversation-git-changes-btn[hidden],
+.conversation-git-commit-btn[hidden],
+.conversation-git-push-btn[hidden] {
+  display: none !important;
+}
+
+.conversation-git-push-label {
+  font-weight: 550;
+}
+
+.conversation-git-subagent-btn[hidden] {
+  display: none !important;
+}
+
+.conversation-git-subagent-label {
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.conversation-git-subagent-btn .conversation-git-commit-icon {
+  color: var(--fg-muted);
+}
+
+.conversation-git-subagent-btn.is-running .conversation-git-commit-icon {
+  color: var(--fg);
+  animation: conversation-git-subagent-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes conversation-git-subagent-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* Numbers mirror the Patch card badge (.content-card-tool-result-changes):
+   same mono family + 600 weight and the same success/danger text tokens,
+   so the two +N/−M renders stay interchangeable. */
+.conversation-git-insertions {
+  color: var(--success-text);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.conversation-git-deletions {
+  color: var(--danger-text);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Status line on the streaming Thinking block (ex composer-right
+ * status row, relocated). While the block has no CoT yet its title mirrors
+ * the turn progress text; shimmer rides the same gradient technique as the
+ * retired row. Pure status rows are not expandable — no body to open. ===== */
+.conversation-reasoning[data-status-text] .conversation-reasoning-toggle {
+  cursor: default;
+}
+
+.conversation-reasoning.status-shimmer .conversation-reasoning-title {
+  /*
+   * Seamless shimmer: identical muted→bright→muted stops tiled via a wide
+   * gradient + linear timing. The bright stop is --shimmer-hi (dark = --fg;
+   * light = lifted pale — light's --fg sits darker than --fg-muted, which
+   * made the sweep read as a dimming and the animation invisible).
+   */
+  background-image: linear-gradient(
+    90deg,
+    var(--fg-muted) 0%,
+    var(--fg-muted) 35%,
+    var(--shimmer-hi, var(--fg)) 50%,
+    var(--fg-muted) 65%,
+    var(--fg-muted) 100%
+  );
+  background-size: 250% 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* Promote to own layer — avoids jank when the transcript repaints. */
+  will-change: background-position;
+  animation: conversation-status-shimmer 2.2s linear infinite;
+}
+
+@keyframes conversation-status-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Roll only when the title changes; time/token refreshes keep the same nodes. */
+.conversation-reasoning-title.is-title-transitioning {
+  display: inline-block;
+  position: relative;
+  /* Paint-clip only: overflow !== visible forces an inline-block's baseline
+     to its bottom margin edge, which shifts inline-flow hosts (CoCo check
+     rows) ±2–3px on every status change. Clip-path clips without that. */
+  overflow: visible;
+  clip-path: inset(0);
+  white-space: pre;
+}
+.conversation-reasoning-title .reasoning-title-glyph {
+  position: absolute;
+  top: 0;
+  white-space: pre;
+}
+.conversation-reasoning-title .reasoning-title-previous::before {
+  content: attr(data-glyph);
+}
+.conversation-reasoning-title .reasoning-title-anchor::before {
+  /* Zero-width, generated (not in textContent): restores the in-flow line
+     box so the box baseline stays at the text baseline. */
+  content: "\200b";
+}
+/* Moving glyphs use the normal title color; resume the existing shimmer on settle. */
+.conversation-reasoning.status-shimmer .conversation-reasoning-title.is-title-transitioning {
+  animation: none;
+  background-image: none;
+  color: var(--fg-muted);
+  will-change: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .conversation-reasoning.status-shimmer .conversation-reasoning-title {
+    animation: none;
+    background-image: none;
+    color: var(--fg-muted);
+  }
+}
+
+/* ===== Light: frosted-glass footer controls (user request — Light only,
+ * Dark keeps the opaque elevated fills above). The composer-area
+ * chrome (scroll-to-bottom circle, Changes / Commit / Push / Subagent
+ * pills) rides a translucent white fill + backdrop blur. ===== */
+:root[data-theme="light"] .conversation-scroll-bottom-btn,
+:root[data-theme="light"] .conversation-git-changes-btn,
+:root[data-theme="light"] .conversation-git-commit-btn,
+:root[data-theme="light"] .conversation-git-push-btn,
+:root[data-theme="light"] .conversation-git-subagent-btn {
+  background: rgba(255, 255, 255, 0.62);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+}
+
+/* Hover keeps the frost: a more solid white instead of the opaque
+ * --surface-2 swap (which would kill the glass). */
+:root[data-theme="light"] .conversation-scroll-bottom-btn:hover,
+:root[data-theme="light"] .conversation-git-changes-btn:hover:not(:disabled),
+:root[data-theme="light"] .conversation-git-commit-btn:hover:not(:disabled),
+:root[data-theme="light"] .conversation-git-push-btn:hover:not(:disabled),
+:root[data-theme="light"] .conversation-git-subagent-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+/* Embedded Coco transcript uses its host's existing composer. */
+.conversation-transcript-only { height:100%; min-width:0; --conversation-top-fade-h:12px; }
+.conversation-transcript-only>.conversation-footer { position:relative; inset:auto; width:auto; flex:none; padding:0 12px; background:none; pointer-events:auto; }
+.conversation-transcript-only>.conversation-footer::before { display:none; }
+.conversation-transcript-only>.conversation-messages { padding-bottom:12px; }

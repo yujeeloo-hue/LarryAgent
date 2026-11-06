@@ -1,0 +1,465 @@
+/* New-workspace template flow — dropdown menu + create/progress dialogs.
+   Tokens come from styles/tokens.css; look matches the devmode ctx menu and
+   text-prompt dialog (see docs/plans/new-workspace-templates.md). */
+
+/* ------------------------------------------------ menu (anchored dropdown) */
+
+.nws-menu {
+  position: fixed;
+  z-index: var(--z-flow-menu);
+  width: 264px;
+  padding: 4px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow:
+    0 8px 24px rgba(var(--shadow-rgb), 0.45),
+    0 0 0 0.5px rgba(var(--tint-rgb), 0.04);
+  animation: nws-menu-in 130ms ease both;
+  transform-origin: top left;
+}
+
+@keyframes nws-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.nws-menu-label {
+  padding: 6px 9px 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.nws-menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border);
+}
+
+.nws-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  transition: background 90ms ease;
+}
+
+.nws-menu-item:hover,
+.nws-menu-item:focus-visible,
+.nws-menu-item.is-kbd-focus {
+  background: var(--hover);
+  outline: none;
+}
+
+.nws-ico {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--accent);
+}
+
+.nws-menu-item-blank .nws-ico {
+  background: rgba(var(--tint-rgb), 0.06);
+  color: var(--fg-muted);
+}
+
+/* Unreal U-mark: filled brand glyph, rendered slightly larger than the
+   lucide strokes (user-tuned; see assets/brand-icons/unreal.svg). */
+.nws-unreal-mark {
+  display: inline-flex;
+  line-height: 0;
+}
+
+.nws-unreal-mark svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.nws-menu-txt {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.nws-menu-name {
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--fg);
+}
+
+.nws-menu-desc {
+  font-size: 11px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------ dialogs */
+
+.nws-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-flow-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--scrim);
+  padding: 24px;
+  animation: nws-fade-in 140ms ease both;
+}
+
+@keyframes nws-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.nws-dialog {
+  width: min(500px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated, var(--bg));
+  box-shadow: var(--shadow-xl);
+  animation: nws-dialog-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes nws-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.nws-dialog-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.nws-path {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.nws-path-text {
+  font-family: var(--font-mono);
+  word-break: break-all;
+  min-width: 0;
+}
+
+.nws-path-change {
+  margin-left: auto;
+  flex: 0 0 auto;
+  height: 22px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.nws-path-change:hover {
+  background: var(--hover);
+}
+
+.nws-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--hover);
+  color: var(--fg);
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 120ms ease;
+}
+
+.nws-input:focus {
+  border-color: rgba(var(--accent-rgb), 0.55);
+}
+
+/* Light: solid white base to avoid the blue-grey hover overlay. */
+:root[data-theme="light"] .nws-input {
+  background: #ffffff;
+}
+
+.nws-stack {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nws-chip {
+  font-size: 11px;
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+  border-radius: 5px;
+  padding: 2px 7px;
+}
+
+.nws-chip-muted {
+  color: var(--fg-muted);
+  background: rgba(var(--tint-rgb), 0.05);
+}
+
+.nws-tree-label {
+  margin: 2px 0 -4px;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.nws-tree {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(var(--shade-rgb), 0.28);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.75;
+  color: var(--fg);
+  overflow: auto;
+  max-height: 190px;
+  white-space: pre;
+}
+
+/* ------------------------------------------------ detection rows */
+
+.nws-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nws-opt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--hover);
+  flex-wrap: wrap;
+}
+
+.nws-opt-t {
+  font-size: 12.5px;
+  color: var(--fg);
+}
+
+.nws-opt-d {
+  font-size: 11px;
+  color: var(--fg-muted);
+  min-width: 0;
+}
+
+.nws-opt-state {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------ progress */
+
+.nws-progress {
+  width: min(460px, 100%);
+  gap: 14px;
+}
+
+.nws-progress-sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.nws-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nws-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  color: var(--fg-muted);
+  opacity: 0.55;
+  transition:
+    color 150ms ease,
+    background 150ms ease,
+    opacity 150ms ease;
+}
+
+.nws-step.is-running {
+  color: var(--fg);
+  opacity: 1;
+  background: var(--hover);
+}
+
+.nws-step.is-done {
+  color: var(--fg);
+  opacity: 0.9;
+}
+
+.nws-step.is-skipped {
+  opacity: 0.45;
+}
+
+.nws-step.is-failed {
+  opacity: 0.85;
+}
+
+.nws-step-mark {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.nws-step.is-skipped .nws-step-mark,
+.nws-step.is-failed .nws-step-mark {
+  color: var(--fg-muted);
+}
+
+.nws-step-detail {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 55%;
+}
+
+.nws-spinner {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--accent-rgb), 0.25);
+  border-top-color: var(--accent);
+  animation: nws-spin 700ms linear infinite;
+}
+
+@keyframes nws-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.nws-summary {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
+  background: rgba(var(--accent-rgb), 0.08);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--fg);
+  animation: nws-fade-in 200ms ease both;
+}
+
+/* ------------------------------------------------ actions */
+
+.nws-dialog-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--danger-muted);
+}
+
+.nws-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.nws-btn {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.nws-btn:hover {
+  background: var(--hover);
+}
+
+.nws-btn-confirm {
+  border-color: transparent;
+  background: var(--accent, #7ec8c8);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.nws-btn-confirm:hover {
+  filter: brightness(1.05);
+  background: var(--accent, #7ec8c8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nws-menu,
+  .nws-overlay,
+  .nws-dialog,
+  .nws-summary,
+  .nws-spinner {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

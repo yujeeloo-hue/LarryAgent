@@ -1,0 +1,27 @@
+@import "../../../../../shared/ask-user-panel.css";
+
+/* Ask User choice panel */
+
+.content-card-ask-user-tool .content-card-tool-result-left {
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.content-card-ask-user-tool .content-card-ask-user-title {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--fg);
+}
+
+.content-card-ask-user-tool .content-card-tool-section-output {
+  /* Arguments row is omitted — keep a single divider under the question. */
+  border-top: 0;
+  margin-top: 0;
+}

@@ -1,0 +1,419 @@
+/* End-of-turn Files & Links — merged scroll card */
+
+/* One bordered card: fixed header (title + counts) over an internally
+   scrolling list (300px cap) with sticky group labels when both kinds are
+   present. */
+.turn-modified-files {
+  position: relative;
+  margin-top: 10px;
+  border: 1px solid var(--divider, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  background: rgba(var(--tint-rgb), 0.025);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── header — pinned, never scrolls ─────────────────────────── */
+.turn-modified-files-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(var(--tint-rgb), 0.02);
+}
+
+/* Keep the Light Files & Links card as a quiet white surface. */
+:root[data-theme="light"] .turn-modified-files {
+  border-color: #d9dfe6;
+  background: #ffffff;
+}
+
+:root[data-theme="light"] .turn-modified-files-head {
+  border-bottom-color: #e5e8ec;
+  background: #ffffff;
+}
+
+.turn-modified-files-card-icon {
+  color: var(--fg-muted);
+}
+
+.turn-modified-files-title {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--fg);
+}
+
+.turn-modified-files-counts {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.turn-modified-files-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 550;
+  color: var(--fg-muted);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(var(--tint-rgb), 0.05);
+}
+
+/* Color-coded counts — blue for files, purple for links (same families as
+   the row badges: edited-blue / mentioned-purple). */
+.turn-modified-files-chip.is-files {
+  color: var(--link);
+  background: rgba(88, 166, 255, 0.1);
+}
+
+.turn-modified-files-chip.is-links {
+  color: var(--vcs-renamed);
+  background: rgba(210, 168, 255, 0.1);
+}
+
+/* ── scroll body ────────────────────────────────────────────── */
+.turn-modified-files-scroll {
+  position: relative;
+  flex: 0 1 auto;
+  max-height: 300px;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--tint-rgb), 0.16) transparent;
+}
+
+.turn-modified-files-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.turn-modified-files-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.turn-modified-files-scroll::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: rgba(var(--tint-rgb), 0.14);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+.turn-modified-files-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(var(--tint-rgb), 0.24);
+}
+
+/* Sticky group labels — vertical gradient mask: fully opaque at the sticky
+   edge (hides rows scrolling under), fading toward the list below. */
+.turn-modified-files-group {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px 5px;
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  background: linear-gradient(
+    to bottom,
+    var(--bg-elevated, var(--bg, #141414)) 0%,
+    var(--bg-elevated, var(--bg, #141414)) 55%,
+    color-mix(
+      in srgb,
+      var(--bg-elevated, var(--bg, #141414)) 30%,
+      transparent
+    ) 100%
+  );
+}
+
+:root[data-theme="light"] .turn-modified-files-group {
+  color: var(--fg-muted);
+  background: #ffffff;
+}
+
+.turn-modified-files-group + .turn-modified-files-list,
+.turn-modified-files-list + .turn-modified-files-group {
+  border-top: 1px solid var(--border);
+}
+
+/* Single-kind cards skip the in-list group label — nudge the first list
+   off the header border so rows keep the old breathing room. */
+.turn-modified-files-scroll > .turn-modified-files-list:first-child {
+  padding-top: 4px;
+}
+
+/* ── rows ───────────────────────────────────────────────────── */
+.turn-modified-files-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.turn-modified-files-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  padding: 6px 12px;
+}
+
+.turn-modified-files-list .turn-modified-files-item + .turn-modified-files-item {
+  border-top: 1px solid var(--border);
+}
+
+/* Zebra striping — odd rows get a faint tint (counts within each group's
+   list, restarting per group). No row hover highlight: the actions reveal
+   (slide-in + fade) is the hover feedback; a tinted bar would fight it. */
+.turn-modified-files-list .turn-modified-files-item:nth-child(even) {
+  background: rgba(var(--tint-rgb), 0.025);
+}
+
+:root[data-theme="light"]
+  .turn-modified-files-list .turn-modified-files-item:nth-child(even) {
+  background: #ffffff;
+}
+
+.turn-modified-files-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+  position: relative;
+  /* Actions overlay the trailing padding instead of occupying flex space —
+     info text stays full-width until hover reserves room (smooth re-wrap). */
+  --actions-w: 76px; /* 3 × 24px buttons + 2 × 2px gaps */
+  padding-right: 0;
+  transition: padding-right 0.16s ease;
+}
+
+/* URL rows carry a single action button. */
+.turn-modified-files-item.is-url .turn-modified-files-row {
+  --actions-w: 24px;
+}
+
+.turn-modified-files-item:hover .turn-modified-files-row,
+.turn-modified-files-item:focus-within .turn-modified-files-row {
+  padding-right: calc(var(--actions-w) + 6px);
+}
+
+.turn-modified-files-item.is-preview-open {
+  background: rgba(var(--tint-rgb), 0.045);
+}
+
+:root[data-theme="light"]
+  .turn-modified-files-list .turn-modified-files-item.is-preview-open {
+  background: #ffffff;
+}
+
+.turn-modified-files-icon {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+}
+
+.turn-modified-files-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.turn-modified-files-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.turn-modified-files-name {
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.turn-modified-files-badge {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: var(--fg-muted);
+  background: rgba(var(--tint-rgb), 0.06);
+}
+
+.turn-modified-files-badge.is-created {
+  color: var(--vcs-added);
+  background: rgba(63, 185, 80, 0.14);
+}
+
+.turn-modified-files-badge.is-edited {
+  color: var(--vcs-untracked);
+  background: rgba(88, 166, 255, 0.14);
+}
+
+.turn-modified-files-badge.is-mentioned {
+  color: var(--vcs-renamed);
+  background: rgba(210, 168, 255, 0.14);
+}
+
+.turn-modified-files-path {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── actions — icon-only, overlaid at the row's right edge on hover/focus ── */
+.turn-modified-files-actions {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease;
+}
+
+.turn-modified-files-item:hover .turn-modified-files-actions,
+.turn-modified-files-item:focus-within .turn-modified-files-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Touch devices have no hover — actions stay visible, row keeps its inset. */
+@media (hover: none) {
+  .turn-modified-files-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .turn-modified-files-row {
+    padding-right: calc(var(--actions-w) + 6px);
+  }
+}
+
+.turn-modified-files-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.turn-modified-files-iconbtn:hover {
+  color: var(--fg);
+  background: rgba(var(--tint-rgb), 0.08);
+}
+
+.turn-modified-files-iconbtn.is-open {
+  color: var(--fg);
+  background: rgba(var(--tint-rgb), 0.08);
+}
+
+/* ── inline preview (legacy hosts without File Reader) ──────── */
+.turn-modified-files-preview {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  max-height: min(420px, 50vh);
+  overflow: auto;
+}
+
+.turn-modified-files-preview[hidden] {
+  display: none !important;
+}
+
+.turn-modified-files-preview-body {
+  min-width: 0;
+}
+
+.turn-modified-files-preview-body .tool-file-lines {
+  margin: 0;
+}
+
+.turn-modified-files-preview-markdown {
+  padding: 0 4px 4px;
+}
+
+.turn-modified-files-preview-pdf {
+  display: block;
+  width: 100%;
+  height: 480px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(var(--shade-rgb), 0.25);
+}
+
+.turn-modified-files-preview-status {
+  margin: 0;
+  padding: 4px 2px;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.turn-modified-files-preview-status.is-error {
+  color: var(--danger-text);
+}
+
+.turn-modified-files-url {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.turn-modified-files-url:hover {
+  text-decoration: underline;
+}
+
+/* ── bottom fade — "more below the fold" hint ───────────────── */
+.turn-modified-files-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 34px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0),
+    var(--bg-elevated, var(--bg, #141414))
+  );
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+:root[data-theme="light"] .turn-modified-files-fade {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #ffffff);
+}
+
+.turn-modified-files-fade.is-visible {
+  opacity: 0.88;
+}

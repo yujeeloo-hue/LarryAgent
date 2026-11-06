@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true
+  },
+  "include": [
+    "electron.vite.config.ts",
+    "src/main/**/*",
+    "src/preload/**/*",
+    "src/agent/**/*",
+    "src/tools/**/*",
+    "src/llm/**/*",
+    "src/session/**/*",
+    "src/loops/**/*",
+    "src/settings/**/*",
+    "src/workspace/**/*",
+    "src/logging/**/*",
+    "src/mcp/**/*",
+    "src/events/**/*",
+    "src/skills/**/*",
+    "src/hooks/**/*",
+    "src/unreal/**/*",
+    "src/electron/**/*",
+    "src/web/**/*",
+    "src/debug/**/*"
+  ]
+}

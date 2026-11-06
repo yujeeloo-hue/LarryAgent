@@ -1,0 +1,467 @@
+/* Multi-step plan card */
+
+/* Multi-step plan card — same translucent surface as other tool cards. */
+.content-card-plan {
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+  padding: 12px 14px;
+  border: 1px solid rgba(var(--tint-rgb), 0.17);
+  border-radius: 10px;
+  background: rgba(var(--tint-rgb), 0.03);
+}
+
+:root[data-theme="light"] .content-card-plan {
+  background: var(--bg-elevated);
+}
+
+.content-card-plan[data-plan-status="completed"] {
+  opacity: 0.96;
+}
+
+.content-card-plan[data-plan-status="cancelled"] {
+  opacity: 0.82;
+}
+
+/* Plan review bar — same width as Composer (footer content box, no extra inset). */
+/* overflow: hidden lets the panel slide out downward behind the edge while the
+   host height folds, so the composer never jumps. */
+.conversation-plan-review-host {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: max-height 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.plan-review-bar {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid rgba(var(--tint-rgb), 0.12);
+  border-radius: 16px;
+  /* Match the composer fill — deep black, faint translucency. */
+  background: var(--bg-elevated);
+  transform: translateY(0);
+  opacity: 1;
+  transition:
+    transform 220ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 180ms ease;
+}
+
+/* Enter start state (dropped for one frame) and exit end state: below + faded. */
+.plan-review-bar.is-fold-in,
+.plan-review-bar.is-fold-out {
+  transform: translateY(14px);
+  opacity: 0;
+}
+
+.plan-review-bar-header {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* One fixed-height row: the title is centered against the icon regardless of
+   whether the summary below is folded. */
+.plan-review-bar-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 20px;
+}
+
+.plan-review-bar-icon {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+}
+
+.plan-review-bar-title {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+/* Collapsed-only hint, folded by max-height on the wrapper — the leading gap
+   lives on the inner node so max-height: 0 clips it completely. */
+.plan-review-bar-detail {
+  overflow: hidden;
+  transition:
+    max-height 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 140ms ease;
+}
+
+.plan-review-bar-detail-text {
+  /* Align under the title: icon (16px) + row gap (10px). */
+  padding: 5px 0 0 26px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--fg-muted);
+}
+
+.plan-review-bar-actions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.plan-review-bar-btn {
+  appearance: none;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.plan-review-bar-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.plan-review-bar-btn-primary {
+  position: relative;
+  background: var(--accent);
+  color: var(--on-accent);
+  /* Continuous scale pulse — nudge the user that Approve starts execution. */
+  transform-origin: center center;
+  animation: plan-review-approve-pulse 1.6s ease-in-out infinite;
+}
+
+/* Bloom halo on the same 1.6s beat. A blurred accent layer behind the opaque
+   fill (negative z-index works because the button is only position: relative)
+   keeps the animation to opacity + transform instead of repainting shadows. */
+.plan-review-bar-btn-primary::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--accent);
+  filter: blur(6px);
+  opacity: 0.3;
+  transform-origin: center center;
+  pointer-events: none;
+  animation: plan-review-approve-bloom 1.6s ease-in-out infinite;
+}
+
+.plan-review-bar-btn-primary:disabled {
+  animation: none;
+  transform: none;
+}
+
+.plan-review-bar-btn-primary:disabled::before {
+  animation: none;
+  opacity: 0;
+}
+
+/* The shared action paint owns the face; an accent bloom would reintroduce
+   a second palette around the button. Keep the existing attention pulse. */
+.plan-review-bar-btn-primary.action-primary::before {
+  display: none;
+}
+
+.plan-review-bar-btn-secondary {
+  background: transparent;
+  border-color: rgba(var(--tint-rgb), 0.22);
+  color: var(--fg);
+}
+
+.plan-review-bar-error {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.plan-review-bar-error[hidden] {
+  display: none;
+}
+
+/* Expanded inline markdown preview */
+/* padding-top is the gap above the divider; border-box keeps it clipped at
+   max-height: 0 so the collapsed panel has no dead space. */
+.plan-review-bar-preview {
+  box-sizing: border-box;
+  min-width: 0;
+  /* Cancel the panel's horizontal padding so the divider bleeds edge to edge.
+     Must live on this (overflow: hidden) wrapper, not the inner box, or the
+     wrapper would clip it. */
+  margin: 0 -14px;
+  padding-top: 12px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-height 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 160ms ease;
+}
+
+.plan-review-bar-preview-inner {
+  max-height: min(40vh, 420px);
+  overflow: auto;
+  padding: 12px 14px 0;
+  border-top: 1px solid rgba(var(--tint-rgb), 0.12);
+}
+
+@keyframes plan-review-approve-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes plan-review-approve-bloom {
+  0%,
+  100% {
+    opacity: 0.22;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conversation-plan-review-host,
+  .plan-review-bar,
+  .plan-review-bar-preview,
+  .plan-review-bar-detail {
+    transition: none;
+  }
+
+  /* Keep a still bloom so Approve stays the obvious primary action. */
+  .plan-review-bar-btn-primary,
+  .plan-review-bar-btn-primary::before {
+    animation: none;
+    transform: none;
+  }
+
+  .plan-review-bar-btn-primary::before {
+    opacity: 0.32;
+  }
+}
+
+.plan-review-bar-preview-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg);
+}
+
+.plan-review-bar-preview-body > :first-child {
+  margin-top: 0;
+}
+
+.plan-review-bar-preview-body > :last-child {
+  margin-bottom: 0;
+}
+
+.content-card-plan-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.content-card-plan-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.content-card-plan-icon {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+}
+
+.content-card-plan-title {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.content-card-plan-meta {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+.content-card-plan-steps {
+  --plan-step-row: calc(13px * 1.4);
+  --plan-step-gap: 6px;
+  --plan-visible-steps: 5;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--plan-step-gap);
+  /* Cap at five single-line steps; the rest is reachable by scrolling. */
+  max-height: calc(
+    var(--plan-step-row) * var(--plan-visible-steps) + var(--plan-step-gap) *
+      (var(--plan-visible-steps) - 1)
+  );
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--spinner-track) transparent;
+}
+
+.content-card-plan-steps::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content-card-plan-steps::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content-card-plan-steps::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: rgba(var(--tint-rgb), 0.16);
+}
+
+.content-card-plan-steps::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--tint-rgb), 0.28);
+}
+
+.content-card-plan-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--fg-muted);
+}
+
+.content-card-plan-step.is-in_progress {
+  color: var(--fg);
+  font-weight: 550;
+}
+
+.content-card-plan-step.is-completed {
+  color: var(--fg-muted);
+}
+
+.content-card-plan-step.is-completed .content-card-plan-step-title {
+  text-decoration: line-through;
+  text-decoration-color: rgba(var(--tint-rgb), 0.25);
+}
+
+.content-card-plan-step.is-cancelled {
+  opacity: 0.55;
+}
+
+.content-card-plan-step-icon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  opacity: 0.85;
+}
+
+.content-card-plan-step.is-in_progress .content-card-plan-step-icon {
+  color: var(--accent);
+  animation: subagent-spin 1s linear infinite;
+}
+
+/* Same ring spinner as the Session list, with the macOS zoom-green head. */
+.content-card-plan-step.is-in_progress .content-card-plan-step-spinner {
+  box-sizing: border-box;
+  width: 13px;
+  height: 13px;
+  margin-top: 2px;
+  border: 1.5px solid var(--spinner-track);
+  border-top-color: var(--success);
+  border-radius: 50%;
+  opacity: 1;
+  animation: subagent-spin 0.7s linear infinite;
+}
+
+.content-card-plan-step.is-completed .content-card-plan-step-icon {
+  color: var(--success-text);
+}
+
+.content-card-plan-step.is-cancelled .content-card-plan-step-icon {
+  color: var(--fg-muted);
+}
+
+.content-card-plan-step-title {
+  min-width: 0;
+  word-break: break-word;
+}
+
+.content-card-plan-summary {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--fg-muted);
+  line-height: 1.4;
+}
+
+.content-card-plan-tool > .content-card-tool-result-summary {
+  cursor: default;
+}
+
+.content-card-plan-tool .content-card-tool-result-chevron {
+  display: none;
+}
+
+.content-card-plan-tool .content-card-plan-tool-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.content-card-plan-tool .content-card-tool-result-left {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.content-card-plan-tool .content-card-tool-result-right {
+  display: none;
+}
+
+.content-card-plan-tool-status-icon {
+  flex: 0 0 auto;
+  opacity: 0.9;
+}
+
+.content-card-plan-tool-status-icon.is-completed {
+  color: var(--success-text);
+}
+
+.content-card-plan-step-icon.check-badge {
+  opacity: 1;
+}
+
+.content-card-plan-tool-status-icon.is-in-progress {
+  color: var(--accent);
+}
+
+.content-card-plan-tool-status-icon.is-cancelled {
+  color: var(--fg-muted);
+}

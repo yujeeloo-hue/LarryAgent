@@ -1,0 +1,545 @@
+/* Provider setup wizard — layout approved in provider-wizard-demo (20260929).
+ * Two-step flow: connect (base URL + key) → model picker (default none
+ * selected, non-chat models collapsed). Theme tokens only; Light keeps
+ * inputs / chips / fallback badges pure white per theme conventions. */
+
+.pw-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--scrim);
+  padding: 24px;
+}
+
+.pw-dialog {
+  width: min(480px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated, var(--bg));
+  box-shadow: var(--shadow-xl);
+}
+
+.pw-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* `display:flex` above would beat the UA [hidden] rule — gate explicitly
+ * (same convention as devmode.css / setting.css), or every page and error
+ * banner renders stacked and visible by default. */
+.pw-page[hidden],
+.pw-steps[hidden],
+.pw-error[hidden] {
+  display: none;
+}
+
+.pw-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pw-title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.pw-close {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.pw-close:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+/* ---- step indicator (1 Connect → 2 Select models) ---- */
+
+.pw-steps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.pw-step {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pw-step-num {
+  width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 10.5px;
+}
+
+.pw-step.on {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.pw-step.on .pw-step-num {
+  border-color: transparent;
+  background: var(--accent, #7ec8c8);
+  color: var(--on-accent);
+}
+
+.pw-step-arrow {
+  display: grid;
+  place-items: center;
+  opacity: 0.7;
+}
+
+/* ---- fields ---- */
+
+.pw-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pw-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.pw-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--hover);
+  color: var(--fg);
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.pw-input::placeholder {
+  color: var(--fg-muted);
+  opacity: 0.75;
+}
+
+.pw-input:focus {
+  border-color: rgba(var(--accent-rgb), 0.55);
+}
+
+/* Light: solid white base to avoid the blue-grey hover overlay (same as text-prompt-input). */
+:root[data-theme="light"] .pw-input {
+  background: #ffffff;
+}
+
+.pw-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pw-input-wrap .pw-input {
+  padding-right: 34px;
+}
+
+.pw-search .pw-input {
+  padding-left: 32px;
+}
+
+.pw-search-icon {
+  position: absolute;
+  left: 10px;
+  display: grid;
+  place-items: center;
+  color: var(--fg-muted);
+  pointer-events: none;
+}
+
+.pw-input-icon {
+  position: absolute;
+  right: 9px;
+  display: grid;
+  place-items: center;
+  color: var(--fg-muted);
+  background: transparent;
+  border: 0;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.pw-input-icon:hover {
+  color: var(--fg);
+}
+
+.pw-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--fg-muted);
+}
+
+.pw-hint svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+/* ---- error banner ---- */
+
+.pw-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: var(--danger-bg, rgba(248, 81, 73, 0.14));
+  color: var(--danger, var(--danger-muted));
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.pw-error svg {
+  flex: none;
+}
+
+.pw-error-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pw-retry {
+  flex: none;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid currentColor;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.pw-retry:hover {
+  opacity: 0.8;
+}
+
+/* ---- buttons ---- */
+
+.pw-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.pw-btn {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pw-btn:hover {
+  background: var(--hover);
+}
+
+.pw-btn-primary {
+  border-color: transparent;
+  background: var(--accent, #7ec8c8);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.pw-btn-primary:hover {
+  background: var(--accent, #7ec8c8);
+  filter: brightness(1.05);
+}
+
+.pw-btn[disabled] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.pw-linkbtn {
+  border: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 13px;
+  font-family: inherit;
+  padding: 4px 2px;
+  cursor: pointer;
+}
+
+.pw-linkbtn:hover {
+  color: var(--accent);
+}
+
+.pw-linkbtn[disabled] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.pw-spacer {
+  flex: 1 1 auto;
+}
+
+.pw-count {
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+/* ---- model list ---- */
+
+.pw-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-height: 264px;
+  overflow-y: auto;
+}
+
+.pw-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 4px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pw-row + .pw-row,
+.pw-row + .pw-group,
+.pw-group + .pw-row {
+  border-top: 1px solid var(--border);
+}
+
+.pw-row:hover {
+  background: var(--hover);
+}
+
+.pw-row.disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.pw-row.disabled:hover {
+  background: transparent;
+}
+
+.pw-check {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 1.5px solid var(--fg-muted);
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  color: transparent;
+}
+
+.pw-row.sel .pw-check {
+  border-color: var(--accent, #7ec8c8);
+  background: var(--accent, #7ec8c8);
+  color: var(--on-accent);
+}
+
+.pw-row.disabled .pw-check {
+  border-color: var(--border);
+  background: var(--hover);
+  color: var(--fg-muted);
+}
+
+.pw-brand {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+
+.pw-brand-fallback {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+
+/* Light: chips/badges get a solid white base + theme border. */
+:root[data-theme="light"] .pw-brand-fallback {
+  background: #ffffff;
+}
+
+.pw-model {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: var(--fg);
+}
+
+.pw-model-kind {
+  color: var(--fg-muted);
+}
+
+.pw-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  background: var(--hover);
+}
+
+:root[data-theme="light"] .pw-chip {
+  background: #ffffff;
+}
+
+/* ---- collapsed non-chat group row ---- */
+
+.pw-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 4px 12px;
+  cursor: pointer;
+  user-select: none;
+  background: var(--surface-2, var(--hover));
+}
+
+:root[data-theme="light"] .pw-group {
+  background: #fbfdff;
+}
+
+.pw-group:hover {
+  background: var(--hover);
+}
+
+.pw-group-label {
+  font-size: 12.5px;
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.pw-group-sub {
+  font-size: 11.5px;
+  color: var(--fg-muted);
+}
+
+.pw-group .pw-linkbtn {
+  margin-left: auto;
+  padding: 4px 0;
+}
+
+.pw-chev {
+  display: grid;
+  place-items: center;
+  color: var(--fg-muted);
+}
+
+.pw-chev svg {
+  transition: transform 0.15s ease;
+}
+
+.pw-group.open .pw-chev svg {
+  transform: rotate(90deg);
+}
+
+/* ---- detecting / empty states ---- */
+
+.pw-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 46px 0 50px;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+}
+
+.pw-loading-host {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.pw-spin {
+  animation: pw-rotate 0.8s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes pw-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pw-empty {
+  padding: 30px 0;
+  text-align: center;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Spinner stays (activity affordance) but slows; transitions off. */
+  .pw-spin {
+    animation-duration: 2.4s;
+  }
+
+  .pw-chev svg {
+    transition: none;
+  }
+}

@@ -1,0 +1,784 @@
+/* present_demo card — embedded preview iframe + generated parameter form. */
+
+.content-card-demo {
+  --demo-control-h: 30px;
+  /* Preview viewport height — single source (anti-drift convention), mobile floor below.
+     640px (user-raised 2026-10-24: 520 still truncated phone-frame demos). */
+  --demo-preview-h: 640px;
+  /* Floating params toggle diameter — pinned (anti-drift convention): 36px desktop
+     (user-confirmed 2026-10-27), 44px touch in the narrow-width block. */
+  --demo-fab-size: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Preview: jellybot-file iframe, sandbox="allow-scripts" (plan D11). */
+.content-card-demo-preview {
+  /* Anchors the floating params toggle (position: absolute). */
+  position: relative;
+  /* Edge-to-edge preview (user-confirmed 2026-10-24): no border ring, no
+     white backing — the demo surface is the card surface; only a soft
+     corner radius frames it. */
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.content-card-demo-iframe {
+  display: block;
+  width: 100%;
+  height: var(--demo-preview-h);
+  border: 0;
+  /* Transparent, NOT white (user-confirmed 2026-10-30): the iframe element's
+     own background leaks as a faint white fringe at the preview wrapper's
+     rounded-corner clip arc (cross-origin composited frame), visible over
+     dark demo surfaces. Demos paint their own canvas; while loading the card
+     surface shows through — matching the confirmed "demo surface is the card
+     surface" decision. */
+  background: transparent;
+}
+
+.content-card-demo-preview-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.content-card-demo-preview-note.is-failed {
+  color: var(--danger-text);
+}
+
+/* Floating params toggle (user-confirmed 2026-10-27): circular icon button
+   anchored bottom-right INSIDE the preview window — solid face + theme
+   border + soft shadow keep it legible over any demo background. Geometry
+   pinned via --demo-fab-size so web-font loading cannot jitter it. */
+.content-card-demo-params-toggle {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--demo-fab-size);
+  height: var(--demo-fab-size);
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: #1f1f1f;
+  color: var(--fg-muted);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  font: inherit;
+  cursor: pointer;
+  z-index: 1;
+  transition: color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+/* Light: pure white face + neutral theme border (no accent echo). */
+:root[data-theme="light"] .content-card-demo-params-toggle {
+  border-color: rgba(18, 67, 117, 0.18);
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(18, 52, 86, 0.18);
+}
+
+.content-card-demo-params-icon {
+  width: calc(var(--demo-fab-size) * 0.55);
+  height: calc(var(--demo-fab-size) * 0.55);
+}
+
+.content-card-demo-params-toggle:hover {
+  color: var(--fg);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+  transform: translateY(-1px);
+}
+
+:root[data-theme="light"] .content-card-demo-params-toggle:hover {
+  box-shadow: 0 4px 14px rgba(18, 52, 86, 0.26);
+}
+
+.content-card-demo-params-toggle:active {
+  transform: translateY(0) scale(0.96);
+}
+
+.content-card-demo-params-toggle[aria-expanded="true"] {
+  color: var(--fg);
+  transform: none;
+}
+
+/* Text label lives in a hover/focus tooltip pointing inward from the FAB. */
+.content-card-demo-params-toggle::after {
+  content: "Parameters";
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%) translateX(3px);
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: #262626;
+  color: #e8e8e8;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+:root[data-theme="light"] .content-card-demo-params-toggle::after {
+  border-color: transparent;
+  background: #17202b;
+  color: #ffffff;
+}
+
+.content-card-demo-params-toggle:hover::after,
+.content-card-demo-params-toggle:focus-visible::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* The open popover replaces the tooltip as the anchor's label. */
+.content-card-demo-params-toggle[aria-expanded="true"]::after {
+  opacity: 0;
+}
+
+.content-card-demo-params-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Settled card: params are locked — dim and freeze the FAB. */
+.content-card-demo-params-toggle:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+}
+
+/* Native top-layer popup escapes the card's clipping without moving preview. */
+.content-card-demo-params-popover {
+  position: fixed;
+  inset: auto;
+  display: none;
+  box-sizing: border-box;
+  width: 360px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  box-shadow: var(--shadow-xl);
+  font-family: inherit;
+  overflow: hidden;
+  gap: 10px;
+}
+
+.content-card-demo-params-popover:popover-open {
+  display: flex;
+  flex-direction: column;
+}
+
+.content-card-demo-params-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.content-card-demo-params-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--demo-control-h);
+  height: var(--demo-control-h);
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.content-card-demo-params-close:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.content-card-demo-params-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.content-card-demo-params-popover .content-card-demo-form {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  gap: 8px;
+  padding: 2px;
+}
+
+/* Keep labels beside controls even inside a narrow popup. */
+:root .content-card-demo-params-popover .content-card-demo-row {
+  flex-direction: row;
+  align-items: center;
+  min-height: var(--demo-control-h);
+  gap: 8px;
+}
+
+:root .content-card-demo-params-popover .content-card-demo-label {
+  flex: 0 0 104px;
+  max-width: 40%;
+}
+
+.content-card-demo-params-popover .content-card-demo-readout {
+  min-width: 3ch;
+  text-align: left;
+}
+
+.content-card-demo-params-popover .content-card-demo-slider-line {
+  gap: 6px;
+}
+
+.content-card-demo-params-popover .content-card-demo-range {
+  margin: 0;
+}
+
+.content-card-demo-form {
+  container: demo-form / inline-size;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.content-card-demo-form[hidden],
+.content-card-demo-form.is-empty {
+  display: none;
+}
+
+.content-card-demo-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.content-card-demo-label {
+  /* Shared label column keeps vertically stacked slider tracks aligned. */
+  flex: 0 0 160px;
+  max-width: 40%;
+  font-size: 12px;
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+
+.content-card-demo-control,
+.content-card-demo-note {
+  height: var(--demo-control-h);
+  min-height: var(--demo-control-h);
+  box-sizing: border-box;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(var(--shade-rgb), 0.22);
+  color: var(--fg);
+  font-size: 12px;
+}
+
+.content-card-demo-control {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.content-card-demo-note {
+  width: 100%;
+}
+
+.content-card-demo-control:focus,
+.content-card-demo-note:focus {
+  outline: none;
+  border-color: rgba(var(--accent-rgb), 0.55);
+}
+
+/* Light: solid white control surfaces to avoid a grey cast from stacked shades (same convention as the ask panel). */
+:root[data-theme="light"] .content-card-demo-control,
+:root[data-theme="light"] .content-card-demo-note {
+  background: #ffffff;
+}
+
+/* Keep the select arrow inset; native macOS chevrons ignore padding.
+   The app-drawn combobox trigger (button.content-card-demo-select) reuses
+   the identical closed-state look. */
+:root .content-card-demo select.content-card-demo-control,
+:root .content-card-demo button.content-card-demo-select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a9a9a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px 14px;
+  cursor: pointer;
+}
+
+:root[data-theme="light"] .content-card-demo select.content-card-demo-control,
+:root[data-theme="light"] .content-card-demo button.content-card-demo-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23536173' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* Combobox trigger (select params inside the params popover): native
+   <select> popups open BEHIND the top-layer popover in Chromium, so select
+   params render this button + the listbox below (user-confirmed 2026-10-27). */
+:root .content-card-demo button.content-card-demo-select {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  font-family: inherit;
+}
+
+:root .content-card-demo button.content-card-demo-select[aria-expanded="true"] {
+  border-color: rgba(var(--accent-rgb), 0.55);
+}
+
+:root .content-card-demo button.content-card-demo-select:disabled {
+  cursor: default;
+}
+
+.content-card-demo-select-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Option list — appended to the popover element (top layer → always above
+   the panel); position: fixed escapes the form's overflow clipping. */
+.content-card-demo-listbox {
+  position: fixed;
+  inset: auto;
+  z-index: 10;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  list-style: none;
+  animation: content-card-demo-list-in 120ms ease;
+}
+
+:root[data-theme="light"] .content-card-demo-listbox {
+  border-color: rgba(var(--accent-rgb), 0.16);
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(18, 52, 86, 0.1);
+}
+
+@keyframes content-card-demo-list-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content-card-demo-listbox {
+    animation: none;
+  }
+}
+
+.content-card-demo-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: var(--demo-control-h);
+  padding: 0 10px;
+  border-radius: 5px;
+  color: var(--fg);
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.content-card-demo-option.is-active {
+  background: var(--hover);
+}
+
+.content-card-demo-option[aria-selected="true"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.content-card-demo-option[aria-selected="true"].is-active {
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.content-card-demo-option-check {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  color: var(--accent);
+  opacity: 0;
+}
+
+.content-card-demo-option[aria-selected="true"] .content-card-demo-option-check {
+  opacity: 1;
+}
+
+.content-card-demo-control[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 0 0 var(--demo-control-h);
+  width: var(--demo-control-h);
+  padding: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.content-card-demo-control[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.content-card-demo-control[type="color"]::-webkit-color-swatch {
+  border: 0;
+  border-radius: 3px;
+}
+
+.content-card-demo-control[type="color"]::-moz-color-swatch {
+  border: 0;
+  border-radius: 3px;
+}
+
+.content-card-demo-control[type="color"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.content-card-demo-control.is-checkbox {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+/* Variant A (user-confirmed 2026-10-24): bounded number params render as a
+   range slider + monospace readout. Track fill is a --fill % gradient
+   painted by the view; thumb keeps a white rim on both themes. */
+.content-card-demo-slider-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.content-card-demo-range {
+  -webkit-appearance: none;
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.content-card-demo-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--accent) var(--fill, 50%),
+    var(--border) var(--fill, 50%)
+  );
+}
+
+.content-card-demo-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(16, 20, 28, 0.35);
+  margin-top: -5px;
+}
+
+.content-card-demo-range::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.content-card-demo-range::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.content-card-demo-range::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(16, 20, 28, 0.35);
+}
+
+.content-card-demo-range:focus {
+  outline: none;
+}
+
+.content-card-demo-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.25);
+}
+
+.content-card-demo-readout {
+  flex: 0 0 auto;
+  min-width: 52px;
+  text-align: right;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+
+.content-card-demo-range:disabled + .content-card-demo-readout {
+  color: var(--fg-muted);
+}
+
+.content-card-demo-control:disabled,
+.content-card-demo-note:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.content-card-demo-prompt {
+  margin: 0;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.content-card-demo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.content-card-demo-confirm-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.content-card-demo-confirm-btn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.content-card-demo-confirm-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.content-card-demo-submitted {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--fg-muted);
+}
+
+.content-card-demo-error {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  color: var(--danger-text);
+}
+
+.content-card-demo-submitted.is-waiting {
+  font-weight: 400;
+}
+
+/* Stack labels in narrow panes even when the app window is wide. */
+@container demo-form (max-width: 360px) {
+  .content-card-demo-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .content-card-demo-label {
+    flex-basis: auto;
+    max-width: none;
+  }
+}
+
+/* Narrow widths: vertical-only touch sizing, with the existing preview height. */
+@media (max-width: 560px) {
+  .content-card-demo-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .content-card-demo-label {
+    flex-basis: auto;
+    max-width: none;
+  }
+
+  .content-card-demo-confirm-btn {
+    min-height: 44px;
+  }
+
+  .content-card-demo {
+    --demo-control-h: 44px;
+    --demo-preview-h: 380px;
+    --demo-fab-size: 44px;
+  }
+}
+
+/* ---- Compact confirm summary card (plan §4) ----
+   The D7 marker text renders as a card, never raw prose. The user row is
+   de-bubbled (left-aligned, full width) so the card reads as part of the
+   conversation flow. */
+
+.conversation-msg-user.is-demo-confirm {
+  justify-content: flex-start;
+}
+
+.conversation-msg-user.is-demo-confirm .conversation-msg-body {
+  max-width: 100%;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+.content-card-demo-confirm {
+  max-width: 560px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(var(--shade-rgb), 0.18);
+}
+
+:root[data-theme="light"] .content-card-demo-confirm {
+  background: #ffffff;
+}
+
+.content-card-demo-confirm-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  list-style: none;
+  cursor: default;
+}
+
+.content-card-demo-confirm-head::-webkit-details-marker {
+  display: none;
+}
+
+.content-card-demo-confirm.is-expandable .content-card-demo-confirm-head {
+  cursor: pointer;
+}
+
+.content-card-demo-confirm-icon {
+  flex: 0 0 auto;
+  color: var(--success-text);
+}
+
+.content-card-demo-confirm-title {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.content-card-demo-confirm-brief {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.content-card-demo-confirm-chevron {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+  transition: transform 150ms ease;
+}
+
+.content-card-demo-confirm[open] .content-card-demo-confirm-chevron {
+  transform: rotate(180deg);
+}
+
+.content-card-demo-confirm-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px 10px 34px;
+  border-top: 1px solid var(--border);
+}
+
+.content-card-demo-confirm-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.content-card-demo-confirm-key {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+}
+
+.content-card-demo-confirm-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  word-break: break-all;
+  color: var(--fg);
+}
+
+.content-card-demo-confirm-note {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content-card-demo-confirm-chevron {
+    transition: none;
+  }
+
+  .content-card-demo-params-toggle,
+  .content-card-demo-params-toggle::after {
+    transition: none;
+  }
+
+  .content-card-demo-params-toggle:hover {
+    transform: none;
+  }
+}

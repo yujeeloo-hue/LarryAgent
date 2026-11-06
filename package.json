@@ -1,0 +1,55 @@
+{
+  "name": "jellybot",
+  "version": "1.6.6",
+  "private": true,
+  "description": "JellyBot — a lightweight, agile and highly extensible agent desktop client for macOS and Windows.",
+  "main": "./out/main/index.js",
+  "author": "youyee",
+  "scripts": {
+    "predev": "node build-window-capture.mjs && node build-speech-transcriber.mjs",
+    "dev": "node run-electron-vite.mjs dev",
+    "prebuild": "node check-deps.mjs && node build-window-capture.mjs && node build-speech-transcriber.mjs",
+    "build": "electron-vite build",
+    "preview": "node run-electron-vite.mjs preview",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit",
+    "test": "node run-tests.mjs",
+    "clean": "rm -rf out dist release",
+    "dist": "npm run build:relay && npm run build && electron-builder --config electron-builder.yml",
+    "dist:mac": "npm run build:relay && npm run build && node prepare-dmg-window.mjs && electron-builder --mac --config electron-builder.yml",
+    "dist:win": "npm run build:relay && node prepare-lldb-dap.mjs && node prepare-rsync.mjs && npm run build && electron-builder --win --x64 --config electron-builder.yml",
+    "dist:all": "npm run dist:mac",
+    "build:relay": "node build-relay.mjs",
+    "manifest:downloads": "node scripts/write-downloads-manifest.mjs",
+    "postinstall": "node node_modules/electron/install.js",
+    "release": "node scripts/release.mjs",
+    "publish:snapshot": "node scripts/publish-snapshot.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
+    "@types/node": "^26.1.1",
+    "@types/ws": "^8.18.1",
+    "electron": "^43.1.1",
+    "electron-builder": "^26.0.12",
+    "electron-vite": "^5.0.0",
+    "esbuild": "^0.28.1",
+    "gpt-tokenizer": "^3.4.0",
+    "highlight.js": "^11.11.1",
+    "linkedom": "^0.18.13",
+    "lucide": "^1.33.0",
+    "mermaid": "^11.16.0",
+    "monaco-editor": "^0.56.0",
+    "typescript": "^7.0.2",
+    "vite": "^7.3.6"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "adm-zip": "^0.6.0",
+    "diff": "^9.0.0",
+    "marked": "^18.0.7",
+    "ws": "^8.21.3"
+  }
+}
