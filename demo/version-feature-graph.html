@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Larry Agent 版本特性节点图</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #101010;
+    --panel: #141414;
+    --text: #e8e8e8;
+    --muted: #9a9a9a;
+    --line: rgba(255, 255, 255, 0.08);
+    --accent: #00e5ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 400 14px/1.5 "Segoe UI", "Microsoft YaHei", sans-serif;
+  }
+  button, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:focus-visible, select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  a { color: var(--accent); }
+  .wrap { max-width: 1580px; margin: 0 auto; padding: 28px 24px 48px; }
+  header { margin-bottom: 18px; }
+  .brand {
+    margin: 0 0 4px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  h1 { margin: 0; font-size: 22px; font-weight: 500; line-height: 1.3; }
+  .lead { margin: 8px 0 0; max-width: 68em; color: var(--muted); }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 18px;
+    margin-top: 16px;
+  }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; }
+  .filters button {
+    border: 1px solid var(--line);
+    background: transparent;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+  .filters button[aria-pressed="true"] {
+    border-color: var(--c, var(--accent));
+    color: var(--c, var(--accent));
+  }
+  .jump { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+  .jump select {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 4px 8px;
+    color: var(--text);
+  }
+  .shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-areas: "map inspector";
+    gap: 16px;
+    align-items: start;
+  }
+  .map-col { grid-area: map; }
+  .inspector { grid-area: inspector; }
+  .map-scroll {
+    height: min(740px, calc(100vh - 210px));
+    min-height: 420px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .lane-bar {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    height: 34px;
+    background: #161616;
+    border-bottom: 1px solid var(--line);
+    font-size: 11px;
+    line-height: 34px;
+  }
+  .lane-bar span {
+    position: absolute;
+    top: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    color: var(--c, var(--muted));
+  }
+  .map { position: relative; }
+  .map svg { position: absolute; left: 0; top: 0; pointer-events: none; }
+  .era {
+    position: absolute;
+    left: 16px;
+    width: 124px;
+    text-align: right;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .version {
+    position: absolute;
+    width: 140px;
+    margin: 0;
+    padding: 0 18px 0 0;
+    border: 0;
+    background: transparent;
+    text-align: right;
+    transform: translate(-100%, -50%);
+  }
+  .version strong { display: block; font-size: 13px; font-weight: 500; }
+  .version span { display: block; font-size: 11px; color: var(--muted); font-weight: 400; }
+  .version::after {
+    content: "";
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    background: var(--panel);
+    transform: translateY(-50%);
+  }
+  .version[aria-pressed="true"] strong { color: var(--accent); }
+  .version[aria-pressed="true"]::after { background: var(--accent); }
+  .node {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    height: 46px;
+    margin: 0;
+    padding: 4px 8px 4px 6px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #191919;
+    text-align: left;
+  }
+  .node::before {
+    content: "";
+    width: 2px;
+    align-self: stretch;
+    margin: 6px 8px 6px 2px;
+    border-radius: 1px;
+    background: var(--c);
+    flex: none;
+  }
+  .node strong {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.35;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .node[aria-pressed="true"] { border-color: var(--c); background: #202020; }
+  .list { display: none; }
+  .list .era-name {
+    margin: 18px 0 0;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .release { padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .release h3 { margin: 0; font-size: 15px; font-weight: 500; }
+  .release h3 button {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    text-align: left;
+  }
+  .release h3 button[aria-pressed="true"] { color: var(--accent); }
+  .release .when { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
+  .chips button {
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--c);
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  .chips button[aria-pressed="true"] { border-color: var(--c); }
+  .inspector {
+    position: sticky;
+    top: 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 16px 18px;
+  }
+  .inspector .kicker {
+    margin: 0;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--c, var(--muted));
+  }
+  .inspector h2 { margin: 6px 0 0; font-size: 18px; font-weight: 500; line-height: 1.35; }
+  .inspector .meta { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+  .inspector .body { margin: 12px 0 0; color: var(--text); }
+  footer {
+    margin-top: 16px;
+    max-width: 78em;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+  @media (max-width: 980px) {
+    .shell { grid-template-columns: 1fr; grid-template-areas: "inspector" "map"; }
+    .map-scroll { display: none; }
+    .list { display: block; }
+    .inspector { position: static; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="brand">LARRY AGENT</p>
+    <h1>版本特性节点图</h1>
+    <p class="lead">从 2026-07-21 的桌面代理外壳，到 2026-11-09 的 v1.6.7。左侧是版本，五条轨道是这一版对外说得清的特性。点一个节点，右侧是它在更新日志里的说法。</p>
+    <div class="toolbar">
+      <div class="filters" role="group" aria-label="轨道">
+        <button type="button" data-track="all" aria-pressed="true">全部</button>
+        <button type="button" data-track="runtime" style="--c:#00e5ff">运行时</button>
+        <button type="button" data-track="coco" style="--c:#c084fc">CoCo</button>
+        <button type="button" data-track="dev" style="--c:#f0b429">开发</button>
+        <button type="button" data-track="relay" style="--c:#2ee6c7">中继</button>
+        <button type="button" data-track="skills" style="--c:#8fd18a">技能</button>
+      </div>
+      <label class="jump">跳到
+        <select id="jump" aria-label="跳到版本"></select>
+      </label>
+    </div>
+  </header>
+
+  <div class="shell">
+    <div class="map-col">
+      <div class="map-scroll" id="mapScroll">
+        <div class="lane-bar" id="laneBar" aria-hidden="true"></div>
+        <div class="map" id="map" role="group" aria-label="版本与特性节点">
+          <svg id="svg" aria-hidden="true"></svg>
+        </div>
+      </div>
+      <div class="list" id="list"></div>
+    </div>
+    <aside class="inspector" id="inspector" aria-live="polite">
+      <p class="kicker" id="kicker"></p>
+      <h2 id="ititle"></h2>
+      <p class="meta" id="imeta"></p>
+      <p class="body" id="ibody"></p>
+    </aside>
+  </div>
+
+  <footer>
+    日期取发布提交或 CHANGELOG 中的发布日。本地标签的创建日有不少被重打成 2026-11-04，没有当作节点日期。
+    git 记录 1,879 条，提交说明去重后 716 条；同一句说明常常对应多个哈希。
+    本地标签列到 v1.6.5，v1.6.6 与 v1.6.7 已有发布提交。
+    1.2、1.3、1.4 的提交日期互相重叠，图按版本号排列。
+    依据 <a href="../CHANGELOG.md">CHANGELOG.md</a>。
+  </footer>
+</div>
+
+<script>
+const TRACKS = {
+  runtime: { label: "运行时", color: "#00e5ff" },
+  coco: { label: "CoCo", color: "#c084fc" },
+  dev: { label: "开发", color: "#f0b429" },
+  relay: { label: "中继", color: "#2ee6c7" },
+  skills: { label: "技能", color: "#8fd18a" },
+};
+const LANE_IDS = ["runtime", "coco", "dev", "relay", "skills"];
+const CARD_H = 46;
+const STRIDE = 54;
+
+const ERAS = {
+  coco: "CoCo",
+  hub: "Hub",
+  desk: "工作台与远程",
+  public: "公开发布",
+  platform: "跨平台",
+  fsm: "工作流",
+  found: "奠基",
+};
+
+/** Newest first. Headlines are the nodes; summaries keep the rest of that changelog group. */
+const RELEASES = [
+  {
+    id: "v167",
+    version: "1.6.7",
+    when: "11-09",
+    whenFull: "2026-11-09",
+    era: "coco",
+    summary: "Skill 在回合结束时反思，使用量入账，并带策展。Git 栏可以 Pull，冲突交给模型。run_dev_task 直接跑开发任务。Windows 调试器换到 23.1.1-larry.3，lldb-dap 包进 VC++ 运行时。文件树会标出 F12 和 Ctrl+click 的落点，CoCo 工作简报要求自然英文。根 CHANGELOG、官网更新日志和 GitHub Releases 下载也在这版。另修了 CoCo 回合窗口压缩。",
+    features: [
+      ["skills", "Skill 自我改进", "回合结束的 reflect gate v2、skill 的合并与弃用、使用量台账和策展。相关提交在 11-08，随 1.6.7 发布。"],
+      ["dev", "Git Pull 与冲突解决", "Git 栏新增 Pull，合并冲突由模型解决。"],
+      ["dev", "run_dev_task", "代理可以直接跑 dev task runner。"],
+      ["dev", "Windows 调试器更新", "调试器 23.1.1-larry.3，lldb-dap 的 zip 带上 VC++ 运行时。"],
+      ["dev", "文件树落点揭示", "文件树标出 F12 和 Ctrl+click 落到的位置。"],
+      ["coco", "英文工作简报", "CoCo 的工作简报要求写成自然英文。"],
+      ["relay", "更新日志与下载托管", "根 CHANGELOG、官网整理过的更新日志页，以及 GitHub Releases 下载。"],
+      ["coco", "回合窗口压缩", "修复：CoCo 的回合窗口压缩，长会话能保持连贯。"],
+    ],
+  },
+  {
+    id: "v166",
+    version: "1.6.6",
+    when: "11-06",
+    whenFull: "2026-11-06",
+    era: "coco",
+    summary: "clangd 接上 C/C++ 的引用、Quick Open 里的工作区符号，以及可取消的转到定义。补全使用编译参数和索引符号，文本补全兜底。CoCo 加上会话监督、移交和 coco_balance。删除工作区时会停掉并清掉隐藏的 coco 会话。",
+    features: [
+      ["dev", "clangd 引用与符号", "find-references、Quick Open 里的工作区符号、可取消的转到定义。"],
+      ["dev", "C/C++ 补全", "用编译参数和索引符号补全，文本补全兜底。"],
+      ["coco", "会话监督与移交", "监督 CoCo 会话，并可以移交。"],
+      ["coco", "coco_balance", "新增 coco_balance 工具。"],
+      ["coco", "隐藏会话清理", "修复：删除工作区时停掉并清掉隐藏的 coco 会话。"],
+      ["relay", "Relay 连接状态", "修复：Relay Web 的连接状态显示。"],
+    ],
+  },
+  {
+    id: "v165",
+    version: "1.6.5",
+    when: "11-04",
+    whenFull: "2026-11-04",
+    era: "coco",
+    summary: "公开快照发布到 LarryAgent 仓库，并带上导出的清单。官网有了 About 和 relay 演示。文件阅读器改回 Lucide 的原始线性图标。发布流水线的控制台文案改为英文；官网源码不进公开快照。",
+    features: [
+      ["relay", "公开快照", "把公开快照发到 LarryAgent 仓库，带导出清单。"],
+      ["relay", "About 与演示", "官网 About 页和 relay 演示。"],
+      ["dev", "阅读器线性图标", "文件阅读器改用 Lucide 原始线性图标。"],
+    ],
+  },
+  {
+    id: "v164",
+    version: "1.6.4",
+    when: "11-03",
+    whenFull: "2026-11-03",
+    era: "coco",
+    summary: "CoCo 上下文压缩、EDG FSM 动作节点和内置图谱。plan_execute 收紧轮次，plan_done 让 composer 可以退出。Relay Web 的 CoCo 对齐客户端：协议镜像、设备桥、三栏；手机端是底栏加全屏聊天。发送在真实 DOM 里的崩溃也在这版修掉。",
+    features: [
+      ["coco", "CoCo 上下文压缩", "CoCo 自己的上下文压缩。"],
+      ["runtime", "EDG FSM 节点", "EDG FSM 动作节点和内置图谱，带测试。"],
+      ["runtime", "plan_done 退出", "plan_execute 收紧轮次，plan_done 让 composer 退出。"],
+      ["coco", "手机端 CoCo", "协议镜像、设备桥、三栏界面；手机端底栏和全屏聊天。发送崩溃一并修掉。"],
+    ],
+  },
+  {
+    id: "v163",
+    version: "1.6.3",
+    when: "11-03",
+    whenFull: "2026-11-03",
+    era: "coco",
+    summary: "手机端 CoCo 磁贴严格跟随当前选中的设备。",
+    features: [
+      ["coco", "磁贴跟随设备", "手机上的 CoCo 磁贴跟着当前选中的那台设备。"],
+    ],
+  },
+  {
+    id: "v162",
+    version: "1.6.2",
+    when: "11-02",
+    whenFull: "2026-11-02",
+    era: "coco",
+    summary: "可以查看 CoCo 的工作结果和还在排队的 prompt。提问走共享的 ask-user 面板。自主唤醒改由账本驱动，取代 check-in。下载卡开始显示发布日期。",
+    features: [
+      ["coco", "工作结果与队列", "工作结果，以及正在排队的 prompt。"],
+      ["coco", "共享提问面板", "用共享的 ask-user 面板回答代理的问题。"],
+      ["coco", "账本驱动唤醒", "唤醒改由工作账本驱动，check-in 退出。"],
+    ],
+  },
+  {
+    id: "v161",
+    version: "1.6.1",
+    when: "10-30",
+    whenFull: "2026-10-30",
+    era: "coco",
+    summary: "macOS 与 Windows 安装包上线，console 静态资源刷新。同时修了 verify 分支在 exactOptionalPropertyTypes 下的类型收窄。",
+    features: [
+      ["relay", "安装包上线", "macOS 与 Windows 安装包上线，console 静态资源刷新。"],
+      ["runtime", "verify 类型收窄", "修复：verify 分支适配 exactOptionalPropertyTypes。"],
+    ],
+  },
+  {
+    id: "v160",
+    version: "1.6.0",
+    when: "10-28",
+    whenFull: "2026-10-28",
+    era: "coco",
+    summary: "CoCo 自动化规则、运行记录和总览排序。设置里的更新卡可以手动原地升级。流式 reasoning 块能正确判断自己可不可以展开。",
+    features: [
+      ["coco", "自动化规则", "建立自动化规则，查看运行，总览可以排序。"],
+      ["relay", "原地升级", "设置页更新卡，可以手动原地升级。"],
+      ["runtime", "reasoning 展开", "修复：流式 reasoning 块正确判断能否展开。"],
+    ],
+  },
+  {
+    id: "v1510",
+    version: "1.5.10",
+    when: "10-27",
+    whenFull: "2026-10-27",
+    era: "hub",
+    summary: "Tools 有了二级导航。Auto V2 以演示为先的图谱。Dev Mode 可以部署，Safe Mode 使用审批卡。",
+    features: [
+      ["runtime", "Auto V2 图谱", "Auto V2，以演示为先的工作流图谱。"],
+      ["dev", "Dev Mode 部署", "从 Dev Mode 部署。"],
+      ["runtime", "Safe Mode 审批", "Safe Mode 的审批卡。"],
+      ["dev", "Tools 二级导航", "工具页使用独立的二级导航。"],
+    ],
+  },
+  {
+    id: "v159",
+    version: "1.5.6 – 1.5.9",
+    when: "10-23 起",
+    whenFull: "2026-10-23 起（1.5.8 发布于 10-24）",
+    era: "hub",
+    summary: "1.5.6 把移动端对话统一成 13px。1.5.7 修好滚动自动跟随，userPromptEdit 改成 userPromptReclaim。1.5.8 调整 Thought 块顺序，加上交互式 demo 卡，会话会自动打开最近一次交互，并修了 E2EE 等待 streamKey。1.5.9 给 Dev Mode 图编辑器换上暗岛主题。",
+    features: [
+      ["relay", "移动端 13px", "1.5.6：移动端对话排版统一为 13px。"],
+      ["runtime", "滚动跟随", "1.5.7：滚动自动跟随；userPromptEdit 改为 userPromptReclaim。"],
+      ["runtime", "Thought 块顺序", "1.5.8：Thought 块的排列顺序。"],
+      ["relay", "交互式 demo 卡", "1.5.8：交互式 demo 卡和确认流；会话自动打开最近一次交互。"],
+      ["dev", "图编辑器暗岛", "1.5.9：Dev Mode 图编辑器的暗岛主题。"],
+    ],
+  },
+  {
+    id: "v155",
+    version: "1.5.5",
+    when: "10-22",
+    whenFull: "2026-10-22",
+    era: "hub",
+    summary: "Skill Hub：技能放在 Relay 上，打成 zip，再同步到桌面。功能和工具共用一套 SVG 图标。",
+    features: [
+      ["skills", "Skill Hub", "Relay 上存放技能、打成 zip，并同步到桌面客户端。"],
+      ["runtime", "共享 SVG 图标", "功能和工具共用一套 SVG 图标。"],
+    ],
+  },
+  {
+    id: "v154",
+    version: "1.5.1 – 1.5.4",
+    when: "10-20 – 10-22",
+    whenFull: "2026-10-20 – 2026-10-22",
+    era: "hub",
+    summary: "1.5.1 两端同步字号缩放，更新进度拆细。1.5.2 给会话加载失败加了重试。1.5.3 是 Windows 独立构建，上传在 Windows 上走 scp 回退。1.5.4 重做对话滚动视口和移动端布局，工具卡体虚拟化，Windows 侧打包 rsync。",
+    features: [
+      ["runtime", "字号缩放", "1.5.1：fontScale 在桌面和 Relay 之间同步。"],
+      ["relay", "更新进度步进", "1.5.1：更细的更新进度（agentd 1.4.1 与 console 步进）。"],
+      ["dev", "Windows 独立构建", "1.5.3：Windows 独立构建；上传文件在 Windows 上有 scp 回退。"],
+      ["runtime", "滚动视口", "1.5.4：对话滚动视口和移动端布局。"],
+      ["runtime", "工具卡虚拟化", "1.5.4：工具卡主体虚拟化。"],
+    ],
+  },
+  {
+    id: "v150",
+    version: "1.5.0",
+    when: "10-19",
+    whenFull: "2026-10-19",
+    era: "hub",
+    summary: "MCP Hub：Relay 端点、Web 管理，并同步到客户端。工具策略打在请求边界，执行过程有检查点。LLM 层改为 adapter 和 apiDispatch，reasoning 按范围绑定，避免跨 Provider 重放思维链。主题去掉 graphite，只留深色和浅色。Responses API 归在 1.4 的标签里，不画在这里。",
+    features: [
+      ["relay", "MCP Hub", "用 Relay 端点和 Web 界面管理 MCP，并同步到客户端。"],
+      ["runtime", "工具执行检查点", "工具策略打在请求边界，执行中有检查点。"],
+      ["runtime", "LLM adapter", "LLM 层改为 adapter 架构和 apiDispatch。"],
+      ["runtime", "reasoning 绑定", "reasoning 按范围绑定，避免跨 Provider 重放。"],
+      ["runtime", "仅深色与浅色", "去掉 graphite，只保留深色和浅色，旧的主题 id 会迁移。"],
+    ],
+  },
+  {
+    id: "v14",
+    version: "1.4",
+    when: "10-19",
+    whenFull: "2026-10-10 – 2026-10-19",
+    era: "desk",
+    summary: "中继流 E2EE、agentd 无头维护节点、托盘用量、多语言符号索引，以及 Subagents 独立窗口。OpenAI Responses API 在 v1.4.0 标签中；根 CHANGELOG 曾把这句话写在 v1.5.0 一节。用量适配覆盖 OpenRouter 和 Qwen Code。模型品牌图标也在这组里扩充。",
+    features: [
+      ["relay", "中继流加密", "E2EE v1，中继流加密。"],
+      ["relay", "agentd 无头节点", "无头的 agentd，用于远程维护。"],
+      ["dev", "多语言符号索引", "符号工具：多语言符号索引。1.4.1 的发布提交写的是这一项。"],
+      ["runtime", "Subagents 窗口", "独立的 Subagents 窗口，开发模式可以启动可执行文件。"],
+      ["runtime", "托盘用量", "托盘上的用量弹窗，含常驻和焦点模型。"],
+      ["runtime", "Responses API", "OpenAI Responses API。归属按 v1.4.0 标签，不按后来写进 1.5.0 节的那一行。"],
+    ],
+  },
+  {
+    id: "v13",
+    version: "1.3",
+    when: "10-15",
+    whenFull: "2026-10-14 – 2026-10-15",
+    era: "desk",
+    summary: "Dev Mode 补上 VCS 凭证提示、SSH 回退、SVN 提交、任务面板、gutter、blame 和 diff。设置可以加密备份后导出再导入。1.3.5 的升版提交加入设备执行沙箱，1.3.6 同步 Token Provider Hub。总表把后两项也列在 1.4 组，节点按升版提交放在这里。",
+    features: [
+      ["dev", "VCS 与 SVN", "git push / svn 的凭证提示、SSH 密钥回退、SVN 提交。"],
+      ["dev", "任务与 diff", "任务面板、Build/Run/Commit/Push、gutter、blame、按路径提交和 diff 编辑器。"],
+      ["runtime", "加密设置备份", "设置可以加密备份，再导出或导入。"],
+      ["dev", "设备执行沙箱", "1.3.5：设备执行沙箱。总表在 1.4 组也提到它。"],
+      ["relay", "Token Hub 同步", "1.3.6：Token Provider Hub 同步。总表在 1.4 组也提到它。"],
+    ],
+  },
+  {
+    id: "v12",
+    version: "1.2",
+    when: "10-12",
+    whenFull: "2026-10-10 – 2026-10-12",
+    era: "public",
+    summary: "发布线上的版本号纠错。1.2.1 把误标的 1.4.1 改正。这一版没有单独的产品功能。",
+    features: [
+      ["relay", "版本号纠正", "1.2.1 把误标成 1.4.1 的版本号改正。"],
+    ],
+  },
+  {
+    id: "v11",
+    version: "1.1",
+    when: "10-09",
+    whenFull: "2026-10-08 – 2026-10-09",
+    era: "public",
+    summary: "删除会话时归档，并用模型总结进 work history。自有通知系统和 notify 工具，菜单栏有状态图标。memory 在中继和客户端之间同步。内置 loops 工具由模型管理循环。Agent 交给 Plan 的文档会按 revision 采纳。",
+    features: [
+      ["runtime", "删除即总结", "删除会话时归档，并用模型总结进工作历史。"],
+      ["runtime", "通知系统", "自有通知和 notify 工具，归档时带设备快照。"],
+      ["relay", "memory 同步", "memory 在中继服务端和客户端归档之间同步。"],
+      ["runtime", "内置 loops", "内置 loops 工具，由模型管理循环。"],
+      ["runtime", "Plan 交接修复", "修复：Agent 到 Plan 的文档交接按 revision 采纳。"],
+    ],
+  },
+  {
+    id: "v10",
+    version: "1.0",
+    when: "10-05",
+    whenFull: "2026-10-04 – 2026-10-05",
+    era: "public",
+    summary: "第一条公开发布线：统一落地页和下载。高亮色设置、UBT 构建进度（虚幻引擎构建 4 小时超时）、DMG 双行标题。1.0.2 起 Windows 安装包一起上线。Relay 里的图片工具卡可以出缩略图。",
+    features: [
+      ["relay", "公开落地页", "统一落地页，含下载。"],
+      ["runtime", "高亮色", "可以设置高亮色。"],
+      ["dev", "UBT 构建进度", "UBT 构建进度；虚幻引擎构建的超时是 4 小时。"],
+      ["relay", "Windows 安装包", "1.0.2：Windows 安装包加入发布。"],
+      ["relay", "图片工具卡", "Relay 里的图片工具卡可以显示缩略图。"],
+    ],
+  },
+  {
+    id: "v09",
+    version: "0.5 – 0.9",
+    when: "09-20",
+    whenFull: "2026-08-20 – 2026-09-20",
+    era: "platform",
+    summary: "Windows 第一版、Dev Mode 工作台（Monaco、文件树、VCS、任务、一键提交），以及捆绑的 LLDB-DAP（23.1.1-larry.2，含虚幻引擎、变量树、悬停求值和调用栈）。Relay 远程控制台从 09-09 起：设备与会话、实时流、移动端和 PWA。Unreal C++ 符号、F12 和 Find Usages 在这一段。Loops 的调度放进应用并跨平台打开。版本号走到 0.9.9。",
+    features: [
+      ["dev", "Windows 桌面端", "Windows 第一版：平台门控、命令执行、自定义标题栏、托盘常驻。"],
+      ["dev", "Dev Mode 工作台", "Monaco、文件树、VCS 状态、任务面板，工作区标签进标题栏。"],
+      ["dev", "LLDB-DAP 调试", "捆绑 lldb-dap 23.1.1-larry.2，含虚幻引擎、惰性变量树、悬停求值和调用栈。"],
+      ["dev", "Unreal 与 F12", "Unreal C++ 语言包、符号索引、F12 和 Find Usages。"],
+      ["relay", "Relay 控制台", "远程设备与会话、实时流、移动端界面和 PWA。"],
+      ["runtime", "Loops 应用内调度", "Loops 调度放进应用，并在各平台启用。"],
+    ],
+  },
+  {
+    id: "v04",
+    version: "0.2 – 0.4",
+    when: "08-19",
+    whenFull: "2026-08-07 – 2026-08-19",
+    era: "fsm",
+    summary: "FSM 成为默认工作流，带来图编辑器和 pin 路由。plan_execute 走到 v3，计划文档有门控，评审有一轮 Socratic。Skills 可以整包安装。另有图像生成、Loops 定时运行、用 patch 取代 edit 与 append、对象存储附件、加密密钥存储、Shell Safe Mode 和按住说话的语音输入。自定义 FSM 图可以作为运行模式。标签 v0.4.3 打在 2026-08-19。",
+    features: [
+      ["runtime", "FSM 工作流", "回合级状态图成为默认工作流，带图编辑器和 pin 路由。"],
+      ["runtime", "plan_execute v3", "计划执行 v3、计划文档门控，以及一轮 Socratic 评审。"],
+      ["skills", "Skills 技能包", "完整技能包可以 zip 安装，执行前有技能预检。"],
+      ["runtime", "图像生成", "generate_image，以及独立的图像生成 Provider。"],
+      ["runtime", "Loops 定时运行", "后台定时运行、应用交接，以及回合中途改写 prompt。"],
+      ["runtime", "patch 工具", "用 patch 取代 edit_file 和 append_file。"],
+      ["runtime", "Shell 安全模式", "Shell Safe Mode。加密密钥存储也在这一段。"],
+      ["runtime", "语音输入", "按住说话的语音输入。"],
+    ],
+  },
+  {
+    id: "v00",
+    version: "0.0 – 0.1",
+    when: "07-21",
+    whenFull: "2026-07-21 – 2026-08-02",
+    era: "found",
+    summary: "2026-07-21 从 Electron macOS 外壳起步：会话与消息模型、工具注册表、流事件、流式主循环和 SQLite。随后是多 Provider、ask_user、分级权限、Projects、图像理解、开发终端、MCP、Plan，以及 Hot/Warm/Cold 上下文压缩。子代理可以异步派发、批量会合、按优先级排队。PROJECT.md 和设置自动保存也在这一段。PDF 与 Mermaid 一并落地。发出过 0.0.2 到 0.0.4。",
+    features: [
+      ["runtime", "桌面代理外壳", "Electron macOS 外壳，流式主循环接到桌面。"],
+      ["runtime", "会话持久化", "会话与消息模型，SQLite 持久化。"],
+      ["runtime", "权限与提问", "多 Provider、ask_user，以及 Level-1 / Level-2 内联审批。"],
+      ["runtime", "Projects 工作区", "一等的工作区、Projects 侧栏，以及新建任务时的选择。"],
+      ["runtime", "图像理解", "图像附件、vision 设置和 read_image。"],
+      ["relay", "MCP 服务器", "MCP 服务器，每个工具单独的权限，以及 Plan 工具。"],
+      ["runtime", "上下文压缩", "Hot / Warm / Cold。Round Protect 后来改名为 iterationProtect。"],
+      ["runtime", "子代理派发", "异步派发、批量会合、优先级队列。"],
+    ],
+  },
+];
+
+const state = { track: "all", releaseId: "v167", featureId: null };
+
+const mapScroll = document.getElementById("mapScroll");
+const map = document.getElementById("map");
+const svg = document.getElementById("svg");
+const list = document.getElementById("list");
+const jump = document.getElementById("jump");
+const kicker = document.getElementById("kicker");
+const ititle = document.getElementById("ititle");
+const imeta = document.getElementById("imeta");
+const ibody = document.getElementById("ibody");
+function releaseById(id) {
+  return RELEASES.find((rel) => rel.id === id);
+}
+
+function visibleFeatures(rel) {
+  if (state.track === "all") return rel.features;
+  return rel.features.filter((feature) => feature[0] === state.track);
+}
+
+function metrics() {
+  const width = Math.max(640, (mapScroll.clientWidth || 1000) - 10);
+  const spine = 156;
+  const gap = 12;
+  const card = Math.max(120, Math.floor((width - spine - 12 - gap * (LANE_IDS.length - 1)) / LANE_IDS.length));
+  const pitch = card + gap;
+  const lanes = {};
+  LANE_IDS.forEach((id, index) => {
+    lanes[id] = spine + 8 + index * pitch;
+  });
+  return { width, spine, card, gap, lanes };
+}
+
+function layout(box) {
+  const items = [];
+  let y = 12;
+  let era = "";
+  for (const rel of RELEASES) {
+    if (rel.era !== era) {
+      era = rel.era;
+      items.push({ type: "era", label: ERAS[era], y: y + 2 });
+      y += 24;
+    }
+    const features = visibleFeatures(rel);
+    const counts = {};
+    for (const feature of features) counts[feature[0]] = (counts[feature[0]] || 0) + 1;
+    const rows = Math.max(1, ...Object.values(counts), 0);
+    const stackH = rows * STRIDE - 8;
+    const blockH = stackH + 26;
+    const busY = y + 9;
+    const stackTop = y + 20;
+    const mid = stackTop + stackH / 2;
+    items.push({ type: "version", rel, y: mid, busY, top: y, h: blockH });
+    for (const id of LANE_IDS) {
+      const laneFeatures = features.filter((feature) => feature[0] === id);
+      let fy = stackTop;
+      for (const feature of laneFeatures) {
+        items.push({
+          type: "feature",
+          rel,
+          track: feature[0],
+          title: feature[1],
+          detail: feature[2],
+          x: box.lanes[id],
+          y: fy,
+          busY,
+        });
+        fy += STRIDE;
+      }
+    }
+    y += blockH + 16;
+  }
+  return { items, height: y + 8 };
+}
+
+function svgLine(x1, y1, x2, y2, color, width, opacity) {
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line.setAttribute("x1", String(x1));
+  line.setAttribute("y1", String(y1));
+  line.setAttribute("x2", String(x2));
+  line.setAttribute("y2", String(y2));
+  line.setAttribute("stroke", color);
+  line.setAttribute("stroke-width", String(width));
+  line.setAttribute("stroke-linecap", "round");
+  line.setAttribute("opacity", String(opacity));
+  svg.appendChild(line);
+}
+
+function renderGraph() {
+  if (mapScroll.clientWidth < 80) return;
+  const box = metrics();
+  const { items, height } = layout(box);
+  map.style.height = height + "px";
+  svg.setAttribute("width", String(box.width));
+  svg.setAttribute("height", String(height));
+  svg.replaceChildren();
+  for (const el of [...map.querySelectorAll(".era, .version, .node")]) el.remove();
+
+  const bar = document.getElementById("laneBar");
+  bar.replaceChildren();
+  const spineLabel = document.createElement("span");
+  spineLabel.textContent = "版本";
+  spineLabel.style.left = "0";
+  spineLabel.style.width = (box.spine - 18) + "px";
+  spineLabel.style.textAlign = "right";
+  bar.appendChild(spineLabel);
+  for (const id of LANE_IDS) {
+    const label = document.createElement("span");
+    label.textContent = TRACKS[id].label;
+    label.style.left = box.lanes[id] + "px";
+    label.style.color = TRACKS[id].color;
+    bar.appendChild(label);
+  }
+
+  const versions = items.filter((item) => item.type === "version");
+  if (versions.length > 1) {
+    svgLine(box.spine, versions[0].y, box.spine, versions[versions.length - 1].y, "rgba(255,255,255,0.16)", 1, 1);
+  }
+
+  const features = items.filter((item) => item.type === "feature");
+  const byRelease = new Map();
+  for (const item of features) {
+    if (!byRelease.has(item.rel.id)) byRelease.set(item.rel.id, []);
+    byRelease.get(item.rel.id).push(item);
+  }
+  for (const version of versions) {
+    const group = byRelease.get(version.rel.id) || [];
+    if (!group.length) continue;
+    const on = version.rel.id === state.releaseId;
+    const far = Math.max(...group.map((item) => item.x)) - 8;
+    svgLine(box.spine, version.y, box.spine, version.busY, on ? "#00e5ff" : "rgba(255,255,255,0.28)", 1, on ? 0.7 : 1);
+    svgLine(box.spine, version.busY, far, version.busY, on ? "#00e5ff" : "rgba(255,255,255,0.28)", 1, on ? 0.7 : 1);
+    for (const item of group) {
+      const mid = item.y + CARD_H / 2;
+      svgLine(item.x - 8, version.busY, item.x - 8, mid, TRACKS[item.track].color, on ? 1.6 : 1, on ? 0.95 : 0.45);
+      svgLine(item.x - 8, mid, item.x, mid, TRACKS[item.track].color, on ? 1.6 : 1, on ? 0.95 : 0.45);
+    }
+  }
+
+  for (const item of items) {
+    if (item.type === "era") {
+      const label = document.createElement("div");
+      label.className = "era";
+      label.style.top = item.y + "px";
+      label.textContent = item.label;
+      map.appendChild(label);
+      continue;
+    }
+    if (item.type === "version") {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "version";
+      button.style.left = box.spine + "px";
+      button.style.top = item.y + "px";
+      button.style.width = (box.spine - 16) + "px";
+      button.dataset.release = item.rel.id;
+      button.setAttribute("aria-pressed", String(item.rel.id === state.releaseId));
+      const strong = document.createElement("strong");
+      strong.textContent = item.rel.version;
+      const span = document.createElement("span");
+      span.textContent = item.rel.when;
+      button.append(strong, span);
+      button.addEventListener("click", () => selectRelease(item.rel.id, true));
+      map.appendChild(button);
+      continue;
+    }
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "node";
+    button.style.left = item.x + "px";
+    button.style.top = item.y + "px";
+    button.style.width = box.card + "px";
+    button.style.setProperty("--c", TRACKS[item.track].color);
+    button.dataset.release = item.rel.id;
+    button.dataset.feature = item.title;
+    button.setAttribute("aria-pressed", String(item.rel.id === state.releaseId && state.featureId === item.title));
+    const strong = document.createElement("strong");
+    strong.textContent = item.title;
+    button.appendChild(strong);
+    button.addEventListener("click", () => selectFeature(item.rel.id, item.title));
+    map.appendChild(button);
+  }
+}
+
+function renderList() {
+  list.replaceChildren();
+  let era = "";
+  for (const rel of RELEASES) {
+    const features = visibleFeatures(rel);
+    if (state.track !== "all" && features.length === 0) continue;
+    if (rel.era !== era) {
+      era = rel.era;
+      const name = document.createElement("p");
+      name.className = "era-name";
+      name.textContent = ERAS[era];
+      list.appendChild(name);
+    }
+    const section = document.createElement("section");
+    section.className = "release";
+    const h3 = document.createElement("h3");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.release = rel.id;
+    button.setAttribute("aria-pressed", String(rel.id === state.releaseId && !state.featureId));
+    button.textContent = rel.version;
+    button.addEventListener("click", () => selectRelease(rel.id, false));
+    h3.appendChild(button);
+    const when = document.createElement("p");
+    when.className = "when";
+    when.textContent = rel.whenFull;
+    const chips = document.createElement("ul");
+    chips.className = "chips";
+    for (const feature of features) {
+      const li = document.createElement("li");
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.style.setProperty("--c", TRACKS[feature[0]].color);
+      chip.textContent = feature[1];
+      chip.setAttribute("aria-pressed", String(rel.id === state.releaseId && state.featureId === feature[1]));
+      chip.addEventListener("click", () => selectFeature(rel.id, feature[1]));
+      li.appendChild(chip);
+      chips.appendChild(li);
+    }
+    section.append(h3, when, chips);
+    list.appendChild(section);
+  }
+}
+
+function renderInspector() {
+  const rel = releaseById(state.releaseId);
+  const feature = state.featureId ? rel.features.find((item) => item[1] === state.featureId) : null;
+  if (feature && (state.track === "all" || feature[0] === state.track)) {
+    const track = TRACKS[feature[0]];
+    kicker.textContent = track.label;
+    kicker.style.setProperty("--c", track.color);
+    ititle.textContent = feature[1];
+    imeta.textContent = rel.version + " · " + rel.whenFull;
+    ibody.textContent = feature[2];
+    return;
+  }
+  state.featureId = null;
+  kicker.textContent = ERAS[rel.era];
+  kicker.style.setProperty("--c", "#9a9a9a");
+  ititle.textContent = rel.version;
+  imeta.textContent = rel.whenFull;
+  ibody.textContent = rel.summary;
+}
+
+function render() {
+  renderGraph();
+  renderList();
+  renderInspector();
+  jump.value = state.releaseId;
+  for (const button of document.querySelectorAll(".filters button")) {
+    button.setAttribute("aria-pressed", String(button.dataset.track === state.track));
+  }
+}
+
+function selectRelease(id, scroll) {
+  state.releaseId = id;
+  state.featureId = null;
+  render();
+  if (scroll) scrollToRelease(id);
+}
+
+function selectFeature(releaseId, title) {
+  state.releaseId = releaseId;
+  state.featureId = title;
+  render();
+}
+
+function scrollToRelease(id) {
+  const narrow = getComputedStyle(mapScroll).display === "none";
+  if (narrow) {
+    const button = list.querySelector('h3 button[data-release="' + id + '"]');
+    if (button) button.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  const button = map.querySelector('.version[data-release="' + id + '"]');
+  if (!button) return;
+  const laneH = document.getElementById("laneBar").offsetHeight;
+  mapScroll.scrollTop = laneH + button.offsetTop - mapScroll.clientHeight / 3;
+}
+
+function fillJump() {
+  let era = "";
+  let group = null;
+  for (const rel of RELEASES) {
+    if (rel.era !== era) {
+      era = rel.era;
+      group = document.createElement("optgroup");
+      group.label = ERAS[era];
+      jump.appendChild(group);
+    }
+    const option = document.createElement("option");
+    option.value = rel.id;
+    option.textContent = rel.version;
+    group.appendChild(option);
+  }
+  jump.addEventListener("change", () => {
+    selectRelease(jump.value, true);
+  });
+}
+
+for (const button of document.querySelectorAll(".filters button")) {
+  button.addEventListener("click", () => {
+    state.track = button.dataset.track;
+    const rel = releaseById(state.releaseId);
+    const feature = state.featureId && rel.features.find((item) => item[1] === state.featureId);
+    if (feature && state.track !== "all" && feature[0] !== state.track) state.featureId = null;
+    render();
+  });
+}
+
+fillJump();
+render();
+let lastW = mapScroll.clientWidth;
+new ResizeObserver(() => {
+  const w = mapScroll.clientWidth;
+  if (w === lastW) return;
+  lastW = w;
+  render();
+}).observe(mapScroll);
+</script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+/* Detail's workbench variant. Keep every override under .is-dev-mode so
+ * exiting Dev Mode immediately restores the regular drawer's appearance. */
+.app-shell.is-dev-mode .app-shell-drawer {
+  --detail-header-bg: rgba(23, 25, 28, 0.72);
+  --detail-header-active: rgba(14, 16, 19, 0.62);
+  --detail-header-hover: rgba(52, 57, 64, 0.5);
+  container: devmode-detail / inline-size;
+  position: relative;
+  /* Drawer motion mirrors the flat shell (shell.css): flex-basis animates
+   * the open/close collapse. The card chrome rides the same clock — border
+   * width, gap margin and background interpolate from the closed
+   * zero-footprint state instead of snapping around the height change. */
+  margin-top: 0;
+  border: 0 solid var(--devmode-pane-border);
+  border-radius: var(--devmode-pane-radius);
+  background: transparent;
+  transition:
+    flex-basis 180ms ease,
+    margin-top 180ms ease,
+    border-width 180ms ease,
+    background-color 180ms ease;
+}
+
+/* Drag-resize must track the pointer 1:1. shell.css carries the same guard
+ * for the flat drawer, but this sheet loads after it — restate it with
+ * dev-mode specificity so it still wins over the transition list above. */
+.app-shell.is-dev-mode.is-drawer-resizing .app-shell-drawer {
+  transition: none;
+}
+
+:root[data-theme="light"] .app-shell.is-dev-mode .app-shell-drawer {
+  --detail-header-bg: #edf0f4;
+  --detail-header-active: #fbfcfd;
+  --detail-header-hover: #dfe5ed;
+}
+
+.app-shell.is-dev-mode .app-shell-drawer.is-open {
+  margin-top: var(--devmode-pane-gap);
+  border-width: 1px;
+  background: var(--bg-main);
+  /* The resize target lives in the gutter; only the card body clips. */
+  overflow: visible;
+}
+
+.app-shell.is-dev-mode .app-shell-drawer-body {
+  border-radius: inherit;
+}
+
+.app-shell.is-dev-mode .app-shell-drawer-resize {
+  position: absolute;
+  top: calc(-1 * var(--devmode-pane-gap));
+  left: 0;
+  height: var(--devmode-pane-gap);
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Highlight mirrors the workbench card splitters (devmode.css
+ * .app-shell-resize::before): a 2px rounded pill of --pane-divider-hover
+ * that fades in — not a bespoke 1px accent hairline. */
+.app-shell.is-dev-mode .app-shell-drawer-resize::before {
+  top: calc((var(--devmode-pane-gap) - 2px) / 2);
+  left: var(--devmode-pane-radius);
+  right: var(--devmode-pane-radius);
+  height: 2px;
+  border-radius: 2px;
+  background: var(--pane-divider-hover);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.app-shell.is-dev-mode .app-shell-drawer-resize:is(:hover, :focus-visible, .is-dragging)::before {
+  opacity: 1;
+}
+
+.app-shell.is-dev-mode .app-shell-drawer-resize:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.app-shell.is-dev-mode .dev-tools-chrome {
+  box-sizing: border-box;
+  min-height: var(--devmode-toolbar-height, 34px);
+  padding: 3px 5px;
+  gap: 4px;
+  background: var(--detail-header-bg);
+}
+
+.app-shell.is-dev-mode .dev-tools-tabs {
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.app-shell.is-dev-mode .dev-tools-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.app-shell.is-dev-mode .dev-tools-tab:hover {
+  background: var(--detail-header-hover);
+}
+
+/* Dark active: accent text + 12% accent tint, inset shadow dropped — the
+ * dark inset pill sat at ~1.05:1 against the header and read as nothing
+ * (2026-11-11 detail-tab-active demo, recipe C). Matches the flat drawer. */
+.app-shell.is-dev-mode .dev-tools-tab.is-active {
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.12);
+  box-shadow: none;
+}
+
+/* Light keeps the raised white pill (#fbfcfd via --detail-header-active);
+ * the higher specificity also settles the cascade tie against the
+ * theme-less Dev Mode rule above and the flat Light restore. */
+:root[data-theme="light"] .app-shell.is-dev-mode .dev-tools-tab.is-active {
+  color: var(--fg);
+  background: var(--detail-header-active);
+  box-shadow: 0 1px 2px rgba(var(--shade-rgb), 0.1);
+}
+
+.app-shell.is-dev-mode .dev-tools-close {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+}
+
+.app-shell.is-dev-mode .dev-tools-close:hover {
+  background: var(--detail-header-hover);
+}
+
+/* The other Detail panes share compact toolbar rhythm and quiet controls.
+ * Tool Stats owns its layout in tool-stats.css in both shell modes. */
+.app-shell.is-dev-mode .fsm-pane-toolbar {
+  min-height: 34px;
+  padding: 4px 10px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Timeline keeps its header on one line (status · legend · actions) and
+ * folds legend detail by container width — wrapping here would silently
+ * restore the second row it no longer has. */
+.app-shell.is-dev-mode .timeline-toolbar {
+  min-height: 34px;
+  padding: 4px 10px;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+/* The Log toolbar stays a single line in Dev Mode too — it folds by
+ * container width, so wrapping here would double the row height. */
+.app-shell.is-dev-mode .log-drawer-toolbar {
+  min-height: 34px;
+  padding: 4px 10px;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.app-shell.is-dev-mode :is(.timeline-toolbar-actions, .fsm-pane-toolbar-actions) {
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.app-shell.is-dev-mode .log-drawer-actions {
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.app-shell.is-dev-mode :is(.timeline-status, .fsm-pane-status, .timeline-zoom-label, .fsm-zoom-label, .log-drawer-metric) {
+  font-size: 11px;
+}
+
+.app-shell.is-dev-mode :is(.timeline-action, .timeline-zoom-btn, .fsm-pane-action, .fsm-zoom-btn) {
+  min-height: 24px;
+  border-radius: 5px;
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.app-shell.is-dev-mode :is(.timeline-action, .timeline-zoom-btn, .fsm-pane-action, .fsm-zoom-btn):hover:not(:disabled) {
+  background: var(--detail-header-hover);
+  color: var(--fg);
+}
+
+.app-shell.is-dev-mode .log-drawer-level-toggles {
+  flex-wrap: wrap;
+}
+
+.app-shell.is-dev-mode .log-drawer-filter-input {
+  min-width: 100px;
+}

@@ -1,0 +1,709 @@
+/* Loops screen — daemon status bar, loop cards, recent runs, inline editor.
+   Card / input / toggle / button primitives come from setting.css (reused);
+   only Loops-specific layout lives here. Width follows the main column
+   (no max-width cap), like the other nav screens. */
+
+/* ---- Daemon status bar ---- */
+
+.loop-daemon-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(var(--tint-rgb), 0.03);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.loop-daemon-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--fg-muted);
+}
+
+.loop-daemon-dot.is-running {
+  background: var(--success-text);
+  box-shadow: 0 0 6px rgba(125, 201, 143, 0.55);
+}
+
+.loop-daemon-dot.is-stale {
+  background: var(--warn-text);
+  box-shadow: 0 0 6px rgba(224, 176, 96, 0.5);
+}
+
+.loop-daemon-dot.is-stopped {
+  background: #c98b7d;
+  box-shadow: 0 0 6px rgba(201, 139, 125, 0.45);
+}
+
+.loop-daemon-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.loop-daemon-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loop-daemon-detail {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loop-daemon-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ---- Toolbar ---- */
+
+.loop-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.loop-toolbar-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+/* ---- Loop cards ---- */
+
+.loop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.loop-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(var(--tint-rgb), 0.03);
+  overflow: hidden;
+}
+
+.loop-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+}
+
+.loop-card-titles {
+  min-width: 0;
+  flex: 1;
+}
+
+.loop-card-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Meta line under the name: cadence (brighter) then mode/provider/workspace
+   as quiet dot-separated details; single line, ellipsized, full text on
+   hover via title. Replaces the old wrapping pill row. */
+.loop-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 5px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--fg-muted);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.loop-card-meta svg {
+  color: var(--fg-muted);
+  flex-shrink: 0;
+}
+
+.loop-card-meta-cadence {
+  color: var(--fg);
+  opacity: 0.85;
+}
+
+.loop-card-meta-sep {
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+
+.loop-card-meta .loop-pill {
+  flex-shrink: 0;
+  margin-left: 2px;
+  padding: 0 7px;
+  font-size: 10.5px;
+}
+
+.loop-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 550;
+  color: var(--fg-muted);
+  background: rgba(var(--tint-rgb), 0.04);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.loop-pill.is-paused {
+  color: var(--warn-text);
+  border-color: rgba(224, 176, 96, 0.35);
+  background: rgba(224, 176, 96, 0.08);
+}
+
+.loop-card-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.loop-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.loop-icon-btn:hover:not(:disabled) {
+  background: rgba(var(--tint-rgb), 0.06);
+  color: var(--fg);
+}
+
+.loop-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.loop-icon-btn.is-danger:hover:not(:disabled) {
+  color: var(--danger-muted);
+  background: rgba(224, 108, 117, 0.1);
+}
+
+.loop-card-runs-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.loop-card.is-expanded .loop-card-runs-btn svg {
+  transform: rotate(180deg);
+}
+
+/* Collapsible details below the header divider — 0fr→1fr animates height
+   without fixed max-height guesses. */
+.loop-card-collapsible {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.24s ease;
+}
+
+.loop-card.is-expanded .loop-card-collapsible {
+  grid-template-rows: 1fr;
+}
+
+.loop-card-collapsible-inner {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.loop-card.is-expanded .loop-card-collapsible-inner {
+  opacity: 1;
+}
+
+.loop-card-body {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  padding: 12px 14px 13px;
+}
+
+.loop-card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.loop-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.loop-stat-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.loop-stat-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Status dot shared by daemon bar + last-run stat. */
+.loop-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--fg-muted);
+}
+
+.loop-dot.is-running {
+  background: var(--accent);
+}
+
+.loop-dot.is-succeeded {
+  background: var(--success-text);
+}
+
+.loop-dot.is-failed {
+  background: var(--danger-text);
+}
+
+.loop-dot.is-timeout {
+  background: var(--warn-text);
+}
+
+.loop-dot.is-skipped {
+  background: var(--fg-muted);
+}
+
+/* ---- Recent runs ---- */
+
+.loop-card-runs {
+  border-top: 1px solid var(--border);
+  background: rgba(var(--shade-rgb), 0.14);
+  padding: 10px 14px 12px;
+}
+
+.loop-runs-title {
+  margin: 0 0 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.loop-run-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.loop-run-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.loop-run-row:nth-child(even) {
+  background: rgba(var(--tint-rgb), 0.03);
+}
+
+.loop-run-time {
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.loop-run-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  flex-shrink: 0;
+}
+
+.loop-run-status.is-succeeded {
+  color: var(--success-text);
+  border-color: rgba(125, 201, 143, 0.35);
+  background: rgba(125, 201, 143, 0.08);
+}
+
+.loop-run-status.is-failed {
+  color: var(--danger-muted);
+  border-color: rgba(224, 108, 117, 0.35);
+  background: rgba(224, 108, 117, 0.08);
+}
+
+.loop-run-status.is-timeout {
+  color: var(--warn-text);
+  border-color: rgba(224, 176, 96, 0.35);
+  background: rgba(224, 176, 96, 0.08);
+}
+
+.loop-run-status.is-running {
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  background: rgba(var(--accent-rgb), 0.08);
+}
+
+.loop-run-error {
+  min-width: 0;
+  flex: 1;
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.loop-run-session {
+  margin-left: auto;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 11px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.loop-run-session:hover {
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.loop-run-session.is-placeholder {
+  border-style: dashed;
+  color: var(--fg-muted);
+  cursor: default;
+}
+
+.loop-run-session.is-placeholder:hover {
+  background: transparent;
+}
+
+.loop-runs-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+/* ---- Empty state ---- */
+
+.loop-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 44px 24px;
+  text-align: center;
+}
+
+.loop-empty[hidden] {
+  display: none;
+}
+
+.loop-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--accent);
+}
+
+.loop-empty-icon img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  filter: saturate(1.5);
+}
+
+.loop-empty-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--fg);
+}
+
+.loop-empty-desc {
+  margin: 0;
+  max-width: 420px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+/* ---- Editor ---- */
+
+.loop-editor[hidden] {
+  display: none;
+}
+
+/* The editor sits between the toolbar and the loop list; keep the same
+   rhythm as the daemon bar / card gap when it is open. */
+.loop-editor {
+  margin-bottom: 14px;
+}
+
+.loop-cadence-kind-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 12px;
+  align-items: start;
+}
+
+@media (max-width: 560px) {
+  .loop-cadence-kind-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.loop-cadence-extra {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loop-weekdays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.loop-weekday-btn {
+  min-width: 40px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(var(--shade-rgb), 0.25);
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.loop-weekday-btn:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.loop-weekday-btn.is-selected {
+  border-color: rgba(var(--accent-rgb), 0.45);
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+  font-weight: 650;
+}
+
+.loop-segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(var(--shade-rgb), 0.25);
+  overflow: hidden;
+  align-self: flex-start;
+}
+
+.loop-segmented-btn {
+  padding: 7px 16px;
+  border: none;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.loop-segmented-btn:last-child {
+  border-right: none;
+}
+
+.loop-segmented-btn:hover {
+  color: var(--fg);
+}
+
+.loop-segmented-btn.is-selected {
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+  font-weight: 650;
+}
+
+/* ===== Light: Loops de-dust (same family as Tools / Graphs — white
+ * surfaces + theme border, solid status chips, vivid status dot, no
+ * tint/shade films). Dark keeps the formulas above (zero
+ * drift). Card / toggle / input primitives are covered by the unscoped
+ * Light rules in setting.css. ===== */
+
+:root[data-theme="light"] .loop-daemon-bar {
+  background: #ffffff;
+}
+
+:root[data-theme="light"] .loop-card {
+  background: #ffffff;
+}
+
+:root[data-theme="light"] .loop-icon-btn:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+:root[data-theme="light"] .loop-icon-btn.is-danger:hover:not(:disabled) {
+  background: rgba(198, 40, 40, 0.08);
+}
+
+:root[data-theme="light"] .loop-pill {
+  background: #ffffff;
+}
+
+:root[data-theme="light"] .loop-card-runs {
+  background: #ffffff;
+}
+
+:root[data-theme="light"] .loop-run-row:nth-child(even) {
+  background: #f7f8fa;
+}
+
+:root[data-theme="light"] .loop-weekday-btn {
+  background: #ffffff;
+}
+
+:root[data-theme="light"] .loop-segmented {
+  background: #ffffff;
+}
+
+/* Daemon status lights — the *-text tokens are AA-tuned for text and read
+ * muddy as 9px fills on white. Each tone joins the app-wide vivid dot
+ * family (composer health dot / Tool Stats): running green #19b04f,
+ * stale amber #f59e0b, stopped rose #d26a5c (Light-deepened counterpart
+ * of Dark's #c98b7d so it holds up on white), missing stays neutral
+ * --fg-muted. Glows re-pigment to match. */
+:root[data-theme="light"] .loop-daemon-dot.is-running {
+  background: #19b04f;
+  box-shadow: 0 0 6px rgba(25, 176, 79, 0.45);
+}
+
+:root[data-theme="light"] .loop-daemon-dot.is-stale {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+}
+
+:root[data-theme="light"] .loop-daemon-dot.is-stopped {
+  background: #d26a5c;
+  box-shadow: 0 0 6px rgba(210, 106, 92, 0.35);
+}
+
+/* Last-run dots mirror their chip siblings (see below) in the vivid fill
+ * family; running stays accent (same pairing as the Running chip), skipped
+ * keeps the neutral default above. */
+:root[data-theme="light"] .loop-dot.is-succeeded {
+  background: #19b04f;
+}
+
+:root[data-theme="light"] .loop-dot.is-failed {
+  background: #dc2626;
+}
+
+:root[data-theme="light"] .loop-dot.is-timeout {
+  background: #f59e0b;
+}
+
+/* Paused pill goes solid — amber fill with deep ink (#452c00 reads 6.1:1
+ * AA), same recipe as the timeout chip. Dark keeps the tinted formula. */
+:root[data-theme="light"] .loop-pill.is-paused {
+  border-color: transparent;
+  color: #452c00;
+  background: #f59e0b;
+}
+
+/* Run-status chips go solid — Tool Stats / MCP recipes. */
+:root[data-theme="light"] .loop-run-status {
+  border-color: transparent;
+  color: #ffffff;
+  background: #475569;
+}
+
+:root[data-theme="light"] .loop-run-status.is-succeeded {
+  color: #ffffff;
+  background: #15803d;
+}
+
+:root[data-theme="light"] .loop-run-status.is-failed {
+  color: #ffffff;
+  background: #dc2626;
+}
+
+:root[data-theme="light"] .loop-run-status.is-timeout {
+  color: #452c00;
+  background: #f59e0b;
+}
+
+:root[data-theme="light"] .loop-run-status.is-running {
+  color: #ffffff;
+  background: var(--accent);
+}

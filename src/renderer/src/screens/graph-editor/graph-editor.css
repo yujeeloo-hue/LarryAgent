@@ -1,0 +1,1323 @@
+/*
+ * FSM Graph Editor — Dark island below the top chrome.
+ * The workbench interior (canvas, action overlay, inspector cards) renders
+ * with Dark-theme tokens in every app theme: .graph-editor-body carries
+ * [data-dark-island] and state/theme.ts re-declares the Dark token set on
+ * that scope when the app runs Light (darkIslandCss). The TOP chrome —
+ * toolbar (title input, color picker, zoom) and status bar — stays OUTSIDE
+ * the island and follows the app theme; its Light de-dust rules live at the
+ * bottom of this file. Body-level floaters the island spawns (details/float
+ * tips, route-source menu, dropdown menus) carry the same marker.
+ */
+.screen.graph-editor-screen {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.screen.graph-editor-screen:focus {
+  outline: none;
+}
+
+.graph-editor-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  position: relative;
+}
+
+.graph-editor-canvas-host {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  /* Permanent Dark island — the canvas host stays night-dark in every app
+     theme (tokens pinned via [data-dark-island], see state/theme.ts). */
+  background: #101010;
+  display: flex;
+  flex-direction: column;
+}
+
+.graph-editor-canvas {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.graph-editor-canvas-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(var(--shade-rgb), 0.12);
+  min-height: 40px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.graph-editor-toolbar-start {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.graph-editor-toolbar-end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.graph-editor-canvas-zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.graph-editor-title-input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: inherit;
+  outline: none;
+}
+
+.graph-editor-title-input:hover,
+.graph-editor-title-input:focus {
+  border-color: var(--border);
+  background: rgba(var(--shade-rgb), 0.2);
+}
+
+/* Identity color picker: trigger swatch + neon palette popover. */
+.graph-editor-color-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  margin-left: 2px;
+}
+
+.graph-editor-color-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid rgba(var(--tint-rgb), 0.16);
+  border-radius: 7px;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.graph-editor-color-btn:hover,
+.graph-editor-color-btn.is-open {
+  border-color: rgba(var(--tint-rgb), 0.34);
+}
+
+.graph-editor-color-btn.is-open {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--c) 30%, transparent);
+}
+
+/* Swatch fill: semi-transparent neon (82%) over the dark chrome. */
+.graph-editor-color-swatch {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--c) 82%, transparent);
+  box-shadow: inset 0 0 0 1px rgba(var(--tint-rgb), 0.08);
+  transition: background 140ms ease;
+}
+
+/* Palette popover — same float chrome as the composer/action menus. */
+.graph-editor-color-menu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  z-index: var(--z-pop-palette);
+  padding: 10px;
+  border: 1px solid rgba(var(--tint-rgb), 0.11);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-xl);
+}
+
+.graph-editor-color-menu[hidden] {
+  display: none;
+}
+
+.graph-editor-color-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 20px);
+  gap: 6px;
+}
+
+.graph-editor-color-cell {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--c) 82%, transparent);
+  box-shadow: inset 0 0 0 1px rgba(var(--tint-rgb), 0.06);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+.graph-editor-color-cell:hover {
+  transform: scale(1.12);
+  background: color-mix(in srgb, var(--c) 96%, transparent);
+  box-shadow: inset 0 0 0 1px rgba(var(--tint-rgb), 0.28);
+}
+
+.graph-editor-color-cell.is-selected {
+  background: var(--c);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(var(--tint-rgb), 0.92),
+    0 0 10px color-mix(in srgb, var(--c) 55%, transparent);
+}
+
+.graph-editor-canvas-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 550;
+  flex-shrink: 0;
+}
+
+.graph-editor-canvas-tool:hover {
+  background: var(--hover);
+}
+
+.graph-editor-toolbar-btn {
+  padding: 0 10px;
+}
+
+.graph-editor-toolbar-btn.is-primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--on-accent);
+}
+
+.graph-editor-toolbar-btn.is-primary:hover {
+  filter: brightness(1.05);
+}
+
+.graph-editor-canvas-zoom {
+  min-width: 40px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.graph-editor-viewport {
+  flex: 1;
+  min-height: 0;
+}
+
+.graph-editor-viewport.is-panning {
+  cursor: grabbing;
+}
+
+.graph-editor-viewport.is-wiring {
+  cursor: crosshair;
+}
+
+.graph-editor-wire-preview {
+  fill: none;
+  stroke: #38bdf8;
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  pointer-events: none;
+}
+
+.graph-editor-snap-guide {
+  fill: none;
+  stroke: #f472b6;
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.graph-editor-arrow-head-preview {
+  fill: #38bdf8;
+}
+
+.graph-editor-node.is-wire-target rect {
+  stroke: #38bdf8;
+  stroke-width: 2;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.45));
+}
+
+.graph-editor-node.is-dragging {
+  cursor: grabbing;
+}
+
+.graph-editor-node.is-dragging rect {
+  stroke: #38bdf8;
+  stroke-width: 2;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.35));
+}
+
+.graph-editor-node.is-active rect {
+  stroke: #38bdf8;
+  stroke-width: 2;
+}
+
+.fsm-node-sublabel {
+  font-size: 10px;
+  fill: rgba(180, 220, 255, 0.72);
+  pointer-events: none;
+}
+
+/* —— Floating action overlay on canvas —— */
+
+.graph-editor-action-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  width: min(280px, calc(100% - 24px));
+  max-height: min(420px, calc(100% - 56px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-lg);
+  box-sizing: border-box;
+}
+
+.graph-editor-action-overlay[hidden] {
+  display: none !important;
+}
+
+.graph-editor-action-overlay.is-dragging {
+  opacity: 0.95;
+  user-select: none;
+}
+
+.graph-editor-action-overlay-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.graph-editor-action-overlay.is-dragging .graph-editor-action-overlay-head {
+  cursor: grabbing;
+}
+
+.graph-editor-action-overlay-title {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+}
+
+.graph-editor-action-overlay-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.graph-editor-action-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 8px 6px 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: rgba(var(--tint-rgb), 0.03);
+  color: inherit;
+  text-align: left;
+  cursor: grab;
+  touch-action: none;
+  transition:
+    transform 0.16s ease,
+    opacity 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.graph-editor-action-chip-grip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg-muted);
+  opacity: 0.42;
+  transition: opacity 140ms ease;
+}
+
+.graph-editor-action-chip:hover .graph-editor-action-chip-grip,
+.graph-editor-action-chip.is-selected .graph-editor-action-chip-grip {
+  opacity: 0.85;
+}
+
+.graph-editor-action-chip.is-reorder-live {
+  transition: none;
+}
+
+.graph-editor-action-chip.is-reorder-dragging {
+  opacity: 0.8;
+  box-shadow: var(--shadow-lg);
+  cursor: grabbing;
+  position: relative;
+  z-index: 2;
+}
+
+.graph-editor-action-chip:hover {
+  background: var(--hover);
+}
+
+.graph-editor-action-chip.is-selected {
+  border-color: rgba(var(--accent-rgb), 0.45);
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.graph-editor-action-chip-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.graph-editor-action-chip-label {
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.2;
+}
+
+.graph-editor-action-chip-type {
+  font-size: 11px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.graph-editor-icon-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.graph-editor-icon-chip:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+/* [?] Action details toggle (inspector action card header). */
+.graph-editor-help-chip {
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  align-self: flex-start;
+  border-radius: 6px;
+  opacity: 0.72;
+  transition: opacity 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.graph-editor-help-chip:hover {
+  opacity: 1;
+  background: var(--hover);
+  color: var(--fg);
+}
+
+/* Rich hover details card for action chips (escapes overflow via body). */
+.graph-editor-details-tip {
+  position: fixed;
+  z-index: var(--z-dialog-over);
+  width: min(400px, calc(100vw - 16px));
+  max-height: min(60vh, 460px);
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xl);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(2px);
+  transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s;
+}
+
+.graph-editor-details-tip.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.graph-editor-details-tip-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.graph-editor-details-tip-subtitle {
+  margin-top: 1px;
+  font-size: 11px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.graph-editor-details-tip-body {
+  margin-top: 6px;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--fg);
+}
+
+.graph-editor-details-tip-body p {
+  margin: 0;
+}
+
+.graph-editor-overlay-add {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  align-items: center;
+  min-height: 32px;
+}
+
+/* —— Inspector (floating over canvas; no column chrome) —— */
+
+.graph-editor-inspector {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 4;
+  width: min(var(--graph-editor-inspector-width, 300px), calc(100% - 24px));
+  /* Visible so the left-edge resize knob (centered on the seam) is not clipped. */
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  min-height: 0;
+  background: transparent;
+  border: none;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.graph-editor-inspector[hidden] {
+  display: none !important;
+}
+
+.graph-editor-inspector > * {
+  pointer-events: auto;
+}
+
+.graph-editor-inspector-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+}
+
+.graph-editor-inspector-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: min-content;
+}
+
+.graph-editor-route-to {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--tint-rgb), 0.1);
+  background: rgba(var(--shade-rgb), 0.18);
+}
+
+.graph-editor-route-to-header {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) minmax(72px, 0.9fr) 28px;
+  gap: 6px;
+  padding: 0 2px;
+  font-size: 11px;
+  font-weight: 550;
+  color: var(--fg-muted);
+}
+
+.graph-editor-route-to-header-src {
+  width: 32px;
+}
+
+.graph-editor-route-to-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) minmax(72px, 0.9fr) 28px;
+  gap: 6px;
+  align-items: center;
+}
+
+.graph-editor-route-source-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(var(--shade-rgb), 0.2);
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.graph-editor-route-source-btn:hover {
+  color: var(--fg);
+  border-color: rgba(var(--tint-rgb), 0.2);
+  background: rgba(var(--shade-rgb), 0.32);
+}
+
+.graph-editor-route-source-menu {
+  position: fixed;
+  z-index: var(--z-dialog-menu);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 220px;
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-xl);
+}
+
+.graph-editor-route-source-menu-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.graph-editor-route-source-menu-item:hover {
+  background: rgba(var(--shade-rgb), 0.2);
+}
+
+.graph-editor-route-source-menu-item.is-selected {
+  background: rgba(var(--tint-rgb), 0.1);
+}
+
+.graph-editor-route-source-menu-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  border: 1px solid rgba(var(--tint-rgb), 0.1);
+  background: rgba(var(--tint-rgb), 0.04);
+  color: var(--fg-muted);
+}
+
+.graph-editor-route-source-menu-item.is-selected .graph-editor-route-source-menu-icon {
+  color: var(--fg);
+  border-color: rgba(var(--tint-rgb), 0.18);
+}
+
+.graph-editor-route-source-menu-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.graph-editor-route-source-menu-label {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.graph-editor-route-source-menu-desc {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--fg-muted);
+}
+
+.graph-editor-route-to-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.graph-editor-route-to .graph-editor-route-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: 100%;
+  min-height: 22px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 14px;
+  text-align: center;
+}
+
+.graph-editor-route-to-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.graph-editor-inspector-card .setting-card-header {
+  padding: 10px 12px;
+  gap: 8px;
+}
+
+.graph-editor-inspector-card .setting-card-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.graph-editor-inspector-card .setting-card-title {
+  margin: 0;
+  font-size: 13px;
+}
+
+.graph-editor-inspector-card .setting-card-desc {
+  margin-top: 2px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+}
+
+.graph-editor-inspector-card .setting-card-body {
+  gap: 8px;
+  padding: 10px 12px 12px;
+}
+
+.graph-editor-inspector-card .setting-card-body > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.graph-editor-emits-events {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 2px;
+}
+
+.graph-editor-emits-events-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.graph-editor-emits-events-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.graph-editor-emits-event-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 6px 2px 7px;
+  border-radius: 4px;
+  border: 1px solid rgba(var(--tint-rgb), 0.1);
+  background: rgba(var(--tint-rgb), 0.05);
+  font: inherit;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.graph-editor-emits-event-chip:hover {
+  border-color: rgba(var(--tint-rgb), 0.18);
+  background: rgba(var(--tint-rgb), 0.09);
+}
+
+.graph-editor-emits-event-name {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.graph-editor-emits-event-copy {
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg-muted);
+  opacity: 0.85;
+}
+
+.graph-editor-emits-event-chip:hover .graph-editor-emits-event-copy {
+  color: var(--fg);
+  opacity: 1;
+}
+
+.graph-editor-inspector-card {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Inspector left-edge resize: hover zone + frosted knob that tracks the pointer. */
+.graph-editor-inspector-resize-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -12px;
+  width: 24px;
+  z-index: 7;
+  pointer-events: auto;
+  cursor: col-resize;
+  touch-action: none;
+  background: transparent;
+}
+
+.graph-editor-inspector-resize-knob {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  z-index: 8;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(36, 40, 48, 0.78);
+  -webkit-backdrop-filter: blur(18px) saturate(1.45);
+  backdrop-filter: blur(18px) saturate(1.45);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.25),
+    0 8px 24px rgba(0, 0, 0, 0.45),
+    0 16px 40px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  color: rgba(230, 236, 248, 0.95);
+  pointer-events: none;
+  cursor: col-resize;
+  touch-action: none;
+  transform: translate(-50%, -50%) scale(0.92);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.16s ease,
+    visibility 0.16s ease,
+    transform 0.16s ease,
+    background 0.14s ease,
+    border-color 0.14s ease,
+    box-shadow 0.16s ease;
+}
+
+.graph-editor-inspector-resize-knob.is-visible,
+.graph-editor-inspector-resize-knob.is-dragging {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.graph-editor-inspector-resize-knob.is-dragging {
+  background: rgba(48, 58, 74, 0.88);
+  border-color: rgba(56, 189, 248, 0.55);
+  color: #e0f2fe;
+  transform: translate(-50%, -50%) scale(1.06);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.45),
+    0 0 0 3px rgba(56, 189, 248, 0.18),
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    0 20px 48px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.graph-editor-inspector-resize-knob svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.graph-editor-inspector-resize-knob svg + svg {
+  margin-left: -4px;
+}
+
+.graph-editor-row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 6px 10px;
+  align-items: center;
+  min-height: 28px;
+}
+
+.graph-editor-row.is-stack {
+  grid-template-columns: 1fr;
+  align-items: stretch;
+}
+
+.graph-editor-row-label {
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--fg-muted);
+  line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.graph-editor-row-check {
+  grid-template-columns: 1fr auto;
+}
+
+.graph-editor-row-check input[type="checkbox"] {
+  margin: 0;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.graph-editor-nested-params {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--tint-rgb), 0.1);
+  background: rgba(var(--shade-rgb), 0.18);
+}
+
+.graph-editor-route-bindings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.graph-editor-route-binding-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 28px;
+  gap: 6px;
+  align-items: center;
+}
+
+.graph-editor-route-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--tint-rgb), 0.1);
+  background: rgba(var(--shade-rgb), 0.18);
+}
+
+.graph-editor-route-guide-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(72px, 0.7fr) 28px;
+  gap: 6px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 550;
+  color: var(--fg-muted);
+}
+
+.graph-editor-route-guide-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(72px, 0.7fr) 28px;
+  gap: 6px;
+  align-items: center;
+}
+
+.graph-editor-route-add,
+.graph-editor-route-remove {
+  box-sizing: border-box;
+  min-height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.graph-editor-route-add {
+  width: 100%;
+  padding: 4px 0;
+  text-align: left;
+}
+
+/* Inside the boxed guide table, header + add-row text aligns with the input
+   text column (inputs carry their own 8px inner padding). */
+.graph-editor-route-guide .graph-editor-route-add {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.graph-editor-route-add:hover,
+.graph-editor-route-remove:hover {
+  color: var(--fg);
+  background: rgba(var(--shade-rgb), 0.16);
+}
+
+.graph-editor-route-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  padding: 0;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.graph-editor-control {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 28px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(var(--shade-rgb), 0.2);
+  color: inherit;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.graph-editor-control:focus {
+  outline: none;
+  border-color: rgba(var(--accent-rgb), 0.55);
+}
+
+/* —— Top chrome follows the app theme (toolbar + status bar live outside the island) ——
+   Light de-dust mirrors the app baseline: solid white surfaces + theme
+   borders, no translucent grey washes, no muted-grey glyphs. */
+:root[data-theme="light"] .graph-editor-canvas-toolbar {
+  background: #ffffff;
+}
+
+/* Title input hover/focus: white base appears */
+:root[data-theme="light"] .graph-editor-title-input:hover,
+:root[data-theme="light"] .graph-editor-title-input:focus {
+  background: #ffffff;
+}
+
+/* Zoom readout: grey → foreground color */
+:root[data-theme="light"] .graph-editor-canvas-zoom {
+  color: var(--fg);
+}
+
+/* Palette trigger button: pale border swaps for the theme border */
+:root[data-theme="light"] .graph-editor-color-btn {
+  border-color: var(--border);
+}
+
+.graph-editor-textarea {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  resize: vertical;
+  min-height: 64px;
+  line-height: 1.4;
+}
+
+/* Collapsible textarea (x-ui: collapsible-textarea) — collapsed toggle row
+   that expands into the textarea with a smooth height transition. */
+.graph-editor-collapse {
+  display: flex;
+  flex-direction: column;
+}
+
+.graph-editor-collapse-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 4px 0;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.graph-editor-collapse-label {
+  flex-shrink: 0;
+}
+
+.graph-editor-collapse-preview {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg-muted);
+  opacity: 0.72;
+  transition: opacity 140ms ease;
+}
+
+.graph-editor-collapse.is-open .graph-editor-collapse-preview {
+  opacity: 0;
+}
+
+.graph-editor-collapse-chevron {
+  flex-shrink: 0;
+  display: inline-flex;
+  color: var(--fg-muted);
+  transition: transform 160ms ease;
+}
+
+.graph-editor-collapse.is-open .graph-editor-collapse-chevron {
+  transform: rotate(90deg);
+}
+
+.graph-editor-collapse-arrow {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.graph-editor-collapse-arrow:hover {
+  color: var(--fg);
+  background: rgba(var(--shade-rgb), 0.16);
+}
+
+.graph-editor-collapse-arrow:focus-visible {
+  outline: none;
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.55);
+}
+
+.graph-editor-collapse-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  visibility: hidden;
+  transition:
+    grid-template-rows 180ms ease,
+    visibility 180ms;
+}
+
+.graph-editor-collapse.is-open .graph-editor-collapse-body {
+  grid-template-rows: 1fr;
+  visibility: visible;
+}
+
+.graph-editor-collapse-body-inner {
+  min-height: 0;
+  overflow: hidden;
+  /* Only when open: a 0-height collapsed track cannot swallow inner padding
+     (measured leak: +6px), so the gap itself must animate in/out too. */
+  padding-top: 0;
+  transition: padding-top 180ms ease;
+}
+
+.graph-editor-collapse.is-open .graph-editor-collapse-body-inner {
+  padding-top: 6px;
+}
+
+.graph-editor-pin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.graph-editor-pin-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 8px;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: rgba(var(--shade-rgb), 0.12);
+  font-size: 12px;
+}
+
+.graph-editor-pin-name {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.graph-editor-pin-target {
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.graph-editor-pin-target::before {
+  content: "→ ";
+}
+
+.graph-editor-inspector-actions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.graph-editor-danger-btn {
+  color: var(--danger-text);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.graph-editor-params-host {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.graph-editor-params-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.graph-editor-muted {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--fg-muted);
+}
+
+.graph-editor-has-tip {
+  cursor: help;
+}
+
+.graph-editor-float-tip {
+  position: fixed;
+  z-index: var(--z-dialog);
+  max-width: 260px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+  box-shadow: var(--shadow-lg);
+}
+
+.graph-editor-float-tip[hidden] {
+  display: none !important;
+}
+
+.graph-editor-status {
+  margin: 0;
+  padding: 4px 12px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.graph-editor-status[hidden] {
+  display: none !important;
+}
+
+.graph-editor-status[data-kind="error"] {
+  color: var(--danger-text);
+}
+
+.graph-editor-status[data-kind="info"] {
+  color: var(--fg-muted);
+}

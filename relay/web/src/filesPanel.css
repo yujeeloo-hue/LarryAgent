@@ -1,0 +1,265 @@
+/* ── Files panel (remote mirror of desktop Detail → Files) ─────────── */
+
+.files-panel {
+  position: fixed;
+  inset: 0;
+  /* Above sheets (81) and menus (82) — modal. */
+  z-index: 83;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+.files-panel[hidden] { display: none; }
+.files-panel-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--scrim);
+}
+.files-panel-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* Tracks the browser window: fills the viewport minus the overlay padding,
+     capped so ultra-wide screens keep a readable line length. */
+  width: min(1280px, 100%);
+  height: min(900px, 100%);
+  background: #1b1b1b;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: files-panel-in 160ms ease-out;
+}
+/* Light: white panel + blue-grey shadow (paper theme). */
+html[data-theme="light"] .files-panel-card {
+  background: #ffffff;
+  border-color: var(--border);
+  box-shadow: 0 24px 64px rgba(18, 52, 86, 0.22);
+}
+@keyframes files-panel-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+.files-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 6px 8px 6px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.files-panel-title { display: inline-flex; color: var(--fg-muted); }
+.files-panel-title-text { font-size: 13px; font-weight: 650; letter-spacing: -0.01em; }
+.files-panel-count { font-size: 11.5px; color: var(--fg-dim); }
+.files-panel-head .spacer { flex: 1 1 0; }
+.files-panel-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.files-panel-iconbtn:hover { background: var(--hover); color: var(--fg); }
+.files-panel-iconbtn.is-busy { pointer-events: none; }
+.files-panel-iconbtn.is-busy svg { animation: files-panel-spin 0.9s linear infinite; }
+@keyframes files-panel-spin { to { transform: rotate(360deg); } }
+
+.files-panel-body {
+  display: grid;
+  /* `1fr` alone is minmax(auto, 1fr): its auto minimum is the column's
+     min-content size, and nowrap names/paths push that past the viewport —
+     the track then blows out wider than the card and rows clip off-screen
+     (no ellipsis). minmax(0, …) keeps the tracks shrinkable so rows clamp
+     to the viewport and truncate. */
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  min-height: 0;
+  flex: 1;
+}
+/* Grid items also default to a min-content floor — release it so the
+   single-column phone layout can shrink below the content width. */
+.files-panel-section { min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+.files-panel-section-list { border-right: 1px solid var(--border); }
+.files-panel-list {
+  overflow-y: auto;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.files-panel-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 9px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+  min-height: 40px;
+}
+.files-panel-row:hover { background: var(--hover); }
+.files-panel-row.is-selected { background: var(--accent-dim); }
+.files-panel-row-icon { display: inline-flex; color: var(--fg-muted); flex-shrink: 0; }
+.files-panel-row-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.files-panel-row-title { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.files-panel-row-name {
+  font-size: 12.5px;
+  font-weight: 550;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.files-panel-row-path {
+  font-size: 10.5px;
+  color: var(--fg-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.files-panel-badge {
+  flex-shrink: 0;
+  font-size: 9.5px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 1.5px 6px;
+  border-radius: 999px;
+}
+.files-panel-badge.is-created { color: var(--ok); background: rgba(109, 202, 140, 0.12); }
+.files-panel-badge.is-edited { color: var(--warn); background: rgba(245, 196, 81, 0.12); }
+.files-panel-badge.is-mentioned { color: var(--fg-dim); background: rgba(255, 255, 255, 0.06); }
+/* Light: badge washes follow the deep AA hues (colors already ride tokens). */
+html[data-theme="light"] .files-panel-badge.is-created { background: rgba(23, 122, 54, 0.12); }
+html[data-theme="light"] .files-panel-badge.is-edited { background: rgba(154, 103, 0, 0.12); }
+html[data-theme="light"] .files-panel-badge.is-mentioned { background: rgba(0, 0, 0, 0.06); }
+.files-panel-diff {
+  display: inline-flex;
+  gap: 5px;
+  font-size: 10.5px;
+  font-family: "JetBrains Mono Var", ui-monospace, monospace;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.files-panel-diff-ins { color: var(--ok); }
+.files-panel-diff-del { color: #e08484; }
+.files-panel-row-chevron { display: none; color: var(--fg-dim); flex-shrink: 0; }
+/* Light: error reds deepen for AA on white (dark keeps its softer tint). */
+html[data-theme="light"] .files-panel-diff-del,
+html[data-theme="light"] .files-panel-status.is-error { color: var(--danger-text); }
+
+.files-panel-preview-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.files-panel-back {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.files-panel-preview-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.files-panel-preview-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 12px;
+}
+.files-panel-preview-host { display: flex; flex-direction: column; min-height: 100%; }
+.files-panel-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  color: var(--fg-dim);
+  font-size: 12px;
+  text-align: center;
+  padding: 0 16px;
+}
+.files-panel-status.is-error { color: #e08484; }
+/* Preview reuses the tool-card lined view without its card chrome. */
+.files-panel-preview-body .tool-file-lines { max-height: none; border: none; }
+.files-panel-preview-markdown { max-width: 100%; }
+
+/* Conversation header entry (next to the status pill, right-aligned). */
+.conv-files-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.conv-files-btn:hover { background: var(--hover); color: var(--fg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .files-panel-card { animation: none; }
+}
+
+@media (max-width: 768px) {
+  .files-panel { padding: 0; align-items: stretch; }
+  .files-panel-card {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  /* Single column: list first, preview pushed over it on row tap. */
+  .files-panel-body { grid-template-columns: minmax(0, 1fr); }
+  .files-panel-section-list { border-right: none; }
+  .files-panel-section-preview { display: none; }
+  .files-panel-card.is-previewing .files-panel-section-list { display: none; }
+  .files-panel-card.is-previewing .files-panel-section-preview { display: flex; }
+  .files-panel-back { display: inline-flex; }
+  .files-panel-row-chevron { display: inline-flex; }
+  /* Full-bleed flat list — no desktop-style rounded card rows. */
+  .files-panel-list { padding: 0; gap: 0; }
+  .files-panel-row { border-radius: 0; padding: 10px 16px; min-height: 52px; }
+  .files-panel-status { min-height: 200px; }
+  /* HIG touch targets + cross-view 56px header alignment. */
+  .files-panel-head { min-height: 56px; padding: 6px 8px 6px 10px; }
+  .files-panel-preview-head { min-height: 56px; }
+  .files-panel-iconbtn { width: 44px; height: 44px; }
+  .files-panel-back { width: 44px; height: 44px; }
+  .conv-files-btn { width: 44px; height: 44px; }
+  .files-panel-row-name { font-size: 13.5px; }
+  .files-panel-row-path { font-size: 11px; }
+}

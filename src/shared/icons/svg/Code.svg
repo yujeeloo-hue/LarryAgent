@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none">
+  <defs><mask id="Code-m"><rect width="24" height="24" fill="white" /><path id="Code-a" d="m9.6 7.4.1.1a1.05 1.05 0 0 1 0 1.5L6.7 12l3 3a1.05 1.05 0 0 1-1.5 1.5l-3.6-3.6a1.25 1.25 0 0 1 0-1.8l3.6-3.6a1.05 1.05 0 0 1 1.4-.1Z" fill="black" /><use href="#Code-a" transform="translate(24 0) scale(-1 1)" /></mask></defs>
+  <rect x="1.9" y="3" width="20.2" height="18" rx="4.2" fill="currentColor" mask="url(#Code-m)" />
+</svg>

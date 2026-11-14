@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none">
+<g transform="translate(12 12) scale(0.948172) translate(-12 -12)">
+  <defs>
+    
+    
+    <clipPath id="Composer-c"><path d="M7 2.2h10q4.8 0 4.8 4.8v7.4q0 4.8-4.8 4.8H8l-4.9 2.3q-1.3.6-1.3-.8V7q0-4.8 5.2-4.8Z" /></clipPath>
+    <mask id="Composer-m"><rect width="24" height="24" fill="white" /><circle cx="7.3" cy="10.7" r="1.45" fill="black" /><circle cx="12" cy="10.7" r="1.45" fill="black" /><circle cx="16.7" cy="10.7" r="1.45" fill="black" /></mask>
+  </defs>
+  <g clip-path="url(#Composer-c)" mask="url(#Composer-m)"><rect width="24" height="24" fill="currentColor" /><path d="M0 15.2 24 7.8V24H0Z" fill="currentColor" opacity=".65" /></g>
+</g>
+</svg>

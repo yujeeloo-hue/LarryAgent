@@ -1,0 +1,197 @@
+/* Compact language popovers. Monaco retains positioning, scrolling and keys. */
+.devmode-editor-host .monaco-editor .monaco-hover,
+.devmode-editor-host .monaco-editor .parameter-hints-widget {
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+}
+
+.devmode-editor-host .monaco-editor .monaco-hover .hover-contents {
+  font: 12px/1.5 var(--font-ui) !important;
+}
+
+.devmode-editor-host .monaco-editor .devmode-symbol-hover .hover-contents {
+  box-sizing: border-box;
+  max-width: min(490px, var(--devmode-popover-max-width, 490px));
+  padding: 10px 12px;
+  overflow-wrap: anywhere;
+}
+
+.devmode-editor-host .monaco-editor .devmode-symbol-hover .hover-row-with-copy {
+  padding-right: 0;
+}
+
+.devmode-editor-host .monaco-editor .devmode-symbol-hover h4 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 24px 8px 0;
+  font: 500 13px/18px var(--font-ui);
+}
+
+.devmode-editor-host .monaco-editor .devmode-symbol-hover h4 em {
+  color: var(--vscode-editorSuggestWidget-highlightForeground, #7ec8c8);
+  font-family: var(--font-mono, monospace);
+  font-style: normal;
+}
+
+.devmode-editor-host .monaco-editor .devmode-symbol-hover .code,
+.devmode-editor-host .monaco-editor .devmode-symbol-hover .monaco-tokenized-source {
+  margin: 0;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere;
+}
+
+.devmode-editor-host .monaco-editor .devmode-symbol-hover p { margin: 8px 0; }
+
+.devmode-editor-host .monaco-editor .devmode-symbol-hover hr {
+  min-width: 0 !important;
+  height: 0;
+  margin: 10px -12px;
+  border: 0;
+  border-top: 1px solid var(--vscode-editorHoverWidget-border, #ffffff14);
+}
+
+.devmode-editor-host .monaco-editor .devmode-symbol-hover details { margin-top: 8px; }
+
+.devmode-editor-host .monaco-editor .devmode-symbol-hover summary {
+  width: fit-content;
+  color: var(--fg-muted, #a1a5ad);
+  cursor: pointer;
+}
+
+.devmode-editor-host .monaco-editor .devmode-symbol-hover hr + table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.devmode-editor-host .monaco-editor .devmode-symbol-hover hr + table td {
+  padding: 2px 0;
+  border: 0;
+  vertical-align: baseline;
+}
+
+.devmode-editor-host .monaco-editor .devmode-symbol-hover hr + table td:first-child {
+  width: 38px;
+  padding-right: 10px;
+  color: var(--fg-muted, #a1a5ad);
+}
+
+.devmode-editor-host .monaco-editor .devmode-symbol-hover hr + table code {
+  padding: 0;
+  background: transparent;
+  font-size: 11px;
+}
+
+.devmode-editor-host .monaco-editor .devmode-symbol-hover hr + table td:last-child {
+  padding-left: 10px;
+  color: var(--fg-muted, #a1a5ad);
+  text-align: right;
+}
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget > .phwrapper {
+  position: relative;
+  width: 490px;
+  max-width: min(calc(100vw - 24px), var(--devmode-popover-max-width, 490px));
+}
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget .body { min-width: 0; }
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget.multiple .body::before,
+.devmode-editor-host .monaco-editor .parameter-hints-widget .signature.has-docs::after {
+  display: none;
+}
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget .devmode-parameter-title {
+  padding: 10px 12px 6px;
+  font: 500 13px/18px var(--font-ui);
+  overflow-wrap: anywhere;
+}
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget.multiple .devmode-parameter-title {
+  padding-right: 92px;
+}
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget .signature { padding: 0 12px 10px; }
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget .code {
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget .signature .parameter.active {
+  color: var(--vscode-editorHoverWidget-foreground, #e8e8e8);
+  background: rgba(var(--accent-rgb), 0.12);
+  border-radius: 3px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--vscode-editorSuggestWidget-highlightForeground, #7ec8c8);
+  text-underline-offset: 3px;
+}
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget .docs {
+  padding: 10px 12px;
+  border-top: 1px solid var(--vscode-editorHoverWidget-border, #ffffff14);
+  font: 12px/1.5 var(--font-ui);
+  white-space: normal;
+}
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget .docs p { margin: 6px 0 0; }
+.devmode-editor-host .monaco-editor .parameter-hints-widget .docs p:first-child { margin-top: 0; }
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget .docs h5 {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin: 0 0 6px;
+  font: 500 12px/1.5 var(--font-ui);
+}
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget .docs h5 code {
+  padding: 0;
+  background: transparent;
+  color: var(--vscode-editorSuggestWidget-highlightForeground, #7ec8c8);
+}
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget .docs small {
+  color: var(--fg-muted, #a1a5ad);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget .docs h5 small:last-child { margin-left: auto; }
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget.multiple .controls {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  z-index: 1;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 0;
+  padding: 0;
+  gap: 3px;
+  color: var(--fg-muted, #a1a5ad);
+}
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget .overloads {
+  height: auto;
+  font-size: 11px;
+  line-height: 20px;
+}
+
+.devmode-editor-host .monaco-editor .parameter-hints-widget.multiple .button {
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  line-height: 20px;
+}

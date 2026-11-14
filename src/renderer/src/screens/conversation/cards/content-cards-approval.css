@@ -1,0 +1,378 @@
+/* Approval + compaction cards */
+
+/* Approval cards live in the footer overlay stack (above the composer), so the
+   absolute footer can never cover the Allow/Deny actions. Horizontal inset and
+   stack spacing come from .conversation-footer's padding/gap. */
+.conversation-approvals {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
+/* display:flex above would otherwise defeat the UA [hidden] rule. */
+.conversation-approvals[hidden] {
+  display: none !important;
+}
+
+/*
+ * Approval-card theme skin — component-scoped (precedent: ui/mono-icon.css).
+ * Dark defaults on :root, Light overrides below. Opaque solids only; measured
+ * WCAG ratios in comments. Light high-risk chip reuses the theme gold chip
+ * face (#f59e0b + --on-gold ink); tiles are tinted squares with dark glyphs.
+ */
+:root {
+  --approval-card-bg: #171717;
+  --approval-card-border: rgba(255, 255, 255, 0.07);
+  --approval-mono-bg: rgba(0, 0, 0, 0.28);
+  --approval-mono-border: rgba(255, 255, 255, 0.05);
+  --approval-tile-bg: #262626;
+  --approval-tile-fg: #e8e8e8;
+  --approval-tile-high-bg: #4a3510;
+  --approval-tile-high-fg: #ffcf7d; /* 8.0:1 */
+  --approval-tile-fatal-bg: #54201e;
+  --approval-tile-fatal-fg: #ffab9f; /* 7.2:1 */
+  --approval-chip-high-bg: #4a3510;
+  --approval-chip-high-fg: #ffcf7d; /* 8.0:1 */
+  --approval-chip-fatal-bg: #54201e;
+  --approval-chip-fatal-fg: #ffab9f; /* 7.2:1 */
+  --approval-deny-bg: rgba(248, 81, 73, 0.1);
+  --approval-deny-bg-hover: rgba(248, 81, 73, 0.18);
+  --approval-deny-border: rgba(248, 81, 73, 0.28);
+  --approval-deny-fg: #ff8580; /* 6.7:1 */
+}
+
+:root[data-theme="light"] {
+  --approval-card-bg: #ffffff;
+  --approval-card-border: rgba(18, 67, 117, 0.15);
+  --approval-mono-bg: #f1f2f4;
+  --approval-mono-border: rgba(18, 67, 117, 0.1);
+  --approval-tile-bg: #e7ebf0;
+  --approval-tile-fg: #37424e;
+  --approval-tile-high-bg: #fde68a;
+  --approval-tile-high-fg: #8a5a00; /* 4.8:1 */
+  --approval-tile-fatal-bg: #fbddde;
+  --approval-tile-fatal-fg: #c62828;
+  --approval-chip-high-bg: #f59e0b;
+  --approval-chip-high-fg: #1a1408; /* 8.5:1 */
+  --approval-chip-fatal-bg: #c62828;
+  --approval-chip-fatal-fg: #ffffff; /* 5.6:1 */
+  --approval-deny-bg: #fdf1f0;
+  --approval-deny-bg-hover: #fae1df;
+  --approval-deny-border: rgba(198, 40, 40, 0.3);
+  --approval-deny-fg: #c62828; /* 5.1:1 */
+}
+
+.content-card-approval {
+  padding: 12px 14px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* Neutral border in Dark — the shield tile carries the one color echo
+     (no accent "echo" rim on Dark controls per the style guide). */
+  border-color: var(--approval-card-border);
+  border-radius: 14px;
+  background: var(--approval-card-bg);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--tint-rgb), 0.05),
+    0 8px 24px rgba(var(--shadow-rgb), 0.3);
+}
+
+/* Light keeps a faint accent rim (Light-only per the style guide). */
+:root[data-theme="light"] .content-card-approval {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 8px 24px rgba(var(--shadow-rgb), 0.14),
+    0 0 0 1px rgba(var(--accent-rgb), 0.1);
+}
+
+/* Header: vertically centered two-line head — title primary, bare mono tool
+   name secondary; no second icon competing with the shield tile. */
+.content-card-approval-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.content-card-approval-icon {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--approval-tile-bg);
+  color: var(--approval-tile-fg);
+}
+
+.content-card-approval[data-tone="high"] .content-card-approval-icon {
+  background: var(--approval-tile-high-bg);
+  color: var(--approval-tile-high-fg);
+}
+
+.content-card-approval[data-tone="fatal"] .content-card-approval-icon {
+  background: var(--approval-tile-fatal-bg);
+  color: var(--approval-tile-fatal-fg);
+}
+
+.content-card-approval-headtext {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+
+.content-card-approval-title {
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--fg);
+}
+
+.content-card-approval-tool {
+  min-height: 16px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+/* Risk chip — opaque solid, pinned height (pill geometry rule). */
+.content-card-approval-chip {
+  flex: 0 0 auto;
+  align-self: center;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  background: var(--approval-chip-high-bg);
+  color: var(--approval-chip-high-fg);
+}
+
+.content-card-approval[data-tone="fatal"] .content-card-approval-chip {
+  background: var(--approval-chip-fatal-bg);
+  color: var(--approval-chip-fatal-fg);
+}
+
+/* Reason block — block flow, one sentence per line. Fatal risk lines take
+   the danger ink; plain high-risk lines stay muted. */
+.content-card-approval-reason {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.content-card-approval-reason p {
+  margin: 0;
+}
+
+.content-card-approval-reason-risk {
+  color: var(--fg-muted);
+}
+
+.content-card-approval[data-tone="fatal"] .content-card-approval-reason-risk {
+  color: var(--danger);
+}
+
+.content-card-approval-reason-rewrite {
+  color: var(--fg);
+  font-weight: 550;
+}
+
+/* Body — recessed mono surface (opaque #f1f2f4 in Light, near-black inset
+   in Dark); shell commands get a prompt-prefixed Command block. */
+.content-card-approval-body {
+  border: 1px solid var(--approval-mono-border);
+  border-radius: 9px;
+  background: var(--approval-mono-bg);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.content-card-approval-body-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.content-card-approval-body pre {
+  margin: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.content-card-approval-prompt {
+  color: var(--accent);
+  user-select: none;
+}
+
+.content-card-approval-details {
+  border: 1px solid var(--approval-mono-border);
+  border-radius: 9px;
+  background: var(--approval-mono-bg);
+}
+
+/* Footer — textual countdown (mirrors the Deny fill's single expiresAt
+   source) on the left, actions right-aligned. */
+.content-card-approval-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.content-card-approval-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.content-card-approval-countdown svg {
+  flex: 0 0 auto;
+  opacity: 0.85;
+}
+
+.content-card-approval-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.content-card-approval-deny,
+.content-card-approval-allow {
+  height: 30px;
+  min-width: 76px;
+  padding: 0 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 550;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.content-card-approval-actions button svg {
+  flex: 0 0 auto;
+}
+
+/* Deny — danger-quiet face in both themes: a neutral gray ghost reads as
+   disabled, and the action carries its own semantics. */
+.content-card-approval-deny {
+  position: relative;
+  overflow: hidden;
+  background: var(--approval-deny-bg);
+  border: 1px solid var(--approval-deny-border);
+  color: var(--approval-deny-fg);
+}
+
+.content-card-approval-deny:hover {
+  background: var(--approval-deny-bg-hover);
+}
+
+/* Countdown fill grows from the left edge toward full width; reaching 100%
+   coincides with the main-process auto-deny timeout dismissing the card.
+   The gradient intensifies toward the deadline and carries a bright leading
+   edge plus a soft red glow, so the countdown reads as a warning meter
+   instead of a quiet tint. */
+.content-card-approval-deny-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transform: scaleX(0);
+  border-right: 2px solid var(--danger);
+  background: linear-gradient(
+    90deg,
+    var(--danger-bg),
+    var(--danger-soft) 55%,
+    var(--danger-faint)
+  );
+  box-shadow: 0 0 14px color-mix(in srgb, var(--danger) 42%, transparent);
+  animation: content-card-approval-deny-countdown linear forwards;
+  pointer-events: none;
+}
+
+@keyframes content-card-approval-deny-countdown {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.content-card-approval-deny-label {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content-card-approval-deny-fill {
+    animation: none;
+  }
+}
+
+.content-card-approval-allow {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--on-accent);
+}
+
+.content-card-approval-allow:hover {
+  filter: brightness(1.05);
+}
+
+.content-card-compaction-hint {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 16px 0;
+  padding: 6px 0;
+  color: rgba(var(--tint-rgb), 0.28);
+}
+
+.content-card-compaction-rule {
+  flex: 1 1 0;
+  min-width: 12px;
+  height: 0;
+  border-top: 1px solid currentColor;
+  opacity: 0.7;
+}
+
+.content-card-compaction-label {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1.3;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}

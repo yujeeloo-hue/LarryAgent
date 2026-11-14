@@ -1,0 +1,347 @@
+.log-drawer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: transparent;
+  color: var(--fg);
+  /* Control frames: --border (4.5% white in Dark) all but vanishes at 1px,
+   * so the toolbar draws its own line. 10% matches .timeline-action, keeping
+   * the whole Detail drawer on one frame strength. */
+  --log-btn-line: rgba(var(--tint-rgb), 0.1);
+  --log-btn-line-hover: rgba(var(--tint-rgb), 0.2);
+  --log-btn-fill: rgba(var(--tint-rgb), 0.04);
+  /* Folding rules below measure the pane, not the viewport. */
+  container-type: inline-size;
+  container-name: logdrawer;
+}
+
+:root[data-theme="light"] .log-drawer {
+  --log-btn-fill: #ffffff;
+}
+
+/* One toolbar row: metrics · levels · source · keyword · actions.
+ * Everything keeps its own size — narrowing sheds items by priority
+ * (see the container queries at the bottom) instead of wrapping lines. */
+.log-drawer-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+
+.log-drawer-metrics {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.log-drawer-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.log-drawer-metric-label {
+  color: var(--fg-muted);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.log-drawer-metric-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+
+.log-drawer-divider {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+}
+
+.log-drawer-level-toggles {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Level chips: solid level-brand fills (WCAG-checked ink), same 24px height
+ * as the icon buttons so the whole row reads as one control strip. Off
+ * state keeps the fill but drops it back, which survives both themes. */
+.log-drawer-level-toggle {
+  --chip-fill: #4b515b;
+  --chip-ink: #e8ecf2;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: var(--chip-fill);
+  color: var(--chip-ink);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0.32;
+  transition: opacity 120ms ease;
+}
+
+.log-drawer-level-toggle.level-info {
+  --chip-fill: #0e7490;
+  --chip-ink: #eafcff;
+}
+
+.log-drawer-level-toggle.level-warn {
+  --chip-fill: #a16207;
+  --chip-ink: #fff8e6;
+}
+
+.log-drawer-level-toggle.level-error {
+  --chip-fill: #b91c1c;
+  --chip-ink: #fff0f0;
+}
+
+.log-drawer-level-toggle:hover {
+  opacity: 0.62;
+}
+
+.log-drawer-level-toggle.is-on {
+  opacity: 1;
+}
+
+:root[data-theme="light"] .log-drawer-level-toggle {
+  --chip-fill: #64748b;
+  --chip-ink: #ffffff;
+}
+
+:root[data-theme="light"] .log-drawer-level-toggle.level-info {
+  --chip-fill: #0e7490;
+  --chip-ink: #ffffff;
+}
+
+:root[data-theme="light"] .log-drawer-level-toggle.level-warn {
+  --chip-fill: #f59e0b;
+  --chip-ink: #3b2300;
+}
+
+:root[data-theme="light"] .log-drawer-level-toggle.level-error {
+  --chip-fill: #dc2626;
+  --chip-ink: #ffffff;
+}
+
+:root[data-theme="light"] .log-drawer-level-toggle {
+  opacity: 0.3;
+}
+
+:root[data-theme="light"] .log-drawer-level-toggle:hover {
+  opacity: 0.6;
+}
+
+:root[data-theme="light"] .log-drawer-level-toggle.is-on {
+  opacity: 1;
+}
+
+/* Icon-only actions: Lucide glyphs inside the same 24px frame + 1px border
+ * the sibling controls use, so removing the labels saved width without
+ * making them look like floating glyphs. */
+.log-drawer-icon-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--log-btn-line);
+  border-radius: 5px;
+  background: var(--log-btn-fill);
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.log-drawer-icon-btn:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--fg);
+  border-color: var(--log-btn-line-hover);
+}
+
+.log-drawer-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.log-drawer-icon-btn-danger {
+  color: var(--danger-muted);
+}
+
+.log-drawer-icon-btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+}
+
+.log-drawer-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.log-drawer-full-request-toggle[aria-pressed="true"] {
+  background: rgba(var(--accent-rgb), 0.16);
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), 0.48);
+}
+
+.log-drawer-filter-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--log-btn-line);
+  border-radius: 5px;
+  background: var(--log-btn-fill);
+  color: var(--fg);
+  padding: 4px 8px;
+  font-size: 11px;
+  outline: none;
+}
+
+.log-drawer-filter-input::placeholder {
+  color: var(--fg-muted);
+}
+
+.log-drawer-filter-input:focus {
+  border-color: var(--focus-border);
+}
+
+:root[data-theme="light"] .log-drawer-filter-input {
+  background: #ffffff;
+}
+
+/*
+ * Narrow panes shed the lowest-priority items, in this order:
+ * metrics divider → full-request toggle → memory → whole metrics group →
+ * source label. Each step keeps every remaining control at full size.
+ */
+@container logdrawer (max-width: 900px) {
+  .log-drawer-divider {
+    display: none;
+  }
+}
+
+@container logdrawer (max-width: 820px) {
+  .log-drawer-full-request-toggle {
+    display: none;
+  }
+}
+
+@container logdrawer (max-width: 720px) {
+  .log-drawer-metric:last-child {
+    display: none;
+  }
+}
+
+@container logdrawer (max-width: 640px) {
+  .log-drawer-metrics {
+    display: none;
+  }
+}
+
+@container logdrawer (max-width: 520px) {
+  .log-drawer .app-dropdown-value {
+    display: none;
+  }
+
+  .log-drawer .app-dropdown-chevron {
+    display: none;
+  }
+}
+
+.log-drawer-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.log-drawer-row {
+  display: grid;
+  grid-template-columns: 64px 44px 68px 1fr;
+  gap: 8px;
+  padding: 3px 12px;
+  color: var(--fg-muted);
+}
+
+.log-drawer-row:nth-child(even) {
+  background: rgba(var(--tint-rgb), 0.03);
+}
+
+.log-drawer-row:hover {
+  background: var(--hover);
+}
+
+.log-drawer-time {
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.log-drawer-level {
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+}
+
+.log-drawer-source {
+  color: var(--fg-muted);
+}
+
+.log-drawer-message {
+  color: var(--fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.log-drawer-row.level-debug .log-drawer-level {
+  color: var(--log-debug);
+}
+
+.log-drawer-row.level-info .log-drawer-level {
+  color: var(--log-info);
+}
+
+.log-drawer-row.level-warn .log-drawer-level {
+  color: var(--log-warn);
+}
+
+.log-drawer-row.level-error .log-drawer-level {
+  color: var(--log-error);
+}
+
+.log-drawer-row.level-error .log-drawer-message {
+  color: var(--danger-muted);
+}

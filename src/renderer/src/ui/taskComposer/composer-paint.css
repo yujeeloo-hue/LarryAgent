@@ -1,0 +1,190 @@
+/* Composer-only paint, shared by desktop and Relay. Idle follows the user's
+   theme accent; status colors remain theme-aware. Geometry stays per host. */
+:root {
+  --composer-amber: #e5880a;
+  --composer-amber-on: #261702;
+  --composer-rose: #d54db4;
+  --composer-stop: #df48c2;
+  --composer-action-on: #ffffff;
+  --composer-hover-mix: #ffffff;
+  --composer-ring-track: rgba(255, 255, 255, 0.10);
+  --composer-off-bg: #566170;
+  --composer-off-fg: #ffffff;
+  --composer-low-bg: #4b9bf5;
+  --composer-low-fg: #071c35;
+  --composer-low-fill: linear-gradient(110deg, #4b9bf5 0%, #6ab5ff 50%, #529cf0 100%);
+  --composer-medium-bg: #12cfa6;
+  --composer-medium-fg: #07352c;
+  --composer-medium-fill: linear-gradient(110deg, #12cfa6 0%, #31e4c3 50%, #0ccab6 100%);
+  --composer-high-bg: #9b70f3;
+  --composer-high-fg: #241039;
+  --composer-high-fill: linear-gradient(110deg, #9b70f3 0%, #ba8dff 50%, #a373f4 100%);
+  --composer-max-bg: #f5a009;
+  --composer-max-fg: #372901;
+  --composer-max-fill: linear-gradient(115deg, #f5a009 0%, #ffca32 48%, #f6ad10 100%);
+}
+
+:root[data-theme="light"] {
+  --composer-amber: #d47708;
+  --composer-amber-on: #ffffff;
+  --composer-rose: #c13da1;
+  --composer-stop: #cc36ad;
+  --composer-hover-mix: #111111;
+  --composer-ring-track: #dbe5f0;
+  --composer-off-bg: #596579;
+  --composer-off-fg: #ffffff;
+  --composer-low-bg: #4c96ef;
+  --composer-low-fg: #061a32;
+  --composer-low-fill: linear-gradient(110deg, #4c96ef 0%, #64b0fa 50%, #549aee 100%);
+  --composer-medium-bg: #08b893;
+  --composer-medium-fg: #052d25;
+  --composer-medium-fill: linear-gradient(110deg, #08b893 0%, #24d0ac 50%, #08bca4 100%);
+  --composer-high-bg: #9f63f3;
+  --composer-high-fg: #1b092e;
+  --composer-high-fill: linear-gradient(110deg, #9f63f3 0%, #ac76fa 50%, #a06bf3 100%);
+  --composer-max-bg: #eb9406;
+  --composer-max-fg: #332600;
+  --composer-max-fill: linear-gradient(115deg, #eb9406 0%, #ffc029 48%, #eea009 100%);
+}
+
+.composer-send-wrap {
+  --composer-action: var(--accent);
+  --composer-action-on: var(--on-accent);
+}
+.composer-send-wrap.is-infinite {
+  --composer-action: var(--composer-amber);
+  --composer-action-on: var(--composer-amber-on);
+}
+.composer-send-wrap.is-running,
+.composer-stop-wrap {
+  --composer-action: var(--composer-stop);
+  --composer-action-on: #ffffff;
+}
+.task-composer.voice-recording .composer-send-wrap {
+  --composer-action: var(--composer-rose);
+  --composer-action-on: #ffffff;
+}
+
+.composer-send-btn,
+.composer-stop-btn {
+  --composer-action-strength: 100%;
+  --composer-gradient-top: color-mix(in srgb, var(--composer-action) 88%, #000000);
+  --composer-gradient-bottom: var(--composer-action);
+  background: var(--composer-action);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--composer-gradient-top) var(--composer-action-strength), var(--composer-hover-mix)),
+    color-mix(in srgb, var(--composer-gradient-bottom) var(--composer-action-strength), var(--composer-hover-mix))
+  );
+  color: var(--composer-action-on);
+  box-shadow: none;
+  transition: background-color 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+
+.composer-send-btn:hover:not(:disabled),
+.composer-stop-btn:hover:not(:disabled) {
+  --composer-action-strength: 92%;
+}
+
+.composer-send-btn:active:not(:disabled),
+.composer-stop-btn:active:not(:disabled) {
+  --composer-action-strength: 84%;
+}
+
+.composer-send-btn:disabled,
+.composer-stop-btn:disabled {
+  cursor: default;
+  background: color-mix(in srgb, var(--composer-action) 18%, transparent);
+  color: color-mix(in srgb, var(--composer-action) 68%, var(--fg));
+  box-shadow: none;
+}
+
+.composer-send-btn:focus-visible,
+.composer-stop-btn:focus-visible {
+  outline: 2px solid var(--composer-action);
+  outline-offset: 3px;
+}
+
+.context-usage-track {
+  stroke: var(--composer-ring-track);
+  stroke-width: 2.5;
+}
+.context-usage-progress {
+  stroke: var(--composer-action, var(--accent));
+  stroke-width: 2.5;
+  transition: stroke-dashoffset 200ms ease, stroke 160ms ease, opacity 160ms ease;
+}
+.context-usage-progress.is-warning { stroke: var(--warn-text); }
+.context-usage-progress.is-critical { stroke: var(--danger-text); }
+:root[data-theme="light"] .context-usage-progress.is-warning { stroke: #d38a18; }
+:root[data-theme="light"] .context-usage-progress.is-critical { stroke: #dc4a4a; }
+
+.composer-provider-effort-chip,
+.composer-provider-menu .effort-seg,
+.composer-provider-menu .effort-step-value {
+  --composer-effort-fill: var(--composer-off-bg);
+  --composer-effort-on: var(--composer-off-fg);
+}
+.composer-provider-effort-chip[data-level="low"],
+.composer-provider-menu .effort-seg[data-level="low"],
+.composer-provider-menu .effort-step-value[data-level="low"] {
+  --composer-effort-fill: var(--composer-low-fill, var(--composer-low-bg));
+  --composer-effort-on: var(--composer-low-fg);
+}
+.composer-provider-effort-chip[data-level="medium"],
+.composer-provider-menu .effort-seg[data-level="medium"],
+.composer-provider-menu .effort-step-value[data-level="medium"] {
+  --composer-effort-fill: var(--composer-medium-fill, var(--composer-medium-bg));
+  --composer-effort-on: var(--composer-medium-fg);
+}
+.composer-provider-effort-chip[data-level="high"],
+.composer-provider-menu .effort-seg[data-level="high"],
+.composer-provider-menu .effort-step-value[data-level="high"] {
+  --composer-effort-fill: var(--composer-high-fill, var(--composer-high-bg));
+  --composer-effort-on: var(--composer-high-fg);
+}
+.composer-provider-effort-chip.is-max,
+.composer-provider-effort-chip[data-level="max"],
+.composer-provider-menu .effort-seg[data-level="max"],
+.composer-provider-menu .effort-step-value[data-level="max"] {
+  --composer-effort-fill: var(--composer-max-fill, var(--composer-max-bg));
+  --composer-effort-on: var(--composer-max-fg);
+}
+.composer-provider-effort-chip {
+  color: var(--composer-effort-on);
+  background: var(--composer-effort-fill);
+}
+
+/* Composer scopes win over the shared dial's themed defaults, regardless of
+   import order. Settings and Rules keep their existing dial palette. */
+:root .composer-provider-menu .effort-seg[data-level] .effort-seg-thumb {
+  background: var(--composer-effort-fill);
+  box-shadow: none;
+}
+:root .composer-provider-menu .effort-seg .effort-seg-item[aria-checked="true"] {
+  color: var(--composer-effort-on);
+}
+:root .composer-provider-menu .effort-step-value[data-level] {
+  color: var(--composer-effort-on);
+  background: var(--composer-effort-fill);
+  box-shadow: none;
+}
+
+.composer-provider-menu {
+  --effort-max-fill: var(--composer-max-fill, var(--composer-max-bg));
+  --effort-max-on: var(--composer-max-fg);
+}
+.composer-provider-menu .effort-seg-item:disabled[aria-checked="true"] { opacity: 1; }
+:root .composer-provider-menu .composer-infinite-row .composer-switch.is-on {
+  background: var(--composer-amber);
+}
+:root .composer-provider-menu .composer-infinite-row .composer-switch-thumb { box-shadow: none; }
+.composer-infinite-row:has(.composer-switch.is-on) .composer-row-icon {
+  color: var(--composer-amber);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .composer-send-btn,
+  .composer-stop-btn,
+  .context-usage-progress { transition: none; }
+}

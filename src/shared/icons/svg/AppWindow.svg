@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none">
+  <defs><mask id="AppWindow-m"><rect width="24" height="24" fill="white" /><rect x="0" y="7.2" width="24" height="1.8" fill="black" /><rect x="13.7" y="8" width="1.8" height="16" fill="black" /></mask></defs>
+  <rect x="2" y="3" width="20" height="18" rx="4" fill="currentColor" mask="url(#AppWindow-m)" />
+</svg>

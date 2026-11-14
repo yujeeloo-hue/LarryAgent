@@ -1,0 +1,89 @@
+/* Keep the original SVG/CSS artwork in debugIcons.css. These three small
+ * header glyphs use the approved, separately rasterized PNG sizes on every
+ * platform; image-set also follows the app's interface zoom automatically. */
+.devmode-debug [data-debug-icon="call-stack"] {
+  --debug-bitmap-dark: image-set(
+    url("../assets/devmode-debug/bitmap/dark/call-stack-12.png") 1x,
+    url("../assets/devmode-debug/bitmap/dark/call-stack-15.png") 1.25x,
+    url("../assets/devmode-debug/bitmap/dark/call-stack-18.png") 1.5x,
+    url("../assets/devmode-debug/bitmap/dark/call-stack-24.png") 2x
+  );
+  --debug-bitmap-light: image-set(
+    url("../assets/devmode-debug/bitmap/light/call-stack-12.png") 1x,
+    url("../assets/devmode-debug/bitmap/light/call-stack-15.png") 1.25x,
+    url("../assets/devmode-debug/bitmap/light/call-stack-18.png") 1.5x,
+    url("../assets/devmode-debug/bitmap/light/call-stack-24.png") 2x
+  );
+}
+
+.devmode-debug [data-debug-icon="variables"] {
+  --debug-bitmap-dark: image-set(
+    url("../assets/devmode-debug/bitmap/dark/variables-12.png") 1x,
+    url("../assets/devmode-debug/bitmap/dark/variables-15.png") 1.25x,
+    url("../assets/devmode-debug/bitmap/dark/variables-18.png") 1.5x,
+    url("../assets/devmode-debug/bitmap/dark/variables-24.png") 2x
+  );
+  --debug-bitmap-light: image-set(
+    url("../assets/devmode-debug/bitmap/light/variables-12.png") 1x,
+    url("../assets/devmode-debug/bitmap/light/variables-15.png") 1.25x,
+    url("../assets/devmode-debug/bitmap/light/variables-18.png") 1.5x,
+    url("../assets/devmode-debug/bitmap/light/variables-24.png") 2x
+  );
+}
+
+.devmode-debug [data-debug-icon="breakpoints"] {
+  --debug-bitmap-dark: image-set(
+    url("../assets/devmode-debug/bitmap/dark/breakpoints-12.png") 1x,
+    url("../assets/devmode-debug/bitmap/dark/breakpoints-15.png") 1.25x,
+    url("../assets/devmode-debug/bitmap/dark/breakpoints-18.png") 1.5x,
+    url("../assets/devmode-debug/bitmap/dark/breakpoints-24.png") 2x
+  );
+  --debug-bitmap-light: image-set(
+    url("../assets/devmode-debug/bitmap/light/breakpoints-12.png") 1x,
+    url("../assets/devmode-debug/bitmap/light/breakpoints-15.png") 1.25x,
+    url("../assets/devmode-debug/bitmap/light/breakpoints-18.png") 1.5x,
+    url("../assets/devmode-debug/bitmap/light/breakpoints-24.png") 2x
+  );
+}
+
+.devmode-debug .devmode-debug-icon:is(
+  [data-debug-icon="call-stack"],
+  [data-debug-icon="variables"],
+  [data-debug-icon="breakpoints"]
+) {
+  width: var(--debug-icon-size);
+  height: var(--debug-icon-size);
+  background-image: var(--debug-bitmap-dark);
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  filter: none;
+}
+
+:root[data-theme="light"] .devmode-debug .devmode-debug-icon:is(
+  [data-debug-icon="call-stack"],
+  [data-debug-icon="variables"],
+  [data-debug-icon="breakpoints"]
+) {
+  background-image: var(--debug-bitmap-light);
+}
+
+/* The PNG includes every detail, including VAR's lettering and the two
+ * concentric breakpoint circles. Do not draw the legacy layers over it. */
+.devmode-debug .devmode-debug-icon:is(
+  [data-debug-icon="call-stack"],
+  [data-debug-icon="variables"],
+  [data-debug-icon="breakpoints"]
+)::before,
+.devmode-debug .devmode-debug-icon:is(
+  [data-debug-icon="call-stack"],
+  [data-debug-icon="variables"],
+  [data-debug-icon="breakpoints"]
+)::after,
+.devmode-debug .devmode-debug-icon:is(
+  [data-debug-icon="call-stack"],
+  [data-debug-icon="variables"],
+  [data-debug-icon="breakpoints"]
+) > i {
+  display: none;
+}

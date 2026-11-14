@@ -1,0 +1,30 @@
+# JellyBot Relay — systemd unit template shipped inside the self-host tarball.
+# Placeholders are substituted by install.sh at install time:
+#   __PREFIX__     install directory (default /opt/jellybot-relay)
+#   __PORT__       HTTP port on 127.0.0.1 (default 8788)
+#   __BASE_PATH__  URL path prefix the reverse proxy mounts (default /relay)
+#   __NODE__       absolute node binary path
+# The hardened shape mirrors the production unit on larryagent.online.
+[Unit]
+Description=JellyBot Remote Relay (device bridge + web console)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=__PREFIX__
+Environment=RELAY_HOST=127.0.0.1
+Environment=RELAY_PORT=__PORT__
+Environment=RELAY_PUBLIC_DIR=__PREFIX__/public
+Environment=RELAY_BASE_PATH=__BASE_PATH__
+Environment=NODE_ENV=production
+ExecStart=__NODE__ __PREFIX__/dist/index.js
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=__PREFIX__/data
+
+[Install]
+WantedBy=multi-user.target

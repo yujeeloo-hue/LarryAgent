@@ -1,0 +1,1501 @@
+@import "../../../shared/icons/functional-icon-masks.css";
+.app-shell {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  background: transparent;
+}
+
+/* Dev Mode variant: full-width title bar on top, body row below
+ * (sidebar | resize | main column). Normal mode keeps the flat row. */
+.app-shell.is-dev-mode {
+  --devmode-pane-gap: 8px;
+  --devmode-pane-radius: 10px;
+  --devmode-pane-border: rgba(var(--tint-rgb), 0.1);
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.app-shell-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+.app-shell.is-dev-mode .app-shell-body {
+  /* No top gutter — the cards sit flush under the title bar strip. */
+  padding: 0 var(--devmode-pane-gap) var(--devmode-pane-gap);
+  background: var(--bg);
+}
+
+.app-shell-sidebar {
+  flex: 0 0 var(--sidebar-width);
+  width: var(--sidebar-width);
+  min-width: 0;
+  align-self: stretch;
+  background: var(--bg-sidebar);
+  -webkit-backdrop-filter: saturate(140%) blur(18px);
+  backdrop-filter: saturate(140%) blur(18px);
+  overflow: hidden;
+}
+
+/* Ink & Accent direction (approved sidebar-light-directions-demo.html, B):
+ * near-white gradient keeps the airy rail — top rim stays, the V1 cool foot
+ * grounding goes. Selection cues are shared with secondary navigation in
+ * navigation-selection.css. Still translucent, so the
+ * blur keeps picking up the native window material where available. */
+:root[data-theme="light"] .app-shell-sidebar {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(250, 252, 254, 0.94) 100%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: saturate(155%) blur(28px);
+  backdrop-filter: saturate(155%) blur(28px);
+}
+
+/* Dev Mode's sidebar is a bare gutter column: the file tree card and the
+ * document outline card each draw their own chrome (see devmode.css
+ * .devmode-files-card / .devmode-doc-outline) so they read as two panes. */
+.app-shell.is-dev-mode .app-shell-sidebar {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.app-shell-resize {
+  flex: 0 0 1px;
+  width: 1px;
+  align-self: stretch;
+  position: relative;
+  z-index: 4;
+  cursor: col-resize;
+  touch-action: none;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  background: var(--pane-divider);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+/* Invisible wider hit target around the 1px rule. */
+.app-shell-resize::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  width: 7px;
+}
+
+.app-shell-resize:hover,
+.app-shell-resize:focus-visible,
+.app-shell-resize.is-dragging {
+  background: var(--pane-divider-hover);
+  /* Thicken visually without shifting layout (still 1px flex basis). */
+  box-shadow: 0 0 0 1px var(--pane-divider-halo);
+}
+
+.app-shell-resize:focus-visible {
+  outline: none;
+}
+
+.app-shell.is-sidebar-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.app-shell.is-sidebar-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sidebar-drag-region {
+  flex: 0 0 var(--titlebar-height);
+  display: flex;
+  align-items: center;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.sidebar-brand {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  padding-left: 14px;
+}
+
+html.platform-win32 .sidebar-brand {
+  display: flex;
+}
+
+.sidebar-app-name {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
+
+.sidebar-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px 12px;
+  gap: 16px;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.sidebar-agent {
+  flex: 0 0 auto;
+}
+
+.sidebar-lower {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sidebar-sessions {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sidebar-sessions {
+  flex: 0 1 auto;
+}
+
+/*
+ * Single painted surface for the whole right column; the title bar, main slot
+ * and drawer stay transparent so the translucency is uniform.
+ */
+.app-shell-main-column {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-main);
+}
+
+.app-shell.is-dev-mode .app-shell-main-column {
+  background: transparent;
+}
+
+.app-shell-titlebar {
+  flex: 0 0 var(--titlebar-height);
+}
+
+/* The title bar and card gutters share one continuous window surface. */
+.app-shell.is-dev-mode .app-shell-titlebar {
+  background: var(--bg);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-bottom: 0;
+}
+
+/* Dialogs use a light glass surface with an edge that remains legible over
+ * content; Dark keeps the existing solid surface and deeper elevation. */
+:root[data-theme="light"] :is(
+  .text-prompt-dialog,
+  .edit-workspace-dialog,
+  .skill-dialog,
+  .mcp-dialog,
+  .nws-dialog
+) {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(var(--accent-rgb), 0.16);
+  -webkit-backdrop-filter: saturate(145%) blur(20px);
+  backdrop-filter: saturate(145%) blur(20px);
+  box-shadow: 0 5px 18px rgba(18, 52, 86, 0.09);
+}
+
+.title-bar {
+  height: var(--titlebar-height);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.title-bar-drag {
+  flex: 1;
+  align-self: stretch;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+/* Dev Mode on macOS: keep the drag strip's left clear of the traffic
+ * lights (x=14, three ~12px dots ≈ 66px) — nothing may render under them. */
+html.platform-darwin .app-shell.is-dev-mode .title-bar-drag {
+  padding-left: 84px;
+}
+
+/* App brand in the title bar: Windows Dev Mode only. Normal mode keeps it
+ * in the sidebar's top-left; macOS shows no title text at all. */
+.title-bar-brand {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  padding-left: 14px;
+}
+
+html.platform-win32 .app-shell.is-dev-mode .title-bar-brand {
+  display: flex;
+}
+
+.title-bar-app-name {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
+.title-bar-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px 0 4px;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.title-bar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 24px in the 32px title bar ≈ the old 28px-in-37 density (4px margins);
+   * sized via titlebar-btn-size-demo.html (option B). */
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 5.5px;
+  background: transparent;
+  color: var(--mono-icon-ink);
+  cursor: pointer;
+  padding: 0;
+}
+
+.title-bar-btn:hover {
+  background: var(--hover);
+  color: var(--mono-icon-ink);
+}
+
+.title-bar-btn.is-active {
+  background: var(--active);
+  color: var(--accent);
+}
+
+.title-bar-btn svg {
+  display: block;
+}
+
+/* Notification bell badge: minimal unread dot (smallest possible, no count
+ * — the tooltip/aria carry the number; see TitleBarView.setBellUnread).
+ * Fully INSIDE the 24px button: nothing crosses the button box, so nothing
+ * can hit the window edge on any DPI. Tucked into the icon's empty
+ * top-right corner; 6px matches the inbox row dot (same unread language).
+ * No cut ring: the dot stays within the button around the 14px glyph. */
+.title-bar-bell {
+  position: relative;
+}
+
+.title-bar-bell-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+/* Remote relay console button: dim while connected to the relay, bright
+ * while payloads stream up, hidden while disconnected. Shares the regular
+ * title-bar-btn chrome (same 24px target and hover as Detail); visibility
+ * also gates interaction so a hidden indicator can never catch clicks. */
+.title-bar-remote {
+  color: var(--mono-icon-ink);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 160ms ease,
+    color 160ms ease,
+    visibility 0s linear 160ms;
+}
+
+.title-bar-remote.is-visible {
+  opacity: 0.55;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity 160ms ease,
+    color 160ms ease,
+    visibility 0s;
+}
+
+.title-bar-remote.is-transmitting {
+  color: var(--accent);
+  opacity: 1;
+  filter: drop-shadow(0 0 4px rgba(var(--accent-rgb), 0.55));
+  transition:
+    opacity 40ms ease,
+    color 40ms ease,
+    visibility 0s;
+}
+
+
+.app-shell-drawer {
+  flex: 0 0 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  transition: flex-basis 180ms ease;
+}
+
+.app-shell-drawer.is-open {
+  flex-basis: var(--detail-drawer-height, 50%);
+}
+
+.app-shell-drawer-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell-drawer-resize {
+  flex: 0 0 1px;
+  height: 1px;
+  width: 100%;
+  position: relative;
+  z-index: 4;
+  cursor: row-resize;
+  touch-action: none;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  background: var(--pane-divider);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.app-shell-drawer-resize[hidden] {
+  display: none;
+}
+
+/* Invisible taller hit target around the 1px rule. */
+.app-shell-drawer-resize::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -3px;
+  height: 7px;
+}
+
+.app-shell-drawer-resize:hover,
+.app-shell-drawer-resize:focus-visible,
+.app-shell-drawer-resize.is-dragging {
+  background: var(--pane-divider-hover);
+  box-shadow: 0 0 0 1px var(--pane-divider-halo);
+}
+
+.app-shell-drawer-resize:focus-visible {
+  outline: none;
+}
+
+.app-shell.is-drawer-resizing {
+  cursor: row-resize;
+  user-select: none;
+}
+
+.app-shell.is-drawer-resizing .app-shell-drawer {
+  transition: none;
+}
+
+.app-shell.is-drawer-resizing * {
+  cursor: row-resize !important;
+  user-select: none !important;
+}
+
+.sidebar-section-label {
+  padding: 4px 8px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.agent-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agent-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--fg);
+  min-height: 39px;
+  padding: 9px 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.agent-nav-item:hover {
+  background: var(--hover);
+}
+
+.agent-nav-icon {
+  display: inline-flex;
+  flex: 0 0 17px;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  color: var(--fg-muted);
+  /* Quiet lift for the color artwork: drop-shadow follows the glyph's alpha
+   * (box-shadow would paint a rectangle), and --shadow-rgb follows the theme. */
+  filter: drop-shadow(0 1px 2px rgba(var(--shadow-rgb), 0.25));
+}
+
+.agent-nav-icon svg,
+.agent-nav-artwork {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
+.agent-nav-artwork {
+  filter: saturate(1.5);
+}
+
+.agent-nav-label {
+  font-size: 13px;
+}
+
+.sidebar-sessions[hidden],
+.sidebar-session-section[hidden],
+.sidebar-section-body[hidden] {
+  display: none !important;
+}
+
+.sidebar-section-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-height: 36px;
+}
+
+.sidebar-section-header-row .sidebar-section-header {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-section-add,
+.sidebar-rail-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.sidebar-section-add:hover,
+.sidebar-rail-btn:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.sidebar-section-add svg,
+.sidebar-rail-btn svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.workspace-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+}
+
+.workspace-group {
+  display: flex;
+  flex-direction: column;
+  /* Outside the clip so a collapsed group leaves no residual sliver. */
+  row-gap: 2px;
+  transition: row-gap 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.workspace-group.is-collapsed {
+  row-gap: 0;
+}
+
+/* Reveal fraction of the nested session list; drives the collapse mask. */
+@property --workspace-reveal {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+.workspace-sessions-clip {
+  --workspace-reveal: 1;
+  display: grid;
+  /* minmax(0, …): an auto track would grow to the rows' max-content width and
+     overflow the sidebar instead of following its width. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 1fr;
+  overflow: hidden;
+  visibility: visible;
+  mask-image: linear-gradient(
+    to bottom,
+    #000 calc(var(--workspace-reveal) * 118% - 18%),
+    transparent calc(var(--workspace-reveal) * 118%)
+  );
+  transition:
+    grid-template-rows 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    --workspace-reveal 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    visibility 0s;
+}
+
+.workspace-sessions-clip > .workspace-sessions {
+  min-width: 0;
+  min-height: 0;
+  opacity: 1;
+  /* Fades in slightly behind the height, so rows land after the row opens. */
+  transition: opacity 170ms ease 30ms;
+}
+
+.workspace-group.is-collapsed .workspace-sessions-clip {
+  --workspace-reveal: 0;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition:
+    grid-template-rows 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    --workspace-reveal 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    visibility 0s linear 200ms;
+}
+
+.workspace-group.is-collapsed .workspace-sessions-clip > .workspace-sessions {
+  opacity: 0;
+  transition: opacity 130ms ease;
+}
+
+.workspace-group.is-collapsed .workspace-row-icon-chevron {
+  transform: rotate(-90deg);
+}
+
+/* Staggered card reveal when a workspace group expands. */
+@keyframes sidebar-card-reveal {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .workspace-sessions.is-revealing .session-row,
+  .archived-sessions.is-revealing .archived-session-row {
+    animation: sidebar-card-reveal 240ms cubic-bezier(0.32, 0.72, 0, 1)
+      backwards;
+    animation-delay: var(--reveal-delay, 0ms);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-group,
+  .workspace-sessions-clip,
+  .workspace-group.is-collapsed .workspace-sessions-clip,
+  .workspace-sessions-clip > .workspace-sessions,
+  .workspace-group.is-collapsed .workspace-sessions-clip > .workspace-sessions {
+    transition: none;
+  }
+}
+
+.workspace-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-radius: 6px;
+  min-height: 36px;
+}
+
+.workspace-row:hover {
+  background: var(--hover);
+}
+
+.workspace-row-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 6px;
+}
+
+.workspace-row-icon {
+  position: relative;
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--fg-muted);
+}
+
+/* Disclosure chevron — always visible (no hover swap): collapsed/expanded
+   state must read at a glance, and the rotation animates on toggle. */
+.workspace-row-icon-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--fg-muted);
+  transition: transform 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.workspace-row-icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* Provenance mark on CoCo-created project rows (band silhouette). */
+.workspace-row-coco-mark {
+  display: inline-flex;
+  flex: none;
+  margin-left: 2px;
+  color: var(--fg-muted);
+}
+
+.workspace-row-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workspace-row-add {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.workspace-row-rename,
+.workspace-row-archive,
+.workspace-row-delete {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.workspace-row:hover .workspace-row-add,
+.workspace-row:hover .workspace-row-rename,
+.workspace-row:hover .workspace-row-archive,
+.workspace-row:hover .workspace-row-delete {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.workspace-row-delete:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.workspace-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.workspace-sessions .session-row {
+  /* Align titles with workspace labels: pad 10 + leading 16 + gap 10. */
+  padding-left: 10px;
+  padding-right: 10px;
+  gap: 10px;
+  min-height: 39px;
+}
+
+.workspace-sessions .session-leading {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-muted);
+}
+
+.workspace-sessions .session-unread-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--unread);
+  box-shadow: 0 0 0 1px var(--unread-ring);
+  flex-shrink: 0;
+}
+
+/* Loop-origin session badge — shares the fixed 16px leading slot with the
+   unread dot (dot wins), so the title start never shifts. */
+.workspace-sessions .session-loop-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  opacity: 0.75;
+}
+
+.workspace-sessions .session-row.is-unread .session-title {
+  color: var(--fg);
+}
+
+.workspace-sessions .session-trailing {
+  min-width: 28px;
+  margin-right: 0;
+  justify-content: flex-end;
+  padding-right: 0;
+}
+
+/* Overlay pair (delete left, archive flush-right) — matches the workspace
+   row trailing button column. */
+.workspace-sessions .session-row-delete,
+.workspace-sessions .session-row-archive {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.workspace-sessions .session-row-archive {
+  right: 4px;
+}
+
+.workspace-sessions .session-row-delete {
+  right: 32px;
+}
+
+/* CoCo hand-over entry (mono mark): idle rows park it right after Delete,
+   which yields one slot (32 → 60px). Rows without the entry — CoCo-managed
+   sessions, engine unavailable — keep Delete at 32px: no empty gap. */
+.workspace-sessions .session-row-coco {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 32px;
+  color: var(--fg-muted);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, color 120ms ease;
+}
+
+.workspace-sessions .session-row.has-coco-entry .session-row-delete {
+  right: 60px;
+}
+
+.workspace-sessions .coco-mono-mark {
+  display: inline-flex;
+  flex: none;
+}
+
+/* Override global session-row focus-within so buttons only appear on hover. */
+.workspace-sessions .session-row:focus-within .session-row-delete,
+.workspace-sessions .session-row:focus-within .session-row-archive,
+.workspace-sessions .session-row:focus-within .session-row-coco {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.workspace-sessions .session-row:hover .session-row-delete,
+.workspace-sessions .session-row:hover .session-row-archive,
+.workspace-sessions .session-row.has-coco-entry:hover .session-row-coco {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.workspace-sessions .session-row-delete:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.workspace-sessions .session-row-coco:hover {
+  color: var(--accent);
+}
+
+/* Running rows keep the spinner: hover never reveals delete/archive. */
+.workspace-sessions .session-row.is-running:hover .session-row-delete,
+.workspace-sessions .session-row.is-running:hover .session-row-archive {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.workspace-sessions .session-row.is-running:hover .session-trailing {
+  opacity: 1;
+}
+
+/* …unless the hand-over entry takes the spinner's place: a 28px button at
+   right:3 puts the mark center exactly on the spinner center (14px spinner
+   flush at right:10 ⇒ both centers sit 17px from the row's right edge). */
+.workspace-sessions .session-row.is-running.has-coco-entry .session-row-coco {
+  right: 3px;
+}
+
+.workspace-sessions
+  .session-row.is-running.has-coco-entry:hover
+  .session-trailing {
+  opacity: 0;
+}
+
+.workspace-sessions .session-row:hover .session-trailing {
+  opacity: 0;
+}
+
+/*
+ * Hover: actively shrink the title so its ellipsis lands left of the overlay
+ * delete/archive pair (delete box spans 32–60px from the row's right edge).
+ * The trailing zone (28px + 10 gap) already ends the title box 48px in;
+ * 14px more puts the clip point at 62px — clear of both boxes. Running rows
+ * never reveal the buttons (spinner stays), so they keep the full title.
+ */
+.workspace-sessions .session-title {
+  transition: padding-right 160ms ease;
+}
+
+.workspace-sessions .session-row:not(.is-running):hover .session-title {
+  padding-right: 14px;
+}
+
+.workspace-sessions
+  .session-row.has-coco-entry:not(.is-running):hover
+  .session-title {
+  padding-right: 42px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-sessions .session-title {
+    transition: none;
+  }
+}
+
+.sidebar-session-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sidebar-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: var(--fg-muted);
+  text-align: left;
+}
+
+.sidebar-workspace-section {
+  flex: 1 1 auto;
+}
+
+.sidebar-workspace-section .sidebar-section-header {
+  padding-right: 4px;
+  cursor: default;
+}
+
+.sidebar-workspace-section .sidebar-section-header:hover {
+  background: transparent;
+  color: var(--fg-muted);
+}
+
+.sidebar-workspace-section .sidebar-section-header-row {
+  flex: 0 0 auto;
+}
+
+.sidebar-workspace-section .sidebar-section-body {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Archived Projects entry (PROJECTS header, next to +). */
+.sidebar-section-archived {
+  position: relative;
+}
+
+/* Archived Projects full-sidebar replacement view. */
+.archived-projects {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Text-heavy rows would otherwise show the I-beam over labels/meta. */
+  cursor: default;
+}
+
+.archived-projects-header {
+  flex: 0 0 auto;
+}
+
+/* Back button carries the section title: chevron + ARCHIVED label. */
+.archived-projects-back {
+  width: auto;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 0 8px 0 6px;
+}
+
+.archived-projects-back-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.archived-projects .sidebar-section-body {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  gap: 2px;
+}
+
+/* Two-level archived tree: groups mirror .workspace-group/.workspace-row,
+   nested sessions mirror .session-row, dimmed to secondary tones. */
+.archived-projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+}
+
+.archived-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.archived-group.is-collapsed .archived-sessions {
+  display: none;
+}
+
+.archived-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  border-radius: 6px;
+}
+
+.archived-row:hover {
+  background: var(--hover);
+}
+
+.archived-row-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 6px;
+}
+
+.archived-row-icon {
+  position: relative;
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--fg-muted);
+}
+
+.archived-row-icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* Disclosure chevron — always visible, mirrors the Projects tree. */
+.archived-row-icon-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--fg-muted);
+  transition: transform 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.archived-group.is-collapsed .archived-row-icon-chevron {
+  transform: rotate(-90deg);
+}
+
+.archived-row-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.archived-row-unarchive,
+.archived-row-delete {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+/* Trailing action group — buttons sit tight together like PROJECTS rails. */
+.archived-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.archived-row:hover .archived-row-unarchive,
+.archived-row:hover .archived-row-delete {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.archived-row-delete:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.archived-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Indent (not margin) so the row stays full width while its title lines up
+   with the workspace title: pad 10 + icon 16 + gap 10. */
+.archived-session-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 6px;
+  padding: 8px 10px 8px 36px;
+  cursor: default;
+}
+
+.archived-session-row:hover {
+  background: var(--hover);
+}
+
+.archived-session-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.archived-session-time {
+  flex-shrink: 0;
+  color: var(--fg-muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+/* Overlay pair (delete right, unarchive beside it) so buttons never
+   stretch the row; time fades out on hover like the PROJECTS tree. */
+.archived-session-unarchive,
+.archived-session-delete {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.archived-session-delete {
+  right: 0;
+}
+
+.archived-session-unarchive {
+  right: 28px;
+}
+
+.archived-session-row:hover .archived-session-time {
+  opacity: 0;
+}
+
+.archived-session-row:hover .archived-session-unarchive,
+.archived-session-row:hover .archived-session-delete {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.archived-session-delete:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.archived-projects-empty {
+  padding: 8px 10px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.sidebar-section-header:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.sidebar-section-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sidebar-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  /* Session tree still scrolls (wheel / trackpad), but the native bar would
+   * cut a visible strip into the sidebar surface. */
+  scrollbar-width: none;
+}
+
+.sidebar-section-body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.sessions-empty {
+  margin: 0;
+  padding: 8px 10px;
+  color: var(--fg-muted);
+}
+
+.sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+}
+
+.session-row {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.session-row:hover {
+  background: var(--hover);
+}
+
+.session-row:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.session-title {
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+  font-size: 13px;
+}
+
+.session-trailing {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  min-width: 28px;
+}
+
+.session-row:hover .session-trailing {
+  opacity: 0;
+}
+
+.session-row-delete {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.session-row:hover .session-row-delete,
+.session-row:focus-within .session-row-delete {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.session-row-delete:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.session-row-delete svg {
+  width: 13px;
+  height: 13px;
+  display: block;
+}
+
+/* Running rows keep the spinner: hover/focus never reveals delete. */
+.session-row.is-running:hover .session-row-delete,
+.session-row.is-running:focus-within .session-row-delete {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.session-row.is-running:hover .session-trailing {
+  opacity: 1;
+}
+
+.session-time {
+  color: var(--fg-muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.session-running-spinner {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--spinner-track);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: session-spin 0.7s linear infinite;
+}
+
+@keyframes session-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Light sidebar ink and hover. Selected rows use the same accent treatment
+ * as Dark and secondary navigation (navigation-selection.css). */
+:root[data-theme="light"] .agent-nav-icon,
+:root[data-theme="light"] .sidebar-section-add,
+:root[data-theme="light"] .sidebar-rail-btn,
+:root[data-theme="light"] .workspace-row-icon,
+:root[data-theme="light"] .workspace-row-icon-chevron,
+:root[data-theme="light"] .archived-row-icon,
+:root[data-theme="light"] .archived-row-icon-chevron,
+:root[data-theme="light"] .workspace-sessions .session-leading {
+  color: #43536b;
+}
+
+:root[data-theme="light"] .sidebar-section-label,
+:root[data-theme="light"] .sidebar-section-title,
+:root[data-theme="light"] .archived-projects-back-label {
+  color: #64748b;
+}
+
+/* Structural sidebar controls retain their quieter blue hover. Navigation
+ * and session rows use the theme hover so selection keeps its accent wash. */
+:root[data-theme="light"] .sidebar-section-header:hover,
+:root[data-theme="light"] .sidebar-section-add:hover,
+:root[data-theme="light"] .sidebar-rail-btn:hover,
+:root[data-theme="light"] .workspace-row:hover,
+:root[data-theme="light"] .archived-row:hover,
+:root[data-theme="light"] .archived-session-row:hover {
+  background: rgba(0, 122, 255, 0.05);
+}
+
+/* The PROJECTS header hover is deliberately disabled at (0,3,0) — the
+ * Light scope above is (0,4,0) and would out-rank it. Restore it. */
+:root[data-theme="light"] .sidebar-workspace-section .sidebar-section-header:hover {
+  background: transparent;
+}
+
+.app-shell-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  background: transparent;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.app-shell-main:has(.graph-editor-screen) {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen {
+  min-height: 100%;
+  padding: 28px 32px 40px;
+}
+
+.screen-header {
+  margin-bottom: 20px;
+}
+
+.screen-title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.screen-subtitle {
+  margin: 0;
+  color: var(--fg-muted);
+}
+
+.screen-placeholder {
+  color: var(--fg-muted);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.screen-placeholder p {
+  margin: 0;
+}
+
+.search-field {
+  display: block;
+  margin-bottom: 16px;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 520px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--hover);
+  padding: 10px 12px;
+  outline: none;
+}
+
+/* Light: solid white base to avoid the blue-grey hover overlay. */
+:root[data-theme="light"] .search-input {
+  background: #ffffff;
+}
+
+.search-input:focus {
+  border-color: var(--focus-border);
+}
+
+.search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-result-row {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--hover);
+}

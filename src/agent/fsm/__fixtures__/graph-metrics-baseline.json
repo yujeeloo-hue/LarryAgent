@@ -1,0 +1,461 @@
+{
+  "_meta": {
+    "description": "FSM benchmark structural/token baseline — regenerated ONLY via the command below.",
+    "updateCommand": "UPDATE_BASELINE=1 node --import tsx --test src/agent/fsm/graphBaseline.test.ts",
+    "generatedAt": "2026-11-13T15:09:20.295Z"
+  },
+  "entries": {
+    "S1_react_baseline": {
+      "fingerprint": "926a477c",
+      "metrics": {
+        "modelCalls": 1,
+        "toolCalls": 0,
+        "edgeHops": 3,
+        "nodeVisits": {
+          "start": 1,
+          "agent": 1,
+          "skill_reflect_gate": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 5489,
+          "maxCall": 5489
+        },
+        "visitOrder": [
+          "start",
+          "agent",
+          "skill_reflect_gate",
+          "end"
+        ]
+      }
+    },
+    "S2_react_selfloop": {
+      "fingerprint": "926a477c",
+      "metrics": {
+        "modelCalls": 0,
+        "toolCalls": 0,
+        "edgeHops": 4,
+        "nodeVisits": {
+          "start": 1,
+          "agent": 2,
+          "skill_reflect_gate": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 0,
+          "maxCall": 0
+        },
+        "visitOrder": [
+          "start",
+          "agent",
+          "agent",
+          "skill_reflect_gate",
+          "end"
+        ]
+      }
+    },
+    "S3_v3_direct": {
+      "fingerprint": "a021625c",
+      "metrics": {
+        "modelCalls": 2,
+        "toolCalls": 1,
+        "edgeHops": 4,
+        "nodeVisits": {
+          "start": 1,
+          "analyser": 1,
+          "agent": 1,
+          "skill_reflect_gate": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 16,
+          "maxCall": 8
+        },
+        "visitOrder": [
+          "start",
+          "analyser",
+          "agent",
+          "skill_reflect_gate",
+          "end"
+        ]
+      }
+    },
+    "S4_v3_plan_lane": {
+      "fingerprint": "a021625c",
+      "metrics": {
+        "modelCalls": 3,
+        "toolCalls": 3,
+        "edgeHops": 5,
+        "nodeVisits": {
+          "start": 1,
+          "analyser": 1,
+          "plan_writer": 1,
+          "plan_reviewer": 1,
+          "skill_reflect_gate": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 24,
+          "maxCall": 8
+        },
+        "visitOrder": [
+          "start",
+          "analyser",
+          "plan_writer",
+          "plan_reviewer",
+          "skill_reflect_gate",
+          "end"
+        ]
+      }
+    },
+    "S5_v3_validator_loop": {
+      "fingerprint": "a021625c",
+      "metrics": {
+        "modelCalls": 2,
+        "toolCalls": 1,
+        "edgeHops": 5,
+        "nodeVisits": {
+          "start": 1,
+          "executor": 2,
+          "execution_validator": 1,
+          "skill_reflect_gate": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 16,
+          "maxCall": 8
+        },
+        "visitOrder": [
+          "start",
+          "executor",
+          "execution_validator",
+          "executor",
+          "skill_reflect_gate",
+          "end"
+        ]
+      }
+    },
+    "S6_subagent_loop": {
+      "fingerprint": "3d7b51c4",
+      "metrics": {
+        "modelCalls": 1,
+        "toolCalls": 0,
+        "edgeHops": 2,
+        "nodeVisits": {
+          "start": 1,
+          "subagent": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 3066,
+          "maxCall": 3066
+        },
+        "visitOrder": [
+          "start",
+          "subagent",
+          "end"
+        ]
+      }
+    },
+    "S7a_skill_reflect_eligible": {
+      "fingerprint": "a021625c",
+      "metrics": {
+        "modelCalls": 2,
+        "toolCalls": 0,
+        "edgeHops": 4,
+        "nodeVisits": {
+          "start": 1,
+          "analyser": 1,
+          "skill_reflect_gate": 1,
+          "skill_reflector": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 16,
+          "maxCall": 8
+        },
+        "visitOrder": [
+          "start",
+          "analyser",
+          "skill_reflect_gate",
+          "skill_reflector",
+          "end"
+        ]
+      }
+    },
+    "S7b_skill_reflect_skip": {
+      "fingerprint": "a021625c",
+      "metrics": {
+        "modelCalls": 1,
+        "toolCalls": 0,
+        "edgeHops": 3,
+        "nodeVisits": {
+          "start": 1,
+          "analyser": 1,
+          "skill_reflect_gate": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 8,
+          "maxCall": 8
+        },
+        "visitOrder": [
+          "start",
+          "analyser",
+          "skill_reflect_gate",
+          "end"
+        ]
+      }
+    },
+    "S8_custom_graph_pipeline": {
+      "fingerprint": "926a477c",
+      "metrics": {
+        "modelCalls": 1,
+        "toolCalls": 0,
+        "edgeHops": 3,
+        "nodeVisits": {
+          "start": 1,
+          "agent": 1,
+          "skill_reflect_gate": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 5489,
+          "maxCall": 5489
+        },
+        "visitOrder": [
+          "start",
+          "agent",
+          "skill_reflect_gate",
+          "end"
+        ]
+      }
+    },
+    "S1_react_baseline@win32": {
+      "fingerprint": "fa043a55",
+      "metrics": {
+        "modelCalls": 1,
+        "toolCalls": 0,
+        "edgeHops": 3,
+        "nodeVisits": {
+          "start": 1,
+          "agent": 1,
+          "skill_reflect_gate": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 4189,
+          "maxCall": 4189
+        },
+        "visitOrder": [
+          "start",
+          "agent",
+          "skill_reflect_gate",
+          "end"
+        ]
+      }
+    },
+    "S2_react_selfloop@win32": {
+      "fingerprint": "fa043a55",
+      "metrics": {
+        "modelCalls": 0,
+        "toolCalls": 0,
+        "edgeHops": 4,
+        "nodeVisits": {
+          "start": 1,
+          "agent": 2,
+          "skill_reflect_gate": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 0,
+          "maxCall": 0
+        },
+        "visitOrder": [
+          "start",
+          "agent",
+          "agent",
+          "skill_reflect_gate",
+          "end"
+        ]
+      }
+    },
+    "S3_v3_direct@win32": {
+      "fingerprint": "4a0ad83c",
+      "metrics": {
+        "modelCalls": 2,
+        "toolCalls": 1,
+        "edgeHops": 4,
+        "nodeVisits": {
+          "start": 1,
+          "analyser": 1,
+          "agent": 1,
+          "skill_reflect_gate": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 16,
+          "maxCall": 8
+        },
+        "visitOrder": [
+          "start",
+          "analyser",
+          "agent",
+          "skill_reflect_gate",
+          "end"
+        ]
+      }
+    },
+    "S4_v3_plan_lane@win32": {
+      "fingerprint": "4a0ad83c",
+      "metrics": {
+        "modelCalls": 3,
+        "toolCalls": 3,
+        "edgeHops": 5,
+        "nodeVisits": {
+          "start": 1,
+          "analyser": 1,
+          "plan_writer": 1,
+          "plan_reviewer": 1,
+          "skill_reflect_gate": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 24,
+          "maxCall": 8
+        },
+        "visitOrder": [
+          "start",
+          "analyser",
+          "plan_writer",
+          "plan_reviewer",
+          "skill_reflect_gate",
+          "end"
+        ]
+      }
+    },
+    "S5_v3_validator_loop@win32": {
+      "fingerprint": "4a0ad83c",
+      "metrics": {
+        "modelCalls": 2,
+        "toolCalls": 1,
+        "edgeHops": 5,
+        "nodeVisits": {
+          "start": 1,
+          "executor": 2,
+          "execution_validator": 1,
+          "skill_reflect_gate": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 16,
+          "maxCall": 8
+        },
+        "visitOrder": [
+          "start",
+          "executor",
+          "execution_validator",
+          "executor",
+          "skill_reflect_gate",
+          "end"
+        ]
+      }
+    },
+    "S6_subagent_loop@win32": {
+      "fingerprint": "fcf3c954",
+      "metrics": {
+        "modelCalls": 1,
+        "toolCalls": 0,
+        "edgeHops": 2,
+        "nodeVisits": {
+          "start": 1,
+          "subagent": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 2451,
+          "maxCall": 2451
+        },
+        "visitOrder": [
+          "start",
+          "subagent",
+          "end"
+        ]
+      }
+    },
+    "S7a_skill_reflect_eligible@win32": {
+      "fingerprint": "4a0ad83c",
+      "metrics": {
+        "modelCalls": 2,
+        "toolCalls": 0,
+        "edgeHops": 4,
+        "nodeVisits": {
+          "start": 1,
+          "analyser": 1,
+          "skill_reflect_gate": 1,
+          "skill_reflector": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 16,
+          "maxCall": 8
+        },
+        "visitOrder": [
+          "start",
+          "analyser",
+          "skill_reflect_gate",
+          "skill_reflector",
+          "end"
+        ]
+      }
+    },
+    "S7b_skill_reflect_skip@win32": {
+      "fingerprint": "4a0ad83c",
+      "metrics": {
+        "modelCalls": 1,
+        "toolCalls": 0,
+        "edgeHops": 3,
+        "nodeVisits": {
+          "start": 1,
+          "analyser": 1,
+          "skill_reflect_gate": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 8,
+          "maxCall": 8
+        },
+        "visitOrder": [
+          "start",
+          "analyser",
+          "skill_reflect_gate",
+          "end"
+        ]
+      }
+    },
+    "S8_custom_graph_pipeline@win32": {
+      "fingerprint": "fa043a55",
+      "metrics": {
+        "modelCalls": 1,
+        "toolCalls": 0,
+        "edgeHops": 3,
+        "nodeVisits": {
+          "start": 1,
+          "agent": 1,
+          "skill_reflect_gate": 1,
+          "end": 1
+        },
+        "estPromptTokens": {
+          "total": 4189,
+          "maxCall": 4189
+        },
+        "visitOrder": [
+          "start",
+          "agent",
+          "skill_reflect_gate",
+          "end"
+        ]
+      }
+    }
+  }
+}

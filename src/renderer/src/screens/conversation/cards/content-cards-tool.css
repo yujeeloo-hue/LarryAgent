@@ -1,0 +1,1331 @@
+/* Tool invocation cards, lined file bodies, terminal fences */
+
+/* Stable footprint; offscreen it contains no card / code DOM at all. */
+.conversation-tool-slot {
+  display: flow-root;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.conversation-tool-slot[data-tool-placeholder] {
+  contain: strict;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Tool call */
+.content-card-tool-header {
+  padding: 10px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.content-card-tool-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.content-card-tool-icon {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+}
+
+.content-card-tool-name {
+  font-weight: 600;
+  font-size: 13px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.content-card-tool-status {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.content-card-tool-running .content-card-tool-status {
+  color: var(--accent);
+}
+
+.content-card-tool-error .content-card-tool-status {
+  color: var(--danger-text);
+}
+
+.content-card-tool-summary {
+  font-size: 12px;
+  color: var(--fg-muted);
+  word-break: break-word;
+}
+
+.content-card-tool-details {
+  border-top: 1px solid var(--border);
+}
+
+.content-card-tool-details-summary,
+.content-card-approval-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+  color: var(--fg-muted);
+  user-select: none;
+}
+
+.content-card-tool-details-summary-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.content-card-tool-details-icon {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+}
+
+.content-card-tool-details-summary::-webkit-details-marker,
+.content-card-approval-details summary::-webkit-details-marker,
+.content-card-tool-result-summary::-webkit-details-marker {
+  display: none;
+}
+
+.content-card-tool-json {
+  margin: 0;
+  padding: 0 12px 12px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--fg-muted);
+}
+
+/* Tool result (collapsed by default; write/edit open) */
+.content-card-tool-result {
+  padding: 0;
+}
+
+.content-card-tool-invocation.is-compact {
+  width: min(520px, 100%);
+  box-sizing: border-box;
+  align-self: flex-start;
+}
+
+.content-card-tool-invocation.is-compact > .content-card-tool-result-summary {
+  cursor: default;
+}
+
+.content-card-tool-result-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+/* Keep Light tool cards neutral; blue is reserved for actual actions and links. */
+:root[data-theme="light"] .content-card-tool-invocation {
+  border-color: #d9dfe6;
+  background: #ffffff;
+}
+
+:root[data-theme="light"] .content-card-tool-invocation
+  > .content-card-tool-result-summary {
+  background: #ffffff;
+}
+
+:root[data-theme="light"] .content-card-tool-invocation
+  .content-card-tool-section-output {
+  background: #ffffff;
+}
+
+.content-card-tool-result-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  flex-wrap: nowrap;
+}
+
+.content-card-tool-result-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.content-card-tool-result-chevron {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+  transform: rotate(-90deg);
+  transform-origin: center;
+  transition: transform 200ms ease;
+  will-change: transform;
+}
+
+.content-card-tool-invocation[open] > .content-card-tool-result-summary .content-card-tool-result-chevron,
+.content-card-tool-result[open] > .content-card-tool-result-summary .content-card-tool-result-chevron {
+  transform: rotate(0deg);
+}
+
+.content-card-tool-details-summary > svg,
+.content-card-approval-details summary > svg,
+.content-card-tool-details-chevron {
+  flex: 0 0 auto;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  transition: transform 200ms ease;
+}
+
+.content-card-tool-details[open] > .content-card-tool-details-summary > svg,
+.content-card-approval-details[open] > summary > svg,
+.content-card-tool-details[open]
+  > .content-card-tool-details-summary
+  .content-card-tool-details-chevron {
+  transform: rotate(0deg);
+}
+
+/* Arguments label icon stays upright when the row expands. */
+.content-card-tool-details-summary-left > .content-card-tool-details-icon {
+  transform: none;
+}
+
+.content-card-tool-result-hint {
+  font-size: 12px;
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.content-card-tool-result-changes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.content-card-tool-result-changes .is-add {
+  color: var(--success-text);
+}
+
+.content-card-tool-result-changes .is-del {
+  color: var(--danger-text);
+}
+
+.content-card-tool-outcome {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 14px;
+  background: transparent;
+}
+
+.content-card-tool-outcome.is-ok {
+  color: var(--success-text);
+}
+
+.content-card-tool-outcome.is-fail {
+  color: var(--danger-text);
+}
+
+.content-card-tool-failure-label {
+  color: var(--danger-text);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.conversation-tool-slot[hidden] {
+  display: none;
+}
+
+/* Success marks are transient: created dormant (hidden) for history renders,
+   armed live by the finished-card swap — held 3s, then popped away. Other
+   failure marks and cards stay permanent. */
+.content-card-tool-outcome.is-ok.is-dormant,
+.content-card-subagent-status-icon.is-completed.is-dormant {
+  display: none;
+}
+
+.content-card-subagent-status-icon.is-completed {
+  width: 14px;
+}
+
+/* Pop-out exit: scale up briefly, then shrink + fade to nothing. The
+   visual is pure transform/opacity, but the slot itself is also collapsed
+   (width 14px → 0, margin-left → -10px cancelling the right-container gap)
+   so the row hint / line-count badge smoothly expand into the freed space.
+   The tween itself is a Web Animations animation (ToolOutcomeBadge.ts):
+   CSS animations restart when layoutTurns re-parents rows mid-stream,
+   which made the popped badge reappear on the next sibling tool finish.
+   This class only carries the terminal state. */
+.content-card-tool-outcome.is-faded,
+.content-card-subagent-status-icon.is-faded {
+  transform: scale(0);
+  opacity: 0;
+  /* Reclaim the 14px slot + the trailing flex gap of
+     .content-card-tool-result-right (gap: 10px). Badge is always the last
+     child of that container, so -10px cancels exactly one gap. */
+  width: 0;
+  margin-left: -10px;
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.content-card-tool-result-body {
+  padding: 0 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.content-card-tool-result-path {
+  padding: 8px 12px 0;
+  font-size: 12px;
+  color: var(--fg-muted);
+  word-break: break-word;
+}
+
+.content-card-tool-result-body .md-blocks,
+.content-card-tool-result-body .content-card-attachment {
+  margin: 0 12px;
+}
+
+.content-card-tool-result-body .tool-file-lines {
+  margin: 0 8px;
+}
+
+/* Unified tool invocation (input + output) */
+.content-card-tool-invocation-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
+
+.content-card-tool-section {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.content-card-tool-section-output {
+  border-top: 1px solid var(--border);
+  background: var(--hairline);
+}
+
+/* No Arguments section — avoid a double rule under the summary. */
+.content-card-tool-section-output:first-child {
+  border-top: 0;
+}
+
+/* Wrapper around sections that carry their own padding (upload transfer). */
+.content-card-tool-section-output-flush {
+  padding: 0;
+}
+
+.content-card-tool-section-label {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.content-card-tool-section .content-card-tool-details {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.content-card-tool-section .content-card-tool-result-body {
+  border-top: 0;
+  padding: 0;
+}
+
+.content-card-tool-section .content-card-tool-result-path {
+  padding: 0 0 6px;
+}
+
+.content-card-tool-section .content-card-tool-result-body .md-blocks,
+.content-card-tool-section .content-card-tool-result-body .content-card-attachment {
+  margin: 0;
+}
+
+.content-card-tool-section .content-card-tool-result-body .tool-file-lines {
+  margin: 0;
+}
+
+.content-card-tool-pending {
+  margin: 0;
+  color: var(--fg-muted);
+}
+
+/* Ephemeral commit card (after git commit; never persisted to transcript).
+   It sits directly in the messages list, so inset it and inherit the
+   assistant body metrics (line-height 1.55) to align with regular tool cards. */
+.content-card-tool-invocation[data-ephemeral-commit] {
+  margin-inline: var(--conversation-card-radius);
+  line-height: 1.55;
+}
+
+.content-card-commit-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.content-card-commit-hash {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--fg-muted);
+  word-break: break-all;
+}
+
+.content-card-commit-message {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.content-card-commit-source {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--warn-text);
+}
+
+.content-card-commit-source code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+}
+
+/* Ask User — quiz-style choice card */
+.content-card-tool-invocation.is-asking {
+  border-color: rgba(var(--accent-rgb), 0.35);
+  background: rgba(var(--accent-rgb), 0.05);
+}
+
+.content-card-ask-user-tool > .content-card-tool-result-summary {
+  align-items: flex-start;
+}
+
+.content-card-read-skill-tool > .content-card-tool-result-summary {
+  cursor: default;
+}
+
+.content-card-read-skill-tool .content-card-tool-result-chevron {
+  display: none;
+}
+
+.content-card-read-skill-tool .content-card-read-skill-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.content-card-read-skill-tool .content-card-read-skill-title,
+.content-card-search-tools-tool .content-card-search-tools-title,
+.content-card-subagent-tool .content-card-subagent-tool-title,
+.content-card-plan-tool .content-card-plan-tool-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.content-card-search-tools-tool > .content-card-tool-result-summary {
+  cursor: default;
+}
+
+.content-card-search-tools-tool .content-card-tool-result-chevron {
+  display: none;
+}
+
+.content-card-search-tools-tool .content-card-search-tools-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Subagent tools — framed tool card, non-expandable status row. */
+.content-card-subagent-tool > .content-card-tool-result-summary {
+  cursor: default;
+}
+
+.content-card-subagent-tool .content-card-tool-result-chevron {
+  display: none;
+}
+
+.content-card-subagent-tool .content-card-subagent-tool-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.content-card-subagent-tool .content-card-tool-result-left {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.content-card-subagent-status-icon {
+  flex: 0 0 auto;
+  opacity: 0.9;
+}
+
+.content-card-subagent-context {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-muted);
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+.content-card-subagent-status-icon.is-completed {
+  color: var(--success);
+}
+
+.content-card-subagent-status-icon.is-in-progress {
+  color: var(--accent);
+  transform-box: border-box;
+  transform-origin: center;
+  animation: subagent-spin 0.85s linear infinite;
+  will-change: transform;
+}
+
+.content-card-subagent-status-icon.is-cancelled {
+  color: var(--fg-muted);
+}
+
+@keyframes subagent-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* run_shell live run control — spinner swaps to a stop button on hover. */
+.content-card-tool-run-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.content-card-tool-run-spinner {
+  color: var(--accent);
+  transform-box: border-box;
+  transform-origin: center;
+  animation: subagent-spin 0.85s linear infinite;
+  will-change: transform;
+  transition: opacity 120ms ease;
+}
+
+.content-card-tool-stop-btn {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--danger);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 120ms ease,
+    background-color 120ms ease;
+}
+
+.content-card-tool-stop-btn:hover:not(:disabled) {
+  background: var(--danger-bg);
+}
+
+.content-card-tool-run-control:hover .content-card-tool-run-spinner {
+  opacity: 0;
+}
+
+.content-card-tool-run-control:hover .content-card-tool-stop-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.content-card-tool-stop-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.content-card-tool-run-control:hover .content-card-tool-stop-btn:disabled {
+  pointer-events: none;
+}
+
+/* Lined file body */
+.tool-file-lines {
+  /*
+   * Line box and stripe period locked together: line height = --diff-fs ×
+   * --diff-lh; the delete-stripe period = line height ÷ √2 ÷ m (at 45°,
+   * shifting down one line = m full periods, so adjacent del rows join
+   * seamlessly). --diff-fs follows the chat text scale (--chat-fs-scale),
+   * keeping the geometry consistent automatically.
+   */
+  --diff-fs: calc(12px * var(--chat-fs-scale, 1));
+  --diff-lh: 1.55;
+  --diff-row-h: calc(var(--diff-fs) * var(--diff-lh));
+  --del-stripe-m: 4;
+  --del-period: calc(
+    var(--diff-row-h) / 1.4142135623730951 / var(--del-stripe-m)
+  );
+  --diff-bar-w: 3px;
+  border: 1px solid var(--code-border);
+  border-radius: 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: min(480px, 55vh);
+  /* Classic (non-overlay) scrollbars take layout width: reserve the gutter up
+     front so a streaming preview crossing max-height does not reflow, and keep
+     the bar thin/themed instead of the platform default. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--code-border) transparent;
+  scrollbar-gutter: stable;
+  /* Chain vertical scroll to the conversation list once the body hits its
+     edge; keep horizontal isolated (no trackpad history nav from wide lines). */
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--diff-fs);
+  line-height: var(--diff-lh);
+  /* Dark keeps the original translucent wash — the opaque --code-surface
+   * token (introduced by the light-theme tokenization) sits darker than
+   * the card and reads as a solid black slab. Light keeps the solid
+   * token (deliberate dark code block on the paper theme). */
+  background: rgba(0, 0, 0, 0.22);
+}
+
+:root[data-theme="light"] .tool-file-lines {
+  background: var(--code-surface);
+}
+
+.tool-file-line {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0;
+  min-width: max-content;
+  width: 100%;
+}
+
+.tool-file-line.is-odd {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tool-file-line.is-even {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.tool-file-line.is-add {
+  background: rgba(63, 185, 80, 0.22) !important;
+}
+
+.tool-file-line.is-del {
+  background: var(--danger-soft) !important;
+}
+
+/* Left edge marker: solid green for adds, fine stripes for deletes (period locked to line height, adjacent rows continuous) */
+.tool-file-line.is-add::before,
+.tool-file-line.is-del::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--diff-bar-w);
+  pointer-events: none;
+}
+
+.tool-file-line.is-add::before {
+  background: var(--success);
+}
+
+.tool-file-line.is-del::before {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--danger) 0 calc(var(--del-period) / 2),
+    color-mix(in srgb, var(--danger) 30%, transparent)
+      calc(var(--del-period) / 2) var(--del-period)
+  );
+}
+
+.tool-file-line.is-empty {
+  padding: 10px 12px;
+  color: var(--code-fg-muted);
+}
+
+.tool-file-fold {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 100%;
+  margin: 0;
+  padding: 4px 12px;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--code-border) 70%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--code-border) 70%, transparent);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--code-fg-muted);
+  font: inherit;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  text-align: center;
+}
+
+.tool-file-fold:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--code-fg);
+}
+
+.tool-file-gutter {
+  flex: 0 0 auto;
+  padding: 0 8px 0 12px;
+  text-align: right;
+  color: var(--code-fg-muted);
+  user-select: none;
+  border-right: 1px solid var(--code-border);
+  /* Same story as .tool-file-lines: translucent gutter wash in dark. */
+  background: rgba(0, 0, 0, 0.18);
+  white-space: pre;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:root[data-theme="light"] .tool-file-gutter {
+  background: var(--code-surface);
+}
+
+.tool-file-gutter-diff {
+  gap: 0;
+  padding-right: 8px;
+}
+
+.tool-file-gutter-diff .tool-file-gutter-old {
+  padding-right: 7px;
+  border-right: 1px solid color-mix(in srgb, var(--code-border) 65%, transparent);
+}
+
+.tool-file-gutter-diff .tool-file-gutter-new {
+  padding-left: 7px;
+  padding-right: 6px;
+}
+
+.tool-file-diff-mark {
+  width: 0.9em;
+  text-align: center;
+  font-weight: 700;
+}
+
+.tool-file-line.is-add .tool-file-diff-mark {
+  color: var(--success);
+}
+
+.tool-file-line.is-del .tool-file-diff-mark {
+  color: var(--danger);
+}
+
+.tool-file-code {
+  padding: 0 12px 0 10px;
+  white-space: pre;
+  /* Base text only; highlight.js token spans keep theme colors. */
+  color: var(--code-fg);
+  background: transparent !important;
+}
+
+.tool-file-code.hljs {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/*
+ * Do not set `color` on add/del code roots — it fights hljs token colors
+ * (children without an explicit class would look “unhighlighted”).
+ * Row background already signals add/del; keep a light strike on deletes.
+ */
+.tool-file-line.is-del .tool-file-code {
+  text-decoration: line-through;
+  text-decoration-color: var(--danger-faint);
+}
+
+.content-card-code-lines {
+  border: 0;
+  border-radius: 0;
+  max-height: min(480px, 55vh);
+}
+
+/* Code / terminal fence body — full card width, matches header */
+.content-card-terminal {
+  margin: 0;
+  padding: 10px 12px 12px;
+  overflow: auto;
+  max-height: min(70vh, 720px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--code-border) transparent;
+  scrollbar-gutter: stable;
+  /* Same chaining policy as .tool-file-lines (see above). */
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
+  box-sizing: border-box;
+  width: 100%;
+  background: transparent;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: calc(12.5px * var(--chat-fs-scale, 1));
+  line-height: 1.5;
+  color: var(--code-fg);
+}
+
+.content-card-terminal-code {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+  padding: 0 !important;
+  background: transparent !important;
+  color: inherit;
+  font: inherit;
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.content-card-terminal-code.hljs {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.conversation-msg-tool .conversation-msg-body {
+  color: var(--fg);
+  font-size: 14px;
+}
+
+/* ======================================================================
+   upload_files card (live tool_live "upload" + finished transfer summary)
+   ====================================================================== */
+
+/* Running and finished stay the same width so the card doesn't jump. */
+.content-card-tool-invocation.content-card-tool-upload {
+  width: min(520px, 100%);
+  box-sizing: border-box;
+  align-self: flex-start;
+}
+
+/* Same 12px / 8px rhythm as the summary row and generic tool sections. */
+.content-card-tool-section.content-card-tool-upload-section {
+  padding: 10px 12px;
+  gap: 8px;
+}
+
+.content-card-tool-upload-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.content-card-tool-upload-bar {
+  position: relative;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(var(--tint-rgb), 0.07);
+  overflow: hidden;
+}
+
+.content-card-tool-upload-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  border-radius: 99px;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.3);
+  transition: width 150ms linear, background 200ms ease;
+}
+
+.content-card-tool-upload-bar-fill.is-ok {
+  background: var(--success);
+  box-shadow: none;
+}
+
+.content-card-tool-upload-bar-fill.is-indeterminate {
+  width: 100%;
+  background: transparent;
+  box-shadow: none;
+  transition: none;
+}
+
+.content-card-tool-upload-bar-fill.is-indeterminate::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 34%;
+  border-radius: 99px;
+  background: var(--accent);
+  animation: content-card-tool-upload-slide 1.15s cubic-bezier(0.45, 0.1, 0.55, 0.9) infinite;
+}
+
+@keyframes content-card-tool-upload-slide {
+  from { left: -36%; }
+  to { left: 100%; }
+}
+
+.content-card-tool-upload-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.content-card-tool-upload-pct {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  min-width: 3.25ch;
+}
+
+.content-card-tool-upload-pct:empty {
+  display: none;
+}
+
+.content-card-tool-upload-rest {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.content-card-tool-upload-meta {
+  margin-left: auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  color: var(--fg-muted);
+  font-size: 11.5px;
+}
+
+/* Soft guard: --delete without an .env exclude. */
+.content-card-tool-upload-warn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--warn-text);
+}
+
+.content-card-tool-upload-warn-icon {
+  flex: 0 0 auto;
+}
+
+/* File list: ~5 visible rows, the rest scroll. Empty container is
+   display:none so it does not add a flex gap under the progress line. */
+.content-card-tool-upload-files {
+  max-height: 108px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+  scrollbar-width: thin;
+}
+
+.content-card-tool-upload-files:empty {
+  display: none;
+}
+
+.content-card-tool-upload-files:not(:empty) {
+  border: 1px solid rgba(var(--tint-rgb), 0.075);
+  border-radius: 8px;
+  background: rgba(var(--shade-rgb), 0.25);
+  box-shadow: inset 0 1px 0 rgba(var(--tint-rgb), 0.025);
+}
+
+.content-card-tool-upload-file-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(var(--tint-rgb), 0.03);
+}
+
+.content-card-tool-upload-files .content-card-tool-upload-file-row:nth-child(odd) {
+  background: rgba(var(--tint-rgb), 0.02);
+}
+
+.content-card-tool-upload-files .content-card-tool-upload-file-row:last-child {
+  border-bottom: none;
+}
+
+.content-card-tool-upload-file-icon {
+  flex: 0 0 auto;
+  color: var(--accent);
+  opacity: 0.75;
+}
+
+/* Finished rows: the green check badge keeps its own colors — no accent
+   tint, full opacity. */
+.content-card-tool-upload-file-icon.is-done {
+  color: inherit;
+  opacity: 1;
+}
+
+.content-card-tool-upload-file-name {
+  flex: 1 1 0;
+  min-width: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.content-card-tool-upload-file-size {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Finished stats: same 12px as the live metrics line and sleep stats. */
+.content-card-tool-upload-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.content-card-tool-upload-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.content-card-tool-upload-stat b {
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.content-card-tool-upload-stat span {
+  color: var(--fg-muted);
+}
+
+.content-card-tool-upload-excludes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--fg-muted);
+}
+
+.content-card-tool-upload-excludes-icon {
+  flex: 0 0 auto;
+}
+
+/* Failure / stopped body. */
+.content-card-tool-upload-err {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.content-card-tool-upload-err svg {
+  flex: 0 0 auto;
+  color: var(--danger-text);
+}
+
+.content-card-tool-upload-err-title {
+  font-weight: 600;
+  color: var(--danger-text);
+}
+
+.content-card-tool-upload-err-stderr {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(var(--shade-rgb), 0.25);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 84px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.content-card-tool-upload-err-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--fg-muted);
+  line-height: 1.55;
+}
+
+/* ===== Light: upload card interior (sleep bar shares the recipe).
+ * Dark-canvas sub-surfaces — the shade-film file list, tint zebra, inset
+ * gloss — go neutral per the content-card-table Light recipe (#dfe3ea /
+ * #e7eaee / #f7f8fa on white). The done-state green joins the vivid fill
+ * family (#19b04f, same as the composer health dot): --success #1a7f37 is
+ * tuned for AA text and reads muddy as a 4px fill. Dark keeps the
+ * translucent formulas above (zero drift). ===== */
+:root[data-theme="light"] .content-card-tool-upload-bar,
+:root[data-theme="light"] .content-card-tool-sleep-bar {
+  background: rgba(18, 67, 117, 0.08);
+}
+
+:root[data-theme="light"] .content-card-tool-upload-bar-fill.is-ok,
+:root[data-theme="light"] .content-card-tool-sleep-bar-fill.is-ok {
+  background: #19b04f;
+}
+
+:root[data-theme="light"] .content-card-tool-upload-files:not(:empty) {
+  border-color: #dfe3ea;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+:root[data-theme="light"] .content-card-tool-upload-file-row {
+  border-bottom-color: #e7eaee;
+}
+
+:root[data-theme="light"]
+  .content-card-tool-upload-files
+  .content-card-tool-upload-file-row:nth-child(odd) {
+  background: #f7f8fa;
+}
+
+:root[data-theme="light"] .content-card-tool-upload-file-icon {
+  opacity: 1;
+}
+
+:root[data-theme="light"] .content-card-tool-upload-err-stderr {
+  border-color: #dfe3ea;
+  background: #f7f8fa;
+}
+
+/* ======================================================================
+   sleep countdown card (run_shell auto-detected wait-then-check)
+   Running and finished stay compact — same 12px / 8px rhythm as upload.
+   ====================================================================== */
+
+/* Running and finished stay the same width so the card doesn't jump. */
+.content-card-tool-invocation.content-card-tool-sleep {
+  width: min(520px, 100%);
+  box-sizing: border-box;
+  align-self: flex-start;
+}
+
+.content-card-tool-sleep-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--fg-muted);
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.content-card-tool-sleep-bar {
+  position: relative;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(var(--tint-rgb), 0.07);
+  overflow: hidden;
+}
+
+.content-card-tool-sleep-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.3);
+  transition: background 200ms ease;
+}
+
+.content-card-tool-sleep-bar-fill.is-ok {
+  background: var(--success);
+  box-shadow: none;
+}
+
+.content-card-tool-sleep-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.content-card-tool-sleep-readout {
+  flex: 0 0 auto;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  min-width: 7.5ch;
+  letter-spacing: 0.01em;
+  transition: color 200ms ease;
+}
+
+.content-card-tool-sleep-readout.is-ok {
+  color: var(--success-text);
+}
+
+.content-card-tool-sleep-rest {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.content-card-tool-sleep-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.content-card-tool-sleep-stats-copy {
+  min-width: 0;
+}
+
+.content-card-tool-sleep-stats b {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.content-card-tool-sleep-check {
+  transform-origin: center;
+}
+
+.content-card-tool-sleep-stdout {
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(var(--shade-rgb), 0.25);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 96px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* Light: the follow-up output dump joins the confirmed shell-frame recipe
+   (user-confirmed 2026-11-08, demos/shell-frame-light) — the grey shade wash
+   reads darker than the pale theme recess the conversation now uses for
+   shell output. Same tokens as .content-card-terminal.is-shell; Dark keeps
+   the translucent shade wash (zero drift). */
+:root[data-theme="light"] .content-card-tool-sleep-stdout {
+  border-color: rgba(var(--accent-rgb), 0.16);
+  background: var(--surface-2);
+  color: var(--fg);
+}
+
+.content-card-tool-sleep-err {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.content-card-tool-sleep-err svg {
+  flex: 0 0 auto;
+  color: var(--danger-text);
+}
+
+.content-card-tool-sleep-err-title {
+  font-weight: 600;
+  color: var(--danger-text);
+}
+
+.content-card-tool-sleep-err-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--fg-muted);
+  line-height: 1.4;
+}

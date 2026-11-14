@@ -1,0 +1,18 @@
+[Unit]
+Description=JellyBot agentd root updater (processes console update requests)
+Documentation=https://jellybot.cloud
+# Oneshot triggered by jellybot-agentd-update.path. Runs the release's own
+# update logic as root: download (sha256-pinned) → verify → install under
+# /opt/jellybot-agentd/<version> → switch `current` → refresh units →
+# restart jellybot-agentd. Progress lands in
+# /var/lib/jellybot-agent/update-status/current.json for the service to
+# stream to the web console.
+
+[Service]
+Type=oneshot
+ExecStart=/opt/jellybot-agentd/current/bin/agentd process-update-queue
+# Slow links: a full release download on a Pi may take minutes.
+TimeoutStartSec=900
+# No PrivateTmp here on purpose: local-path update sources under /tmp must
+# be the real /tmp the admin dropped them in.
+ProtectHome=read-only

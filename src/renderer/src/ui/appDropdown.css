@@ -1,0 +1,150 @@
+/* ── App-styled dropdown (see appDropdown.ts) ──
+ * One implementation for every place a native <select> used to sit: OS
+ * popups cannot be themed. Base sizing suits a form row; toolbars override
+ * padding/font in their own stylesheet (`.log-drawer .app-dropdown-btn`). */
+
+.app-dropdown {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.app-dropdown-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(var(--shade-rgb), 0.25);
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+}
+
+.app-dropdown-btn:hover {
+  border-color: rgba(var(--accent-rgb), 0.3);
+}
+
+.app-dropdown-btn:focus-visible,
+.app-dropdown-btn[aria-expanded="true"] {
+  border-color: rgba(var(--accent-rgb), 0.45);
+}
+
+.app-dropdown-leading {
+  display: inline-flex;
+  flex: none;
+  color: var(--fg-muted);
+}
+
+.app-dropdown-btn:hover .app-dropdown-leading {
+  color: var(--fg);
+}
+
+.app-dropdown-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-dropdown-chevron {
+  display: inline-flex;
+  flex: none;
+  color: var(--fg-muted);
+  transition: transform 140ms ease;
+}
+
+.app-dropdown-btn[aria-expanded="true"] .app-dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+.app-dropdown-menu {
+  /* Portaled to <body> while open (AppDropdown.placeMenu sets the fixed
+   * coordinates) so no ancestor's overflow can clip the popup. The height
+   * cap is applied inline by placeMenu(); overflow must scroll so long
+   * option lists (Unreal build targets) stay reachable. */
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow:
+    0 12px 32px rgba(var(--shadow-rgb), 0.35),
+    0 2px 8px rgba(var(--shadow-rgb), 0.22);
+  z-index: var(--z-modal);
+}
+
+.app-dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 6px;
+  color: var(--fg);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.app-dropdown-option.is-active {
+  background: var(--row-hover);
+}
+
+.app-dropdown-check {
+  display: inline-flex;
+  flex: none;
+  color: var(--accent);
+  visibility: hidden;
+}
+
+.app-dropdown-option[aria-selected="true"] .app-dropdown-check {
+  visibility: visible;
+}
+
+.app-dropdown-option[aria-selected="true"] .app-dropdown-option-label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.app-dropdown-option-hint {
+  margin-left: auto;
+  padding-left: 14px;
+  color: var(--fg-dim);
+  font-size: 11px;
+}
+
+/* The menu is portaled to <body>; the dark-tuned glass lift is too heavy on
+ * the light canvas, so light gets a crisper near-white sheet. */
+:root[data-theme="light"] .app-dropdown-menu {
+  border-color: var(--border);
+  background: rgba(255, 255, 255, 0.96);
+  -webkit-backdrop-filter: saturate(145%) blur(16px);
+  backdrop-filter: saturate(145%) blur(16px);
+  box-shadow: 0 5px 18px rgba(18, 52, 86, 0.085);
+}
+
+/* Compact trigger inside the Log drawer toolbar: matches the sibling
+ * select/search sizing (4px 8px padding, 5px radius, 11px text). */
+.log-drawer .app-dropdown {
+  width: auto;
+  flex: none;
+}
+
+.log-drawer .app-dropdown-btn {
+  gap: 6px;
+  padding: 4px 8px;
+  border-color: var(--log-btn-line);
+  border-radius: 5px;
+  background: var(--log-btn-fill);
+  font-size: 11px;
+}
+
+.log-drawer .app-dropdown-btn:hover,
+.log-drawer .app-dropdown-btn[aria-expanded="true"] {
+  border-color: var(--log-btn-line-hover);
+}

@@ -1,0 +1,435 @@
+/*
+ * Subagents window shell — chrome bar, run tab strip, transcript pane.
+ * Content rows/cards reuse the main conversation pipeline
+ * (conversation.css + content-cards.css); only the window chrome and tabs
+ * are window-specific. Tokens mirror the app theme system.
+ */
+
+html.subagents-window,
+body.subagents-window,
+body.subagents-window #app {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg, #141414);
+  color: var(--fg, #e8e8e8);
+}
+
+.subagents-panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg-elevated, var(--bg));
+  font-family: var(--font-ui);
+}
+
+/* ── chrome bar — 38px drag region, mac hiddenInset clearance ─── */
+.subagents-chrome {
+  flex: 0 0 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0 12px 0 78px;
+  overflow: hidden;
+  -webkit-app-region: drag;
+  app-region: drag;
+  box-sizing: border-box;
+}
+
+html.platform-win32 .subagents-chrome {
+  padding-left: 12px;
+}
+
+/* Windows caption group hugs the chrome's top-right corner. */
+html.platform-win32 .subagents-chrome {
+  padding-right: 0;
+}
+
+html.platform-win32 .subagents-chrome .title-bar-caption-group {
+  align-self: stretch;
+}
+
+.subagents-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.subagents-brand-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
+.subagents-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+  white-space: nowrap;
+}
+
+.subagents-session-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--fg-muted);
+  font-size: 11px;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subagents-chrome-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-dim);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.subagents-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.subagents-chip.is-running {
+  background: rgba(var(--accent-rgb), 0.16);
+  color: var(--accent);
+}
+
+.subagents-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.subagents-chip.is-running .subagents-chip-dot {
+  animation: subagents-pulse 1.4s ease-in-out infinite;
+}
+
+/* ── run tab strip — single row, horizontal scroll, edge fades ── */
+/* One row of pinned-height chips; the strip scrolls horizontally (wheel
+ * deltaY is translated in the controller, trackpads swipe natively) and
+ * hidden-scrollbar overflow is signalled by the two edge fades, whose
+ * visibility is data-driven (off when scrolled flush to that side). */
+.subagents-tabs-shell {
+  position: relative;
+  flex: 0 0 auto;
+  border-bottom: 1px solid rgba(var(--tint-rgb), 0.08);
+}
+
+.subagents-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  /* Tab row height is content-pinned: 6px top + 28px chip + 12px bottom
+   * breathing room before the divider (single row — nowrap + hidden). */
+  padding: 6px 12px 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.subagents-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.subagents-tabs-shell[hidden] {
+  display: none;
+}
+
+.subagents-tabs-fade {
+  position: absolute;
+  top: 0;
+  bottom: 1px; /* keep the divider crisp */
+  width: 44px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.subagents-tabs-fade.is-on {
+  opacity: 1;
+}
+
+.subagents-tabs-fade-left {
+  left: 0;
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated, var(--bg)),
+    rgba(0, 0, 0, 0)
+  );
+}
+
+.subagents-tabs-fade-right {
+  right: 0;
+  background: linear-gradient(
+    270deg,
+    var(--bg-elevated, var(--bg)),
+    rgba(0, 0, 0, 0)
+  );
+}
+
+.subagents-tab {
+  --subagents-tab-h: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  max-width: 220px;
+  height: var(--subagents-tab-h);
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 13px;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.subagents-tab:hover {
+  background: rgba(var(--tint-rgb), 0.05);
+  color: var(--fg);
+}
+
+:root[data-theme="light"] .subagents-tab:hover {
+  background: rgba(var(--accent-rgb), 0.07);
+}
+
+.subagents-tab.is-active {
+  background: rgba(var(--tint-rgb), 0.08);
+  border-color: rgba(var(--tint-rgb), 0.14);
+  color: var(--fg);
+}
+
+/* Light active follows the theme accent (rim kept); Dark stays neutral. */
+:root[data-theme="light"] .subagents-tab.is-active {
+  background: rgba(var(--accent-rgb), 0.08);
+  border-color: rgba(var(--accent-rgb), 0.38);
+  color: var(--accent);
+}
+
+.subagents-tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Role badge — solid vivid fill, cold→warm hue ladder, WCAG AA measured.
+ * Completed tabs compact to icon + label ~10s after completion: the badge
+ * animates shut (max-width + padding + opacity; the -6px margin eats the
+ * flex gap so the tab truly ends at the label). */
+.subagents-tab-role {
+  flex: 0 0 auto;
+  max-width: 120px;
+  overflow: hidden;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    max-width 260ms ease,
+    padding 260ms ease,
+    margin 260ms ease,
+    opacity 260ms ease;
+}
+
+.subagents-tab.is-compact .subagents-tab-role {
+  max-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  margin-right: -6px;
+  opacity: 0;
+}
+
+.subagents-tab-role[data-role="explore"] {
+  background: #134e4a;
+  color: #5eead4;
+}
+.subagents-tab-role[data-role="general"] {
+  background: #4c1d95;
+  color: #c4b5fd;
+}
+.subagents-tab-role[data-role="worker"] {
+  background: #78350f;
+  color: #fcd34d;
+}
+:root[data-theme="light"] .subagents-tab-role[data-role="explore"] {
+  background: #0f766e;
+  color: #ffffff;
+}
+:root[data-theme="light"] .subagents-tab-role[data-role="general"] {
+  background: #6d28d9;
+  color: #ffffff;
+}
+:root[data-theme="light"] .subagents-tab-role[data-role="worker"] {
+  background: #b45309;
+  color: #ffffff;
+}
+
+/* Single spinner node per tab: visible while running, hidden when terminal. */
+.subagents-tab .subagents-tab-spinner {
+  flex: 0 0 auto;
+  display: none;
+  color: inherit;
+}
+
+.subagents-tab[data-status="running"] .subagents-tab-spinner,
+.subagents-tab[data-status="queued"] .subagents-tab-spinner {
+  display: inline-flex;
+}
+
+.subagents-tab .subagents-tab-spinner svg {
+  animation: subagents-spin 0.85s linear infinite;
+}
+
+/* Terminal mark (same leading slot as the spinner) — completed green
+ * circle-check, error red circle-x, cancelled dim circle-slash. */
+.subagents-tab-terminal {
+  flex: 0 0 auto;
+  display: none;
+}
+
+.subagents-tab[data-status="completed"] .subagents-tab-terminal {
+  display: inline-flex;
+  color: var(--success-text);
+}
+
+.subagents-tab[data-status="error"] .subagents-tab-terminal {
+  display: inline-flex;
+  color: var(--danger-text);
+}
+
+.subagents-tab[data-status="cancelled"] .subagents-tab-terminal {
+  display: inline-flex;
+  color: var(--fg-dim);
+}
+
+@keyframes subagents-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes subagents-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subagents-tab .subagents-tab-spinner svg,
+  .subagents-tab-role,
+  .subagents-chip.is-running .subagents-chip-dot,
+  .subagents-tail-caret {
+    animation: none;
+    transition: none;
+  }
+  .subagents-tabs {
+    scroll-behavior: auto;
+  }
+}
+
+/* ── transcript pane — main conversation row styles apply inside ── */
+.subagents-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 10px 24px;
+  scrollbar-width: thin;
+}
+
+.subagents-pane-inner {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+/* Live streaming tail below committed rows. */
+.subagents-tail {
+  padding: 0 var(--conversation-card-radius, 10px);
+}
+
+.subagents-tail-reasoning {
+  padding: 0 var(--conversation-card-radius, 10px);
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.subagents-tail-caret {
+  display: inline-block;
+  width: 7px;
+  height: 15px;
+  margin-left: 2px;
+  vertical-align: -2px;
+  background: var(--accent);
+  border-radius: 1.5px;
+  animation: subagents-pulse 1s steps(2) infinite;
+}
+
+/* ── empty state ─────────────────────────────────────────────── */
+.subagents-empty {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  text-align: center;
+  padding: 0 24px;
+}
+
+.subagents-empty svg {
+  color: var(--fg-dim);
+}
+
+.subagents-empty-hint {
+  font-size: 11.5px;
+  color: var(--fg-dim);
+  max-width: 340px;
+  line-height: 1.55;
+}
+
+.subagents-empty[hidden] {
+  display: none;
+}

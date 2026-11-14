@@ -1,0 +1,108 @@
+/* Turn error card — tool-card family chrome with a danger tint.
+   Renders instead of the old raw red system text box; carries the Retry
+   pill that consumes the error row and resends the failed turn's prompt. */
+
+.content-card-error {
+  width: min(520px, 100%);
+  box-sizing: border-box;
+  align-self: flex-start;
+  border-color: color-mix(in srgb, var(--danger) 32%, transparent);
+  background:
+    linear-gradient(
+      color-mix(in srgb, var(--danger) 4.5%, transparent),
+      color-mix(in srgb, var(--danger) 4.5%, transparent)
+    ),
+    rgba(var(--tint-rgb), 0.03);
+}
+
+.content-card-error .content-card-tool-icon {
+  color: var(--danger);
+}
+
+.content-card-error .content-card-tool-name {
+  color: var(--danger);
+}
+
+.content-card-error > .content-card-tool-result-summary {
+  cursor: default;
+}
+
+.content-card-error-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--danger) 38%, transparent);
+  border-radius: 6px;
+  background: var(--danger-bg);
+  color: var(--danger);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    opacity 120ms ease;
+}
+
+.content-card-error-retry:hover:not(:disabled) {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+}
+
+.content-card-error-retry:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.content-card-error-retry svg {
+  flex: 0 0 auto;
+}
+
+/* A running turn blocks the resend — gate the pill via the list container
+   so the state stays live without re-rendering old turns. */
+.conversation-messages-list.is-turn-running .content-card-error-retry {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Retry clicked: the card folds to its title row immediately (the row itself
+   is dropped by the transcript refresh once the resend starts). Pill hides so
+   the click can't repeat; a rejected retry (false outcome) removes the class
+   and restores it. */
+.content-card-error.is-consumed .content-card-error-body {
+  display: none;
+}
+
+.content-card-error.is-consumed .content-card-error-retry {
+  display: none;
+}
+
+.content-card-error.is-consumed {
+  opacity: 0.72;
+}
+
+.content-card-error-body {
+  border-top: 1px solid color-mix(in srgb, var(--danger) 18%, transparent);
+  padding: 8px 12px 10px;
+}
+
+.content-card-error-text {
+  margin: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 96px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.content-card-error-text.is-short {
+  max-height: none;
+  overflow-y: visible;
+}

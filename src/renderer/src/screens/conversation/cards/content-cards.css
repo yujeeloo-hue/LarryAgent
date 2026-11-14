@@ -1,0 +1,56 @@
+/* Content cards — split by card/surface type; imported as one entry.
+   NOTE: @import must stay at the top of this file — any rule before an
+   @import causes the browser to drop every @import. */
+
+@import "./content-cards-markdown.css";
+@import "./content-cards-tool.css";
+@import "./content-cards-hosted.css";
+@import "./content-cards-build.css";
+@import "./content-cards-plan.css";
+@import "./content-cards-ask-user.css";
+@import "./content-cards-demo.css";
+@import "./content-cards-modified-files.css";
+@import "./content-cards-attachment.css";
+@import "./content-cards-approval.css";
+@import "./content-cards-media.css";
+@import "./content-cards-error.css";
+
+/* Enable animating details content (block-size: auto transitions). */
+:root {
+  interpolate-size: allow-keywords;
+}
+
+/* Animated expand/collapse for all collapsible content cards.
+   ::details-content is the implicit wrapper Chromium puts around everything
+   in a <details> except the <summary>. */
+.content-card-tool-invocation::details-content,
+.content-card-tool-details::details-content,
+.content-card-approval-details::details-content,
+.content-card-display-image-collapsible::details-content {
+  block-size: 0;
+  overflow-y: clip;
+  opacity: 0;
+  content-visibility: hidden;
+  transition:
+    content-visibility 200ms allow-discrete,
+    block-size 200ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 160ms ease;
+}
+
+.content-card-tool-invocation[open]::details-content,
+.content-card-tool-details[open]::details-content,
+.content-card-approval-details[open]::details-content,
+.content-card-display-image-collapsible[open]::details-content {
+  block-size: auto;
+  opacity: 1;
+  content-visibility: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content-card-tool-invocation::details-content,
+  .content-card-tool-details::details-content,
+  .content-card-approval-details::details-content,
+  .content-card-display-image-collapsible::details-content {
+    transition: none;
+  }
+}

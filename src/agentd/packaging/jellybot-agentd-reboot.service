@@ -1,0 +1,10 @@
+[Unit]
+Description=JellyBot agentd root reboot (processes a console reboot request)
+Documentation=https://jellybot.cloud
+# Oneshot triggered by jellybot-agentd-reboot.path. Deletes the request
+# before calling systemctl reboot so a boot cannot see the file and loop.
+
+[Service]
+Type=oneshot
+ExecStart=/opt/jellybot-agentd/current/bin/agentd process-reboot-queue
+TimeoutStartSec=60

@@ -1,0 +1,1245 @@
+.devtools-host,
+.dev-tools {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: transparent;
+  /* Top border lives on `.app-shell-drawer` only — avoid a double line. */
+  color: var(--fg);
+}
+
+.dev-tools-chrome {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+
+.dev-tools-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dev-tools-tab {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-weight: 550;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Colored marks show in both the flat drawer and the Dev Mode variant. */
+.dev-tools-tab-icon {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.dev-tools-tab:hover {
+  color: var(--fg);
+  background: rgba(var(--tint-rgb), 0.04);
+}
+
+/* Dark active reads at a glance: accent text + 12% accent tint, with a
+ * neutral brighter border (no accent echo on Dark borders — house rule).
+ * Approved 2026-11-11 detail-tab-active demo (recipe C, both contexts).
+ * Light restores the established quiet pill in the rule right below. */
+.dev-tools-tab.is-active {
+  color: var(--accent);
+  border-color: rgba(var(--tint-rgb), 0.14);
+  background: rgba(var(--accent-rgb), 0.12);
+}
+
+/* Light keeps the quiet neutral pill (zero drift from the pre-2026-11
+ * look): fg text + theme border + 6% tint. */
+:root[data-theme="light"] .dev-tools-tab.is-active {
+  color: var(--fg);
+  border-color: var(--border);
+  background: rgba(var(--tint-rgb), 0.06);
+}
+
+.dev-tools-close {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.dev-tools-close:hover {
+  color: var(--fg);
+  background: rgba(var(--tint-rgb), 0.06);
+}
+
+.dev-tools-pane {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dev-tools-pane.is-active {
+  display: flex;
+}
+
+/* Embedded log drawer: fill the pane. The drawer has no close of its own —
+ * the Detail shell owns closing. */
+.dev-tools-pane .log-drawer {
+  border-top: none;
+  height: 100%;
+}
+/* —— FSM pane —— */
+
+.fsm-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  font-family: var(--font-ui);
+}
+
+.fsm-pane-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+
+.fsm-pane-status {
+  font-size: 12px;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fsm-pane-toolbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fsm-pane-action {
+  appearance: none;
+  border: 1px solid rgba(var(--tint-rgb), 0.1);
+  border-radius: 6px;
+  background: rgba(var(--tint-rgb), 0.04);
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-weight: 550;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.fsm-pane-action:hover {
+  color: var(--fg);
+  background: rgba(var(--tint-rgb), 0.08);
+}
+
+.fsm-pane-viewport {
+  --fsm-grid-minor: 20px;
+  --fsm-grid-major: 100px;
+  --fsm-grid-x: 0px;
+  --fsm-grid-y: 0px;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  /* Quiet dot canvas: pale violet-white dots, brighter every major cell.
+     The +half-cell calc keeps dot centers exactly on world-grid
+     intersections so snapped node corners land on dots. */
+  background-color: #0b0a10;
+  background-image:
+    radial-gradient(circle, rgba(226, 220, 255, 0.13) 1px, transparent 1.4px),
+    radial-gradient(circle, rgba(226, 220, 255, 0.22) 1.3px, transparent 1.8px);
+  background-size:
+    var(--fsm-grid-minor) var(--fsm-grid-minor),
+    var(--fsm-grid-major) var(--fsm-grid-major);
+  background-position:
+    calc(var(--fsm-grid-x) + var(--fsm-grid-minor) / 2)
+      calc(var(--fsm-grid-y) + var(--fsm-grid-minor) / 2),
+    calc(var(--fsm-grid-x) + var(--fsm-grid-major) / 2)
+      calc(var(--fsm-grid-y) + var(--fsm-grid-major) / 2);
+}
+
+.fsm-pane-viewport.is-panning {
+  cursor: grabbing;
+}
+
+.fsm-pane-svg-host {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.fsm-pane-svg-host[hidden] {
+  display: none;
+}
+
+.fsm-pane-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(180, 255, 250, 0.45);
+  font-size: 12.5px;
+  padding: 24px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.fsm-pane-empty[hidden] {
+  display: none;
+}
+
+/* Legend (four-color dots + labels) */
+.fsm-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 12px;
+  flex: 0 0 auto;
+}
+
+.fsm-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--fg-muted);
+  user-select: none;
+}
+
+.fsm-legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.fsm-legend-dot.fsm-kind-forward {
+  background: #22f0ff;
+  box-shadow: 0 0 6px rgba(34, 240, 255, 0.85);
+}
+
+.fsm-legend-dot.fsm-kind-back {
+  background: #ff3dce;
+  box-shadow: 0 0 6px rgba(255, 61, 206, 0.85);
+}
+
+.fsm-legend-dot.fsm-kind-self {
+  background: #ffe14a;
+  box-shadow: 0 0 6px rgba(255, 225, 74, 0.85);
+}
+
+.fsm-legend-dot.fsm-kind-cross {
+  background: #c084fc;
+  box-shadow: 0 0 6px rgba(192, 132, 252, 0.85);
+}
+
+/* Zoom controls */
+.fsm-zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.fsm-zoom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+  border: 1px solid rgba(var(--tint-rgb), 0.1);
+  border-radius: 6px;
+  background: rgba(var(--tint-rgb), 0.04);
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-weight: 550;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 6px;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.fsm-zoom-btn:hover {
+  color: var(--fg);
+  background: rgba(var(--tint-rgb), 0.08);
+}
+
+.fsm-zoom-fit {
+  min-width: 36px;
+  padding: 0 10px;
+}
+
+.fsm-zoom-label {
+  font-size: 11px;
+  color: var(--fg-muted);
+  min-width: 38px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+/* SVG graph */
+
+.fsm-graph-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: inherit;
+}
+
+/* Edges: magenta / gold / cyan / violet — kept off the node palette. */
+.fsm-edge-hitarea {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.fsm-edge,
+.fsm-edge-flow {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.fsm-edge {
+  stroke-width: 1.6;
+  transition: stroke-width 0.15s ease, stroke 0.15s ease;
+}
+
+.fsm-edge-forward {
+  stroke: #22f0ff;
+  filter: drop-shadow(0 0 3px rgba(34, 240, 255, 0.85));
+}
+
+.fsm-edge-back {
+  stroke: #ff3dce;
+  stroke-dasharray: 5 4;
+  filter: drop-shadow(0 0 3px rgba(255, 61, 206, 0.85));
+}
+
+.fsm-edge-self {
+  stroke: #ffe14a;
+  stroke-dasharray: 5 4;
+  filter: drop-shadow(0 0 3px rgba(255, 225, 74, 0.85));
+}
+
+.fsm-edge-cross {
+  stroke: #c084fc;
+  filter: drop-shadow(0 0 3px rgba(192, 132, 252, 0.85));
+}
+
+.fsm-edge-flow {
+  stroke-width: 2.6;
+  stroke-dasharray: 10 16;
+  stroke-opacity: 0;
+}
+
+/* Dedicated arrowhead carrier (painted last, above the flow overlay).
+   stroke-width matters: markers scale with it (markerUnits=strokeWidth) —
+   mirrors the base line widths so the arrow size stays identical. */
+.fsm-edge-arrow {
+  fill: none;
+  stroke: none;
+  pointer-events: none;
+  stroke-width: 1.6;
+}
+
+.fsm-edge-flow-forward {
+  stroke: #e8ffff;
+  filter: drop-shadow(0 0 5px rgba(34, 240, 255, 1));
+}
+
+.fsm-edge-flow-back {
+  stroke: #ffd6f5;
+  filter: drop-shadow(0 0 5px rgba(255, 61, 206, 1));
+}
+
+.fsm-edge-flow-self {
+  stroke: #fff6c4;
+  filter: drop-shadow(0 0 5px rgba(255, 225, 74, 1));
+}
+
+.fsm-edge-flow-cross {
+  stroke: #f3e8ff;
+  filter: drop-shadow(0 0 5px rgba(192, 132, 252, 1));
+}
+
+/* Hover = highlight only: brighter kind stroke + stronger glow, no flow
+   animation — the flowing overlay is reserved for the selected state. */
+.fsm-edge-hit:hover .fsm-edge {
+  stroke-width: 2.4;
+}
+
+.fsm-edge-hit:hover .fsm-edge-arrow {
+  stroke-width: 2.4;
+}
+
+.fsm-edge-hit:hover .fsm-edge-forward {
+  stroke: #8ff7ff;
+  filter: drop-shadow(0 0 5px rgba(34, 240, 255, 1));
+}
+
+.fsm-edge-hit:hover .fsm-edge-back {
+  stroke: #ff86df;
+  filter: drop-shadow(0 0 5px rgba(255, 61, 206, 1));
+}
+
+.fsm-edge-hit:hover .fsm-edge-self {
+  stroke: #ffef9b;
+  filter: drop-shadow(0 0 5px rgba(255, 225, 74, 1));
+}
+
+.fsm-edge-hit:hover .fsm-edge-cross {
+  stroke: #ddb3fe;
+  filter: drop-shadow(0 0 5px rgba(192, 132, 252, 1));
+}
+
+.fsm-edge-hit:hover .fsm-arrow-head-forward {
+  fill: #8ff7ff;
+}
+
+.fsm-edge-hit:hover .fsm-arrow-head-back {
+  fill: #ff86df;
+}
+
+.fsm-edge-hit:hover .fsm-arrow-head-self {
+  fill: #ffef9b;
+}
+
+.fsm-edge-hit:hover .fsm-arrow-head-cross {
+  fill: #ddb3fe;
+}
+
+/* Selected = current style: thicker stroke + flowing overlay. */
+.fsm-edge-hit.is-selected .fsm-edge-flow {
+  stroke-opacity: 1;
+  animation: fsm-edge-flow 0.55s linear infinite;
+}
+
+.fsm-edge-hit.is-selected .fsm-edge {
+  stroke-width: 2.6;
+}
+
+.fsm-edge-hit.is-selected .fsm-edge-arrow {
+  stroke-width: 2.6;
+}
+
+@keyframes fsm-edge-flow {
+  to {
+    stroke-dashoffset: -26;
+  }
+}
+
+.fsm-arrow-head-forward {
+  fill: #22f0ff;
+}
+
+.fsm-arrow-head-back {
+  fill: #ff3dce;
+}
+
+.fsm-arrow-head-self {
+  fill: #ffe14a;
+}
+
+.fsm-arrow-head-cross {
+  fill: #c084fc;
+}
+
+/* Nodes: other = indigo, start = lime, end = orange. */
+.fsm-node rect {
+  fill: rgba(70, 110, 255, 0.58);
+  stroke: #8eb0ff;
+  stroke-width: 1.4;
+  filter: drop-shadow(0 0 6px rgba(80, 120, 255, 0.65));
+  transition: stroke 0.25s ease, fill 0.25s ease, filter 0.25s ease;
+}
+
+.fsm-node text.fsm-node-label {
+  fill: #f4feff;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  user-select: none;
+  pointer-events: none;
+  transition: fill 0.25s ease;
+}
+
+.fsm-node:hover rect {
+  fill: rgba(90, 130, 255, 0.72);
+  stroke: #b8ccff;
+  filter: drop-shadow(0 0 10px rgba(90, 130, 255, 0.85));
+}
+
+.fsm-node.is-entry rect {
+  fill: rgba(40, 230, 120, 0.58);
+  stroke: #5cff9a;
+  filter: drop-shadow(0 0 8px rgba(60, 255, 140, 0.7));
+}
+
+.fsm-node.is-entry:hover rect {
+  fill: rgba(55, 255, 140, 0.72);
+  stroke: #9dffc0;
+}
+
+.fsm-node.is-terminal rect {
+  fill: rgba(255, 120, 40, 0.58);
+  stroke: #ff9a55;
+  stroke-dasharray: 4 3;
+  filter: drop-shadow(0 0 8px rgba(255, 130, 50, 0.7));
+}
+
+.fsm-node.is-terminal:hover rect {
+  fill: rgba(255, 140, 60, 0.72);
+  stroke: #ffc08a;
+}
+
+/* Active: pulse stroke/glow only — keep the node's type fill. */
+.fsm-node.is-active rect {
+  transition: none;
+  stroke: #fff;
+  stroke-width: 2;
+  animation: fsm-node-blink 0.9s ease-in-out infinite;
+}
+
+.fsm-node.is-active text.fsm-node-label {
+  fill: #ffffff;
+}
+
+@keyframes fsm-node-blink {
+  0%,
+  100% {
+    stroke: #fff;
+    stroke-width: 2.4;
+    filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.95));
+  }
+  50% {
+    stroke-width: 1.4;
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.35));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Selection stays visible without motion: static bright core line. */
+  .fsm-edge-hit.is-selected .fsm-edge-flow {
+    animation: none;
+    stroke-opacity: 0.85;
+  }
+
+  .fsm-node.is-active rect {
+    animation: none;
+    stroke: #fff;
+    stroke-width: 1.8;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.75));
+  }
+}
+
+/* Graph parked until a real camera pose exists (drawer reopen). */
+.fsm-pane-svg-host.is-awaiting-fit {
+  visibility: hidden;
+}
+
+/* ———————————————————— Timeline (LLM waterfall) ———————————————————— */
+
+.timeline-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  font-family: var(--font-ui);
+  /* Folds below measure the pane (the drawer's width), not the viewport. */
+  container-type: inline-size;
+  container-name: timeline;
+}
+
+/* One header row: status · legend · actions. It never wraps — narrow panes
+ * shed legend detail by priority (container queries below the dot colors)
+ * while every control keeps its own size. */
+.timeline-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.timeline-status {
+  font-size: 12px;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.timeline-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 1 auto;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.timeline-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.timeline-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+}
+
+.timeline-legend-dot.is-user {
+  background: #42e882;
+}
+
+.timeline-legend-dot.is-llm {
+  background: #ffd23f;
+}
+
+.timeline-legend-dot.is-wait {
+  background: #c9782a;
+}
+
+.timeline-legend-dot.is-reasoning {
+  background: #ff9f1c;
+}
+
+.timeline-legend-dot.is-content {
+  background: #ffd23f;
+}
+
+.timeline-legend-dot.is-tools {
+  background: #4d9fff;
+}
+
+.timeline-legend-dot.is-aux {
+  background: #9d6bff;
+}
+
+.timeline-legend-dot.is-error {
+  background: #ff4d6d;
+}
+
+.timeline-legend-dot.is-inflight {
+  background: #ffd23f;
+  animation: timeline-pulse 1.2s ease-in-out infinite;
+}
+
+/* Narrow panes shed the legend by priority instead of wrapping the row:
+ * labels → Aux/Content dots → the whole strip. Every control keeps its size;
+ * a bare dot carries its name in `title` (set in TimelinePaneView).
+ * 880 is measured: dot+label legend still fits unclipped at 860, clips at 800. */
+@container timeline (max-width: 880px) {
+  .timeline-legend-item .timeline-legend-label {
+    display: none;
+  }
+
+  .timeline-legend {
+    gap: 7px;
+  }
+}
+
+@container timeline (max-width: 720px) {
+  .timeline-legend-item.is-aux,
+  .timeline-legend-item.is-content {
+    display: none;
+  }
+}
+
+@container timeline (max-width: 580px) {
+  .timeline-legend {
+    display: none;
+  }
+}
+
+.timeline-toolbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timeline-zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.timeline-zoom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+  border: 1px solid rgba(var(--tint-rgb), 0.1);
+  border-radius: 6px;
+  background: rgba(var(--tint-rgb), 0.04);
+  color: var(--fg-muted);
+  font-size: 12px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.timeline-zoom-btn:hover {
+  color: var(--fg);
+  background: rgba(var(--tint-rgb), 0.08);
+}
+
+.timeline-zoom-label {
+  font-size: 12px;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 44px;
+  text-align: center;
+}
+
+.timeline-action {
+  appearance: none;
+  border: 1px solid rgba(var(--tint-rgb), 0.1);
+  border-radius: 6px;
+  background: rgba(var(--tint-rgb), 0.04);
+  color: var(--fg-muted);
+  padding: 3px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.timeline-action:hover:not(:disabled) {
+  color: var(--fg);
+  background: rgba(var(--tint-rgb), 0.08);
+}
+
+.timeline-action.is-busy svg {
+  animation: timeline-spin 0.9s linear infinite;
+}
+
+@keyframes timeline-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.timeline-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  /* Anchors the absolute empty-state overlay to the full pane body. */
+  position: relative;
+}
+
+.timeline-viewport {
+  flex: 0 0 auto;
+  min-height: 120px;
+  min-width: 0;
+  position: relative;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.timeline-viewport.is-panning {
+  cursor: grabbing;
+}
+
+.timeline-svg {
+  display: block;
+  width: 100%;
+}
+
+/* SVG internals */
+.tl-gutter-bg {
+  fill: rgba(var(--tint-rgb), 0.035);
+}
+
+.tl-baseline {
+  stroke: rgba(var(--tint-rgb), 0.25);
+}
+
+.tl-grid {
+  stroke: rgba(var(--tint-rgb), 0.07);
+}
+
+.tl-tick-label {
+  fill: var(--fg-muted);
+  font-size: 10px;
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-track-label {
+  fill: var(--fg-muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+}
+
+.tl-track-sep {
+  stroke: rgba(var(--tint-rgb), 0.08);
+}
+
+.tl-track-divider {
+  stroke: rgba(var(--tint-rgb), 0.15);
+}
+
+/*
+ * Track colors: User green · LLM phases in one orange-yellow family
+ * (wait deep orange → reasoning orange → content bright yellow) ·
+ * Tools electric blue · Aux violet · Error neon red
+ */
+.tl-bar.is-user {
+  fill: #42e882;
+}
+
+.tl-bar.is-llm {
+  fill: #ffd23f;
+}
+
+.tl-bar.is-base {
+  opacity: 0.28;
+}
+
+.tl-bar.is-wait {
+  fill: #c9782a;
+}
+
+.tl-bar.is-reasoning {
+  fill: #ff9f1c;
+}
+
+.tl-bar.is-content {
+  fill: #ffd23f;
+}
+
+.tl-bar.is-tools {
+  fill: #4d9fff;
+}
+
+.tl-bar.is-tools.is-error {
+  fill: #ff4d6d;
+}
+
+.tl-bar.is-aux {
+  fill: #9d6bff;
+}
+
+.tl-bar.is-error {
+  fill: #ff4d6d;
+}
+
+.tl-bar.is-inflight {
+  animation: timeline-pulse 1.2s ease-in-out infinite;
+}
+
+.tl-bar.is-selected {
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 1.4;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.4));
+}
+
+/* Selection outline for phase-segmented LLM bars (one stroke over all segments). */
+.tl-select-outline {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 1.4;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.4));
+  pointer-events: none;
+}
+
+.tl-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+/* ===== Light: white-canvas palette (approved graphs-timeline-light-demo).
+ * The fills above are neon pastels tuned for the dark canvas; on white they
+ * wash out. Same hue per track, saturated mid-tones + a dark selection
+ * stroke (the white one is invisible on light). Dark zero drift. */
+:root[data-theme="light"] .tl-bar.is-user {
+  fill: #16a34a;
+}
+
+:root[data-theme="light"] .tl-bar.is-llm,
+:root[data-theme="light"] .tl-bar.is-content {
+  fill: #eab308;
+}
+
+:root[data-theme="light"] .tl-bar.is-wait {
+  fill: #b45309;
+}
+
+:root[data-theme="light"] .tl-bar.is-reasoning {
+  fill: #f97316;
+}
+
+:root[data-theme="light"] .tl-bar.is-tools {
+  fill: #2563eb;
+}
+
+:root[data-theme="light"] .tl-bar.is-tools.is-error,
+:root[data-theme="light"] .tl-bar.is-error {
+  fill: #dc2626;
+}
+
+:root[data-theme="light"] .tl-bar.is-aux {
+  fill: #7c3aed;
+}
+
+/* Legend mirrors the bar fills. */
+:root[data-theme="light"] .timeline-legend-dot.is-user {
+  background: #16a34a;
+}
+
+:root[data-theme="light"] .timeline-legend-dot.is-llm,
+:root[data-theme="light"] .timeline-legend-dot.is-content,
+:root[data-theme="light"] .timeline-legend-dot.is-inflight {
+  background: #eab308;
+}
+
+:root[data-theme="light"] .timeline-legend-dot.is-wait {
+  background: #b45309;
+}
+
+:root[data-theme="light"] .timeline-legend-dot.is-reasoning {
+  background: #f97316;
+}
+
+:root[data-theme="light"] .timeline-legend-dot.is-tools {
+  background: #2563eb;
+}
+
+:root[data-theme="light"] .timeline-legend-dot.is-aux {
+  background: #7c3aed;
+}
+
+:root[data-theme="light"] .timeline-legend-dot.is-error {
+  background: #dc2626;
+}
+
+/* White stroke/glow reads as nothing on white — flip to fg pigment. */
+:root[data-theme="light"] .tl-bar.is-selected,
+:root[data-theme="light"] .tl-select-outline {
+  stroke: #17202b;
+  filter: drop-shadow(0 0 6px rgba(23, 32, 43, 0.25));
+}
+
+/* Structural lines: black tints → cool blue-gray. */
+:root[data-theme="light"] .tl-gutter-bg {
+  fill: rgba(18, 67, 117, 0.05);
+}
+
+:root[data-theme="light"] .tl-baseline {
+  stroke: rgba(18, 67, 117, 0.3);
+}
+
+:root[data-theme="light"] .tl-grid {
+  stroke: rgba(18, 67, 117, 0.1);
+}
+
+/* Toolbar chrome: the 4% black film → white + theme border. */
+:root[data-theme="light"] .timeline-zoom-btn,
+:root[data-theme="light"] .timeline-action {
+  border-color: var(--border);
+  background: #ffffff;
+}
+
+:root[data-theme="light"] .timeline-zoom-btn:hover,
+:root[data-theme="light"] .timeline-action:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+@keyframes timeline-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.timeline-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  padding: 24px;
+  text-align: center;
+  user-select: none;
+  pointer-events: none;
+}
+
+.timeline-empty[hidden] {
+  display: none;
+}
+
+/* Imported (offline) timeline: tinted status text as a mode hint. */
+.timeline-pane.is-imported .timeline-status {
+  color: var(--accent);
+}
+
+/* Detail panel (below the waterfall, no divider line) */
+.timeline-detail {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 10px;
+}
+
+.timeline-detail[hidden] {
+  display: none;
+}
+
+.timeline-detail-section {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 650;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 4px;
+}
+
+.timeline-detail-section svg {
+  flex: 0 0 auto;
+}
+
+.timeline-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.timeline-detail-title {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--fg);
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeline-detail-subtitle {
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeline-detail-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  flex: 0 0 auto;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.timeline-detail-close:hover {
+  color: var(--fg);
+  background: rgba(var(--tint-rgb), 0.1);
+}
+
+.timeline-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.timeline-detail-col {
+  min-width: 0;
+  border: 1px solid rgba(var(--tint-rgb), 0.12);
+  border-radius: 8px;
+  background: rgba(var(--tint-rgb), 0.03);
+  padding: 8px 10px;
+}
+
+.timeline-detail-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--danger-muted);
+  word-break: break-all;
+}
+
+.timeline-detail-error svg {
+  flex: 0 0 auto;
+}
+
+/* Raw payload card: one card, two equal columns, always visible. */
+.timeline-detail-raws {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  margin-top: 8px;
+  border: 1px solid rgba(var(--tint-rgb), 0.12);
+  border-radius: 8px;
+  background: rgba(var(--tint-rgb), 0.03);
+  padding: 8px 10px;
+}
+
+.timeline-raw-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.timeline-raw-pane {
+  min-width: 0;
+}
+
+.timeline-raw-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 650;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.timeline-raw-title svg {
+  flex: 0 0 auto;
+}
+
+.timeline-raw-copy {
+  margin-left: auto;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+}
+
+.timeline-raw-copy:hover {
+  color: var(--fg);
+  background: rgba(var(--tint-rgb), 0.1);
+}
+
+.timeline-raw-copy.is-copied {
+  color: var(--success);
+}
+
+.timeline-raw-pane pre {
+  margin: 0;
+  padding: 8px;
+  max-height: 200px;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--fg-muted);
+  background: rgba(var(--tint-rgb), 0.06);
+  border: 1px solid rgba(var(--tint-rgb), 0.1);
+  border-radius: 6px;
+}
+
+.timeline-detail-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  padding: 3px 0;
+}
+
+.timeline-detail-label {
+  color: var(--fg-muted);
+  flex: 0 0 auto;
+}
+
+.timeline-detail-value {
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  word-break: break-word;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-bar.is-inflight,
+  .timeline-legend-dot.is-inflight {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+

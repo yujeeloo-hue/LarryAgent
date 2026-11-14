@@ -1,0 +1,214 @@
+@import "./action-buttons.css";
+@import "./spinners.css";
+
+/*
+ * Bundled webfonts — SF Pro Text / SF Mono are Apple-licensed and can't be
+ * redistributed, so non-Mac platforms fall to the closest open equivalents:
+ * Inter (SF Pro match) and JetBrains Mono. Variable woff2, latin subset
+ * (~47KB + ~40KB). Macs resolve the stacks below via system fonts and never
+ * download these files (font-display: swap keeps the fallback only while
+ * the woff2 streams in).
+ */
+@font-face {
+  font-family: "Inter Var";
+  src: url("../assets/fonts/inter-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono Var";
+  src: url("../assets/fonts/jetbrains-mono-latin-wght-normal.woff2")
+    format("woff2");
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #141414;
+  --bg-elevated: #141414;
+  --bg-sidebar: rgba(0, 0, 0, 0.48);
+  /* Right column surface — lightly translucent so macOS vibrancy peeks through. */
+  --bg-main: rgba(8, 8, 8, 0.8);
+  --fg: #e8e8e8;
+  --fg-muted: #9a9a9a;
+  /* Status-line shimmer bright stop (Dark: plain fg). Light re-values in
+     state/theme.ts — its fg is darker than fg-muted, which reads as dimming. */
+  --shimmer-hi: var(--fg);
+  --border: rgba(255, 255, 255, 0.045);
+  --pane-divider: rgba(150, 165, 190, 0.24);
+  --pane-divider-hover: color-mix(in srgb, var(--accent) 65%, transparent);
+  --pane-divider-halo: color-mix(in srgb, var(--accent) 20%, transparent);
+  --hover: rgba(255, 255, 255, 0.06);
+  --active: rgba(255, 255, 255, 0.1);
+  --accent: #00e5ff;
+  /* Semantic action fallback before ThemeManager injects derived colors. */
+  --button-primary-bg: #00e5ff;
+  --button-primary-bg-hover: #12e7ff;
+  --button-primary-bg-active: #24e9ff;
+  --button-primary-fg: #111111;
+  --button-danger-bg: rgba(248, 81, 73, 0.14);
+  --button-danger-bg-hover: rgba(248, 81, 73, 0.20);
+  --button-danger-bg-active: rgba(248, 81, 73, 0.26);
+  --button-danger-fg: #ff8580;
+  --button-danger-border: rgba(248, 81, 73, 0.25);
+  --button-danger-list-bg: rgba(248, 81, 73, 0.14);
+  --button-danger-list-bg-hover: rgba(248, 81, 73, 0.20);
+  --button-danger-list-bg-active: rgba(248, 81, 73, 0.26);
+  --button-danger-list-fg: #ff8580;
+  --button-disabled-bg: #303030;
+  --button-disabled-fg: #a3a3a3;
+  --button-focus-ring: #00e5ff;
+  /* Windows caption close hover — bright warning red (Windows convention). */
+  --win-close-red: #e81123;
+  /*
+   * Status & semantic tokens — mirrored by state/theme.ts for every theme
+   * (docs/theme-audit.md §2). Dark values here are the audit's measured
+   * values; the light variant comes from theme.ts injections.
+   */
+  --accent-rgb: 0, 229, 255;
+  --on-accent: #111;
+  --on-gold: #1a1408;
+  --surface-2: #1b1b1b;
+  --fg-dim: #6a6a6a;
+  --row-hover: rgba(255, 255, 255, 0.05);
+  --scrim: rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.45);
+  /* Shadow pigment for multi-layer stacks (see theme.ts). */
+  --shadow-rgb: 0, 0, 0;
+  --success: #3fb950;
+  --success-text: #6dca8c;
+  --success-bg: rgba(63, 185, 80, 0.14);
+  --warn: #d29922;
+  --warn-text: #e0a33a;
+  --gold-fill: #e2b340;
+  --warn-bg: rgba(210, 153, 34, 0.12);
+  --danger-text: #e5534b;
+  --danger-muted: #e8a0a0;
+  --vcs-added: #57ab5a;
+  --vcs-modified: #d29922;
+  --vcs-deleted: #e5534b;
+  --vcs-untracked: #539bf5;
+  --vcs-renamed: #d2a8ff;
+  --link: #58a6ff;
+  --badge-gold: #d6a94a;
+  --log-debug: #8a8a8a;
+  --log-info: #8ab4c8;
+  --log-warn: #d4b06a;
+  --log-error: #e08080;
+  --bubble-user-bg: rgba(20, 38, 42, 0.92);
+  --bubble-user-border: rgba(64, 224, 224, 0.35);
+  /*
+   * Surface polarity. Raised surfaces paint `rgba(var(--tint-rgb), α)`,
+   * recessed ones `rgba(var(--shade-rgb), α)`; themes swap the triple so the
+   * same alpha works in both directions. See state/theme.ts.
+   */
+  --tint-rgb: 255, 255, 255;
+  --shade-rgb: 0, 0, 0;
+  /* Code surfaces stay dark in every theme (github-dark highlighting). */
+  --code-fg: #e8e8e8;
+  --code-fg-muted: #9a9a9a;
+  --code-border: rgba(255, 255, 255, 0.08);
+  --code-surface: #0d0d0d;
+  /* Composer send/stop face — dark defaults; light re-values live in
+     state/theme.ts LIGHT_SEND_FACE_TOKENS. */
+  --send-face-bg: rgba(255, 255, 255, 0.1);
+  --send-face-bg-hover: rgba(255, 255, 255, 0.17);
+  --send-face-bg-disabled: rgba(255, 255, 255, 0.06);
+  --send-face-border: rgba(255, 255, 255, 0.22);
+  --send-face-border-hover: rgba(255, 255, 255, 0.32);
+  --send-face-border-disabled: rgba(255, 255, 255, 0.12);
+  --send-face-inset: rgba(255, 255, 255, 0.22);
+  --send-face-inset-disabled: rgba(255, 255, 255, 0.08);
+  --send-icon: #eefcff;
+  --send-icon-disabled: rgba(238, 252, 255, 0.42);
+  --send-glow-core: rgba(255, 255, 255, 0.85);
+  --send-glow-core-hover: rgba(255, 255, 255, 0.95);
+  --send-text-shadow: 0 1px 2px rgba(0, 24, 32, 0.45);
+  --titlebar-height: 32px;
+  --sidebar-width: 305px;
+  --detail-drawer-height: 50%;
+  --log-drawer-height: 260px;
+  --font-ui: "SF Pro Text", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* Monospace stack for code/editor surfaces. macOS keeps the native
+     ui-monospace/SF Mono renderer; every other platform prefers the bundled
+     JetBrains Mono variable webfont (see @font-face above) before falling
+     back to system monos — Windows previously landed on Courier New. */
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono Var",
+    SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+  /*
+   * Stacking ladder — single source for z-index (full convention in
+   * docs/STYLE.md "Stacking").
+   * Three-layer world:
+   *   A In-screen / in-component stacking: small integers (≤21); only
+   *     local relative order matters, bare numbers allowed.
+   *   B Canvas-workbench overlays (--z-pop-*, 55–120): how Dev Mode and
+   *     graph editor overlays stack against each other; notification
+   *     components (fixed, cross-screen popups) also pick their tier here.
+   *   C Global cross-screen layers (300+, body-mounted / position:fixed
+   *     full-screen overlays).
+   * Rules: any z-index ≥55 must use a var() tier — bare numbers forbidden;
+   * sub-order within a tier uses calc(var(--z-*) + n) instead of a new
+   * number; keep the gaps between tiers when inserting a new one.
+   */
+  --z-pop-pill: 55;        /* floating context pill (below palette) */
+  --z-pop-palette: 60;     /* Quick Open / Find / canvas popover */
+  --z-pop-toast: 62;       /* app notification toast stack (above palette) */
+  --z-pop-pop: 70;         /* large pop-over panels (session menu / notification corner popup) */
+  --z-pop-menu: 80;        /* context menu / action popover (fixed) */
+  --z-pop-shield: 90;      /* workbench fullscreen shield (inset 0) */
+  --z-pop-hover: 120;      /* hover rich card (blame hover, above the shield) */
+  --z-flow-menu: 300;      /* first-run guided-flow menu */
+  --z-flow-overlay: 400;   /* first-run guided-flow fullscreen shield */
+  --z-modal: 1000;         /* in-screen modal / drag ghost */
+  --z-inspector: 1200;     /* debug value inspector (body-mounted, above every workbench overlay) */
+  --z-dialog: 10000;       /* fullscreen dialog */
+  --z-dialog-over: 10001;  /* tip / secondary card above a dialog */
+  --z-dialog-menu: 10002;  /* menu popped above a dialog */
+}
+
+/* Native form controls / scrollbars must follow the theme. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --pane-divider: #dce1e8;
+  --pane-divider-hover: color-mix(in srgb, var(--accent) 70%, #dce1e8);
+  --pane-divider-halo: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

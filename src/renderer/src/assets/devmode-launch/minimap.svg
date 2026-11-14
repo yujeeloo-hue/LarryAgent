@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#14f5bd"/><stop offset=".52" stop-color="#00d9c6"/><stop offset="1" stop-color="#00a6c4"/></linearGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="0"><stop offset=".18" stop-color="#078da7" stop-opacity="0"/><stop offset=".42" stop-color="#078da7" stop-opacity=".4"/><stop offset=".64" stop-color="#078da7" stop-opacity=".4"/><stop offset=".82" stop-color="#078da7" stop-opacity="0"/></linearGradient>
+    <linearGradient id="pin" x1="0" y1="0" x2=".6" y2="1"><stop stop-color="#ff5050"/><stop offset="1" stop-color="#e4263d"/></linearGradient>
+    <path id="shape" d="m3.3 4.5 3.5-1.6q1.2-.7 2.8-.1l5.2 1.8q1.2.5 2.4-.1L20 3.2q2.3-1 2.3 1.6v12.6q0 1.6-1.5 2.3l-3.5 1.5q-1.4.6-2.8.1l-5.3-1.9q-1.2-.4-2.4.1L4 20.8q-2.3 1-2.3-1.6V6.8q0-1.6 1.6-2.3Z"/>
+  </defs>
+  <g transform="translate(12 12) scale(.95) translate(-12 -12)">
+    <g transform="translate(0 2.524085192) translate(12 12) scale(1 0.888623088) translate(-12 -12)">
+      <use href="#shape" fill="url(#g)"/>
+      <use href="#shape" fill="url(#fold)"/>
+    </g>
+    <g transform="translate(0 -5.052632)">
+      <path d="M12 18s5-4.8 5-8.2a5 5 0 1 0-10 0C7 13.2 12 18 12 18Z" fill="url(#pin)"/>
+      <circle cx="12" cy="9.8" r="1.85" fill="#fff"/>
+    </g>
+  </g>
+</svg>

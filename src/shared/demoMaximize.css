@@ -1,0 +1,90 @@
+/* A closed dialog renders inline; opening it promotes the SAME iframe to
+   the native modal top layer without moving or reloading its document. */
+.content-card-demo-preview {
+  display: block;
+  box-sizing: border-box;
+  inset: auto;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.content-card-demo-preview[open] {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border-radius: 0;
+  background: var(--bg, #141414);
+}
+
+.content-card-demo-preview[open]::backdrop {
+  background: var(--bg, #141414);
+}
+
+.content-card-demo-preview[open] .content-card-demo-iframe {
+  height: 100%;
+}
+
+.content-card-demo-maximize {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  right: max(10px, env(safe-area-inset-right));
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  /* Same Dark/Light faces and icon colors as the parameter button. */
+  background: #1f1f1f;
+  color: var(--fg-muted);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+.content-card-demo-maximize:hover {
+  color: var(--fg);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+}
+
+:root[data-theme="light"] .content-card-demo-maximize {
+  border-color: rgba(18, 67, 117, 0.18);
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(18, 52, 86, 0.18);
+}
+
+:root[data-theme="light"] .content-card-demo-maximize:hover {
+  box-shadow: 0 4px 14px rgba(18, 52, 86, 0.26);
+}
+
+.content-card-demo-maximize:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.content-card-demo-maximize svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+@media (pointer: coarse) {
+  .content-card-demo-maximize {
+    width: 44px;
+    height: 44px;
+  }
+}

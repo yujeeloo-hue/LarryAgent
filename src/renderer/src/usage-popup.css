@@ -1,0 +1,395 @@
+/*
+ * Tray usage popup card — CursorUsage visual language
+ * (docs/plans/20261013-usage-popup-tray-icon.md). Opaque surface in both
+ * themes (Light pure white + theme border, Dark #1b1b1b + neutral border,
+ * same chrome rule as the notify card). Brand constants mirror CursorUsage
+ * MenuBarView.swift: neon gradient bars (#6B14D9 → #AD38FF → #FF6BF2) and
+ * the gold plan badge (#E2B340), fixed in both themes.
+ */
+
+.usage-popup-window,
+.usage-popup-window html,
+.usage-popup-window body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+}
+
+.usage-popup-window {
+  /* Windows draws a translucent rounded card inside a square transparent
+   * window. macOS fills the native rounded window with the theme color
+   * (see the darwin overrides below). */
+  --up-card-bg: rgba(27, 27, 27, 0.8);
+  --up-card-border: rgba(255, 255, 255, 0.09);
+  /* Blur must fade inside the window padding (6px top, 8px sides, 16px
+     bottom). A larger shadow is cut by the square window and shows up as
+     a semi-transparent black right angle outside the card's radius. */
+  --up-card-shadow: 0 3px 5px rgba(0, 0, 0, 0.32);
+  --up-track: rgba(255, 255, 255, 0.12);
+  --up-divider: rgba(255, 255, 255, 0.08);
+  font-family: var(--font-ui);
+  box-sizing: border-box;
+  display: grid;
+  align-items: start;
+  /* Transparent margins so the card shadow has room to paint. */
+  padding: 6px 8px 16px;
+}
+
+html[data-theme="light"] .usage-popup-window {
+  /* Windows rounded-card path (macOS uses solid theme fill + window
+   * opacity — see usagePopup.ts). 0.95: 0.9 read as too translucent. */
+  --up-card-bg: rgba(255, 255, 255, 0.95);
+  --up-card-border: rgba(18, 67, 117, 0.16);
+  --up-card-shadow: 0 3px 5px rgba(23, 32, 43, 0.18);
+  --up-track: rgba(0, 0, 0, 0.1);
+  --up-divider: rgba(0, 0, 0, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.usage-card {
+  position: relative;
+  width: 264px;
+  background: var(--up-card-bg);
+  border: 1px solid var(--up-card-border);
+  border-radius: 12px;
+  box-shadow: var(--up-card-shadow);
+  padding: 12px;
+  color: var(--fg);
+  overflow: hidden;
+}
+
+/* Windows hover-revealed close × — hidden until the card is hovered so the
+ * resting panel stays chrome-free (usagePopupMain.ts appends it on win32
+ * only; macOS closes via Esc / blur per its popover convention). */
+.up-close-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.usage-card:hover .up-close-btn,
+.up-close-btn:focus-visible {
+  opacity: 1;
+}
+
+.up-close-btn:hover {
+  background: var(--up-divider);
+  color: var(--fg);
+}
+
+/* tokens.css gives every #app a full-height, clipped viewport. This host
+   must follow the card's fractional height and let its rounded shadow reach
+   the body padding; clipping here cuts the bottom border and squares off
+   the shadow at the card's lower corners. */
+.usage-popup-window #app {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+/* macOS panel is the window: theme fill to the edges, system corner clip
+   and shadow. No CSS radius — those transparent pixels show up as gray
+   tips on the desktop. */
+html[data-platform="darwin"] .usage-popup-window {
+  padding: 0;
+}
+
+html[data-platform="darwin"] .usage-card {
+  width: 100%;
+  background: #1b1b1b;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+html[data-platform="darwin"][data-theme="light"] .usage-card {
+  background: #ffffff;
+}
+
+/* No pop-in animation — the panel appears instantly on tray click. */
+
+/* ---- Sections ---------------------------------------------------------- */
+
+.up-section + .up-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--up-divider);
+}
+
+.up-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.up-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+/* Gold plan badge (CursorUsage #E2B340 capsule, black caption). Sized down
+   from 10px/2x8 so it reads as a qualifier next to the 13px section title
+   instead of competing with it (user: 「PRO 有点显得大了」). */
+.up-badge {
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #e2b340;
+  color: #000;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-transform: capitalize;
+}
+
+/* Light theme: a more vivid gold — #E2B340 reads dull over a white
+ * translucent card; dark keeps the CursorUsage original. */
+html[data-theme="light"] .up-badge {
+  background: #ffc53d;
+}
+
+.up-bar-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 48px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.up-bar-label {
+  font-size: 11.5px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+.up-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--up-track);
+  overflow: hidden;
+}
+
+.up-fill {
+  height: 100%;
+  border-radius: 3px;
+  /* Neon gradient, fixed brand colors in both themes. */
+  background: linear-gradient(90deg, #6b14d9, #ad38ff, #ff6bf2);
+}
+
+.up-pct {
+  font-size: 12px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* One rotating caption per section. Height is locked to a single line so a
+ * rotation tick never changes the content height (and never re-reports a
+ * resize to the main process). Durations come from usageCaption.ts via
+ * --up-caption-fade; never hardcode a second copy here. */
+.up-caption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 15px;
+  margin-top: 6px;
+}
+
+.up-caption-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 10.5px;
+  line-height: 15px;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Composited properties only (opacity / transform). */
+  transition:
+    opacity var(--up-caption-fade, 0.14s) ease,
+    transform var(--up-caption-fade, 0.14s) ease;
+}
+
+.up-caption-text.is-out {
+  opacity: 0;
+  transform: translateY(2px);
+}
+
+/* Single-line sections have nothing to rotate — no pointer affordance. */
+.up-caption[data-count="1"] .up-caption-text {
+  cursor: default;
+}
+
+.up-caption:not([data-count="1"]) .up-caption-text {
+  cursor: pointer;
+}
+
+.up-caption:hover .up-caption-text {
+  color: var(--fg);
+}
+
+/* Dot strip: one pip per line. 2px dots + 2px gaps keep the text column wide
+ * enough for the longest adapter line at the 264px (Windows) card. */
+.up-pips {
+  display: inline-flex;
+  gap: 2px;
+  flex: none;
+}
+
+.up-pip {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: var(--up-track);
+  transition:
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.up-pip.is-on {
+  background: var(--fg-muted);
+  transform: scale(1.6);
+}
+
+.up-error {
+  font-size: 11px;
+  color: var(--danger-text);
+  line-height: 1.4;
+}
+
+/* ---- Empty / loading ---------------------------------------------------- */
+
+.up-empty-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.up-empty-hint {
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.45;
+}
+
+.up-skel {
+  border-radius: 4px;
+  background: var(--up-track);
+  animation: up-skel-pulse 1.1s ease-in-out infinite;
+}
+
+.up-skel-title {
+  width: 40%;
+  height: 13px;
+  margin-bottom: 8px;
+}
+
+.up-skel-bar {
+  height: 6px;
+  border-radius: 3px;
+  margin-top: 7px;
+}
+
+.up-skel-line {
+  width: 65%;
+  height: 10px;
+  margin-top: 8px;
+}
+
+@keyframes up-skel-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* ---- Footer -------------------------------------------------------------- */
+
+.up-footer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--up-divider);
+}
+
+.up-updated {
+  flex: 1;
+  min-width: 0;
+  font-size: 10.5px;
+  color: var(--fg-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.up-icon-btn {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.up-icon-btn:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.up-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.up-icon-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.up-icon-btn.is-busy svg {
+  animation: up-spin 0.9s linear infinite;
+}
+
+@keyframes up-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .up-skel,
+  .up-icon-btn.is-busy svg {
+    animation: none;
+  }
+
+  /* Rotation is disabled in JS (usageCaption.ts); the fade goes with it. */
+  .up-caption-text,
+  .up-pip {
+    transition: none;
+  }
+}

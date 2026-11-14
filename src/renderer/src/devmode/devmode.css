@@ -1,0 +1,5908 @@
+/* Dev Mode workbench (plan: dev-mode-v1) — three-column layout. */
+@import "./language-popovers.css";
+
+/* Monaco 0.56 context menu chrome. The right-click menu is the classic
+ * Menu widget: .context-view (ABSOLUTE, light DOM inside the editor
+ * container — standalone mode never creates a .shadow-root-host) wrapping
+ * .monaco-scrollable-element, which Menu styles INLINE (outline + radius +
+ * background) with colors fed by --vscode-menu-border. Standalone themes
+ * leave that var undefined (falls back to editorWidget.border ≈ invisible),
+ * so we define it here — it drives both the inline outline and the inner
+ * .monaco-menu border. Remaining vars round the menu and drive the rows. */
+:root {
+  --vscode-menu-border: rgba(255, 255, 255, 0.18);
+  --vscode-cornerRadius-large: 10px;
+  --vscode-cornerRadius-medium: 6px;
+  --vscode-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --vscode-list-hoverBackground: rgba(255, 255, 255, 0.08);
+  --vscode-list-hoverForeground: #e8e8e8;
+  --vscode-menu-selectionBorder: transparent;
+}
+
+/* Menu box itself: frost + depth on the scroll element (the box with the
+ * background). No inline box-shadow there, so plain CSS applies cleanly and
+ * the shadow follows its inline 10px radius. */
+.devmode-editor-host .context-view .monaco-scrollable-element {
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 6px 16px rgba(0, 0, 0, 0.32),
+    0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* ------------------------------------------- F12 peek (defs / references)
+ * Monaco's Go-to-Definition / References peek lives in .zone-widget
+ * (absolute, light DOM inside the editor host) wrapping .peekview-widget
+ * with a .head (title + codicon actions) and .body (result tree on the
+ * left, embedded editor on the right). Colors come from the peekView
+ * tokens in monacoSetup.defineTheme; this block rounds the box, adds the
+ * app's frost/depth treatment, and aligns the head/actions with the
+ * context-menu / find-widget surface language. */
+.devmode-editor-host .zone-widget .peekview-widget {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 6px 16px rgba(0, 0, 0, 0.32),
+    0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* Title bar: quiet strip above the content, divider below (Monaco draws
+ * its own 1px divider off the title background — repaint it ours). */
+.devmode-editor-host .zone-widget .peekview-widget .head {
+  border-bottom: 1px solid var(--divider, rgba(255, 255, 255, 0.1));
+}
+
+.devmode-editor-host .zone-widget .peekview-widget .head .peekview-title .filename {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.devmode-editor-host .zone-widget .peekview-widget .head .peekview-title .dirname {
+  font-size: 11px;
+}
+
+/* Head action buttons (codicon): same square-hover as find widget buttons. */
+.devmode-editor-host .zone-widget .peekview-widget .head .peekview-actions .action-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: 0 1px;
+  border-radius: 5px;
+}
+
+.devmode-editor-host .zone-widget .peekview-widget .head .peekview-actions .action-label:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Result rows: relax the default 22px height slightly and let the themed
+ * list tokens drive hover/focus (accent wash, not VS Code blue). */
+.devmode-editor-host .zone-widget .peekview-widget .body .monaco-list-row {
+  border-radius: 4px;
+}
+
+/* ------------------------------------------- completion list (suggest widget)
+ * Same frosted surface as the context menu / peek. Row height comes from the
+ * `suggestLineHeight` editor option (the virtual list sizes rows in JS), so
+ * spacing here only insets the highlight: a rounded block 4px in from the
+ * sides and 2px from its neighbours, drawn on ::before because Monaco paints
+ * the focused row background through an id-scoped rule. */
+.devmode-editor-host .monaco-editor .suggest-widget,
+.devmode-editor-host .monaco-editor .suggest-details {
+  border-radius: 10px;
+  overflow: hidden;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 6px 16px rgba(0, 0, 0, 0.32),
+    0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.devmode-editor-host .monaco-editor .suggest-widget .monaco-list .monaco-list-row {
+  isolation: isolate; /* keeps the ::before highlight inside the row */
+  padding: 0 12px 0 10px;
+  background-color: transparent !important;
+  outline: none !important;
+}
+
+.devmode-editor-host .monaco-editor .suggest-widget .monaco-list .monaco-list-row::before {
+  content: "";
+  position: absolute;
+  inset: 2px 4px;
+  z-index: -1;
+  border-radius: 6px;
+  background: transparent;
+  transition: background-color 80ms ease-out;
+}
+
+.devmode-editor-host .monaco-editor .suggest-widget .monaco-list .monaco-list-row:hover::before {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.devmode-editor-host .monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused::before {
+  background: rgba(var(--accent-rgb), 0.16);
+}
+
+/* Kind icon: a little air before the name. */
+.devmode-editor-host .monaco-editor .suggest-widget .monaco-list .monaco-list-row .suggest-icon {
+  margin-right: 8px;
+  opacity: 0.85;
+}
+
+/* Name · signature (left) … type (right): quieter secondary columns. */
+.devmode-editor-host
+  .monaco-editor
+  .suggest-widget
+  .monaco-list
+  .monaco-list-row
+  > .contents
+  > .main
+  > .left
+  > .signature-label {
+  margin-left: 1px;
+  opacity: 0.5;
+}
+
+.devmode-editor-host
+  .monaco-editor
+  .suggest-widget
+  .monaco-list
+  .monaco-list-row
+  > .contents
+  > .main
+  > .right
+  > .details-label {
+  margin-left: 16px;
+  font-size: 11.5px;
+  opacity: 0.55;
+}
+
+.devmode-editor-host
+  .monaco-editor
+  .suggest-widget
+  .monaco-list
+  .monaco-list-row.focused
+  > .contents
+  > .main
+  > .right
+  > .details-label {
+  opacity: 0.75;
+}
+
+/* Matched characters: accent colour carries the emphasis, not a heavy weight. */
+.devmode-editor-host .monaco-editor .suggest-widget:not(.frozen) .monaco-highlighted-label .highlight {
+  font-weight: 600;
+}
+
+/* Docs side panel: same padding rhythm as the hover card. */
+.devmode-editor-host .monaco-editor .suggest-details > .monaco-scrollable-element > .body {
+  padding: 4px 6px;
+}
+
+/* "Loading…" / "No suggestions." line. */
+.devmode-editor-host .monaco-editor .suggest-widget > .message {
+  padding: 6px 12px 6px 16px;
+  color: var(--fg-muted, rgba(232, 232, 232, 0.6));
+}
+
+/* ------------------------------------------- hover copy button (Lucide)
+ * Only the copy affordance is customized: the codicon glyph is replaced
+ * by the Lucide Copy icon (same icon set as the app chrome, ui/icons.ts)
+ * via ::before clear + ::after mask, and the button is a 20px chip
+ * vertically centered on the compact 18px title line. Everything
+ * else about the hover is styled in language-popovers.css. The status-bar
+ * action row (Go to Definition / Find References) stays hidden per
+ * review; F12 / ⇧F12 still work. */
+.devmode-editor-host .monaco-editor .monaco-hover .hover-copy-button {
+  /* 10px content padding + half the 18px title − half the 20px control. */
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 4px;
+  color: rgba(232, 232, 232, 0.72);
+  opacity: 0.72;
+}
+
+.devmode-editor-host
+  .monaco-editor
+  .monaco-hover
+  .hover-copy-button::before,
+.devmode-editor-host .monaco-editor .monaco-hover .hover-copy-button .codicon::before {
+  content: none;
+}
+
+.devmode-editor-host
+  .monaco-editor
+  .monaco-hover
+  .hover-copy-button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 12px;
+  height: 12px;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='14' height='14' x='8' y='8' rx='2' ry='2'/%3E%3Cpath d='M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='14' height='14' x='8' y='8' rx='2' ry='2'/%3E%3Cpath d='M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.devmode-editor-host
+  .monaco-editor
+  .monaco-hover
+  .hover-copy-button:hover {
+  color: #e8e8e8;
+}
+
+/* Status-bar action row: removed (keyboard F12 / ⇧F12 still work). */
+.devmode-editor-host .monaco-editor .monaco-hover .hover-row.status-bar {
+  display: none;
+}
+
+
+
+
+.devmode-workbench {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  min-width: 0;
+  /* Preserve the native material beneath Dark's translucent pane chrome. */
+  background: transparent;
+}
+
+/* ------------------------------------------------------------- center */
+
+.devmode-editor-pane,
+.devmode-chat-pane {
+  border: 1px solid var(--devmode-pane-border, rgba(var(--tint-rgb), 0.1));
+  border-radius: var(--devmode-pane-radius, 10px);
+  background: var(--bg-main);
+}
+
+.devmode-editor-pane {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Positioning context for the Quick Open overlay (absolute, centered). */
+  position: relative;
+}
+
+/* Panel docking: collapsed, the strip is the bottom row *of the editor card*
+ * (one border, one radius — exactly the pre-docking look). Expanded, the pane
+ * turns into a bare gutter column and both halves draw their own card chrome.
+ * Instant on purpose: the open/close motion used to fight the editor reflow. */
+.devmode-editor-pane:has(> .devmode-panel:not(.is-collapsed)) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  gap: var(--devmode-pane-gap, 8px);
+}
+
+.devmode-editor-pane:has(> .devmode-panel:not(.is-collapsed)) > .devmode-editor-root,
+.devmode-editor-pane:has(> .devmode-panel:not(.is-collapsed)) > .devmode-panel {
+  box-sizing: border-box;
+  border: 1px solid var(--devmode-pane-border, rgba(var(--tint-rgb), 0.1));
+  border-radius: var(--devmode-pane-radius, 10px);
+  background: var(--bg-main);
+}
+
+/* The detached card owns its own edges — no inherited header rules. */
+.devmode-editor-pane:has(> .devmode-panel:not(.is-collapsed)) > .devmode-editor-root {
+  overflow: hidden;
+}
+
+.devmode-editor-empty,
+.devmode-chat-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--fg-muted);
+  font-size: 12px;
+  user-select: none;
+}
+
+/* Author display:flex would beat the [hidden] UA rule — gate explicitly. */
+.devmode-chat-empty[hidden] {
+  display: none;
+}
+
+.devmode-editor-empty {
+  display: none;
+}
+
+.devmode-editor-empty.is-visible {
+  display: flex;
+}
+
+.devmode-empty-icon {
+  opacity: 0.45;
+}
+
+.devmode-empty-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.devmode-empty-hint {
+  max-width: 320px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ------------------------------------------------------- editor (s7) */
+
+.devmode-editor-root {
+  display: flex;
+  flex-direction: column;
+  /* flex share, not height:100% — height:100% would consume the whole pane
+   * and push the task panel below the overflow:hidden clip window. */
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.devmode-tabs,
+.devmode-panel-tabs,
+.devmode-chat-header,
+.devmode-workspace-header,
+.devmode-doc-outline-head {
+  --devmode-header-bg: rgba(23, 25, 28, .72);
+  --devmode-header-line: var(--border);
+  --devmode-header-active: rgba(14, 16, 19, .62);
+  --devmode-header-hover: rgba(52, 57, 64, .5);
+  box-sizing: border-box;
+  border-top: 1px solid var(--devmode-header-line);
+  border-bottom: 1px solid var(--devmode-header-line);
+}
+
+.devmode-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: stretch;
+  height: var(--devmode-toolbar-height, 34px);
+  /* The editor card already owns the top edge. */
+  border-top: 0;
+  background: var(--devmode-header-bg);
+}
+
+/* Overflow paging: < > buttons scroll the strip, never a scrollbar. */
+.devmode-tabs-scroll {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  /* Closing a tab settles the strip with a smooth slide, not a jump. */
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.devmode-tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.devmode-tabs-nav {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.devmode-tabs-nav:hover:not(:disabled) {
+  background: var(--devmode-header-hover);
+  color: var(--fg);
+}
+
+.devmode-tabs-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.devmode-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 220px;
+  /* Right inset matches the close button's vertical margins: the 20px × in
+   * the 34px bar gets 7px above/below, so it also gets 7px on the right. */
+  padding: 0 7px 0 12px;
+  border-right: 0;
+  font-size: 12px;
+  color: var(--fg-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.devmode-tab:hover {
+  background: var(--devmode-header-hover);
+  color: var(--fg);
+}
+
+.devmode-tab.is-active {
+  color: var(--fg);
+  background: var(--devmode-header-active);
+  /* Active tab must read at a glance: accent bar across the top edge
+   * (inset shadow, so no layout shift) + heavier label. */
+  box-shadow: inset 0 2px 0 0 var(--accent);
+  font-weight: 600;
+}
+
+/* Fresh tab slides in on open (class removed on animationend). */
+@keyframes devmode-tab-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.devmode-tab.is-entering {
+  animation: devmode-tab-in 170ms ease;
+}
+
+/* Agent whole-file write opened this tab — one green pulse on the label
+ * (class removed on animationend; color eases back to whatever the tab's
+ * own state paints, so active/inactive both recover). */
+@keyframes devmode-tab-written {
+  0%,
+  55% {
+    color: var(--success-text);
+  }
+}
+
+.devmode-tab.is-written {
+  animation: devmode-tab-written 1.6s ease-out 1 both;
+}
+
+/* Tab close: shrink + fade; neighbors glide in as the width eases away. */
+.devmode-tab.is-leaving {
+  overflow: hidden;
+  padding: 0;
+  border-right-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    width 160ms ease,
+    padding 160ms ease,
+    border-right-width 160ms ease,
+    opacity 120ms ease;
+}
+
+.devmode-tab-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-tab-dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+/* Clean tabs collapse the dot entirely — a reserved 7px slot read as dead
+ * gap between the filename and the close button (wasted width per tab). */
+.devmode-tab:not(.is-dirty) .devmode-tab-dot {
+  width: 0;
+}
+
+.devmode-tab.is-dirty .devmode-tab-dot {
+  background: var(--accent);
+}
+
+.devmode-tab.is-deleted .devmode-tab-label {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+/* ---- Tab language icon (badge + glyph) --------------------------------
+ * Both themes show it (user requirement) and share the vivid brand
+ * palette; only css/html carry a small Light nudge so white glyphs stay
+ * readable. Colors ride on --libg/--lifg so the SVG itself stays
+ * theme-agnostic. */
+.devmode-tab-icon {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3.5px;
+}
+
+.devmode-tab-icon.is-plain {
+  color: var(--fg-muted);
+}
+
+.devmode-tab-icon[data-lang="typescript"] { --libg: #3178c6; --lifg: #ffffff; }
+.devmode-tab-icon[data-lang="javascript"] { --libg: #e8c63e; --lifg: #221b00; }
+.devmode-tab-icon[data-lang="python"]     { --libg: #4b8bbe; --lifg: #ffffff; }
+.devmode-tab-icon[data-lang="swift"]      { --libg: #f05138; --lifg: #ffffff; }
+.devmode-tab-icon[data-lang="cpp"]        { --libg: #4a7bd0; --lifg: #ffffff; }
+.devmode-tab-icon[data-lang="csharp"]     { --libg: #9c6cf0; --lifg: #ffffff; }
+.devmode-tab-icon[data-lang="css"]        { --libg: #4c9eff; --lifg: #ffffff; }
+.devmode-tab-icon[data-lang="html"]       { --libg: #ef6c35; --lifg: #ffffff; }
+.devmode-tab-icon[data-lang="xml"]        { --libg: #8aa0b8; --lifg: #10233a; }
+.devmode-tab-icon[data-lang="json"]       { --libg: #e8c63e; --lifg: #221b00; }
+.devmode-tab-icon[data-lang="markdown"]   { --libg: #7d94ad; --lifg: #10233a; }
+.devmode-tab-icon[data-lang="txt"]        { --libg: #7d94ad; --lifg: #10233a; }
+
+/* Light: badges ride the same vivid brand palette as Dark (deepening the
+ * whole set read dull and left XM/MD glyphs at 2.4:1 on their own fill).
+ * Only css/html get a Light nudge so white glyphs hold ≥3.4:1 on the chip. */
+:root[data-theme="light"] .devmode-tab-icon.is-plain {
+  color: #43536b;
+}
+
+:root[data-theme="light"] .devmode-tab-icon[data-lang="css"]  { --libg: #1e86f2; }
+:root[data-theme="light"] .devmode-tab-icon[data-lang="html"] { --libg: #ea5c0c; }
+
+.devmode-tab-close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.devmode-tab:hover .devmode-tab-close,
+.devmode-tab.is-active .devmode-tab-close {
+  opacity: 1;
+}
+
+.devmode-tab-close:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.devmode-editor-host {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  display: none;
+  /* Breathing room between the outline divider and the line-number gutter.
+     Safe with automaticLayout: Monaco measures this host via contentRect /
+     clientWidth (padding excluded) and .overflow-guard is a relative block
+     child, so it flows from the content edge and everything inside shifts. */
+  padding-left: 10px;
+  /* Paint the padding gap in the gutter color (injected from monacoSetup's
+     DEV_MODE_EDITOR_BG) — the pane background is translucent and mismatched. */
+  background: var(--devmode-editor-bg, #080808cc);
+}
+
+/* The grouped controls follow the approved website toolbar layout. */
+.devmode-editor-launch {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  margin: 3px 3px 3px auto;
+  padding: 0;
+}
+
+/* Overflow controls join the same surface when tabs need paging. */
+.devmode-pager-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  gap: 1px;
+  border: 0;
+  background: none;
+}
+
+/* Equal segments share one outer border, including the optional chat button. */
+.devmode-launch-pill {
+  --devmode-launch-button-width: 27px;
+  --devmode-launch-bg: rgba(32, 36, 42, .64);
+  --devmode-launch-line: var(--pane-divider);
+  --devmode-launch-hover: rgba(52, 57, 64, .64);
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  height: 27px;
+  gap: 0;
+  padding: 0;
+  border: 1px solid var(--devmode-launch-line);
+  border-radius: 6px;
+  background: var(--devmode-launch-bg);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.devmode-launch-btn.devmode-build-selector {
+  width: 14px;
+  min-width: 14px;
+  padding: 0;
+  color: var(--fg-muted);
+}
+.devmode-build-triangle {
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-top: 4px solid currentColor;
+}
+.devmode-build-menu {
+  position: fixed;
+  z-index: 900;
+  width: 288px;
+  max-height: calc(100vh - 64px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid var(--pane-divider, #343840);
+  border-radius: 7px;
+  background: #202329;
+  color: var(--fg, #d7dbe1);
+  box-shadow: 0 8px 28px #0006;
+  font: 12px/1.5 var(--font-ui, sans-serif);
+}
+.devmode-build-menu label { display: grid; grid-template-columns: 86px minmax(0, 1fr); align-items: center; gap: 8px; margin: 8px 0; color: var(--fg-muted); }
+.devmode-build-field { min-width: 0; }
+.devmode-build-menu .app-dropdown-btn { width: 100%; height: 27px; padding: 0 8px; border: 1px solid var(--pane-divider, #343840); border-radius: 4px; background: #17191e; color: var(--fg); font: inherit; }
+.devmode-build-menu :focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+:root[data-theme="light"] .devmode-build-menu { background: #f7f8fa; }
+:root[data-theme="light"] .devmode-build-menu .app-dropdown-btn { background: #fff; }
+
+/* Light matches the website example's white segmented surface. */
+:root[data-theme="light"] .devmode-tabs,
+:root[data-theme="light"] .devmode-panel-tabs,
+:root[data-theme="light"] .devmode-chat-header,
+:root[data-theme="light"] .devmode-workspace-header,
+:root[data-theme="light"] .devmode-doc-outline-head {
+  --devmode-header-bg: #edf0f4;
+  --devmode-header-active: #fbfcfd;
+  --devmode-header-hover: #dfe5ed;
+}
+
+:root[data-theme="light"] .devmode-launch-pill {
+  --devmode-launch-bg: #fff;
+  --devmode-launch-line: #d4dae1;
+  --devmode-launch-hover: #e8edf3;
+}
+
+/* The paging group appears only while tabs overflow. */
+.devmode-pager-pill {
+  display: none;
+  align-self: center;
+  flex: 0 0 auto;
+  margin-left: 8px;
+  /* Keeps the launch capsule's left inset at 3px (mirrors its right margin)
+   * once the auto left margin collapses in the overflow state. */
+  margin-right: 3px;
+}
+
+.devmode-tabs.has-overflow .devmode-pager-pill {
+  display: inline-flex;
+}
+
+.devmode-launch-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--devmode-launch-button-width, 27px);
+  height: 25px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-sizing: border-box;
+  color: var(--fg);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background 140ms ease, box-shadow 140ms ease;
+}
+
+/* Draw separators only before another visible segment. */
+.devmode-launch-pill > .devmode-launch-btn:has(~ .devmode-launch-btn:not([hidden]):not(.devmode-chat-expand:not(.is-in))) {
+  border-right: 1px solid var(--devmode-launch-line);
+}
+
+.devmode-launch-btn:hover:not(:disabled) {
+  background: var(--devmode-launch-hover);
+}
+
+.devmode-launch-btn:active:not(:disabled) {
+  background: var(--devmode-launch-hover);
+  box-shadow: inset 0 0 0 1px var(--devmode-launch-line);
+}
+
+.devmode-launch-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.devmode-launch-icon {
+  display: block;
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  user-select: none;
+  transform-origin: center;
+  transform:
+    translate(var(--devmode-icon-x, 0px), var(--devmode-icon-y, 0px))
+    scale(var(--devmode-icon-scale, 1), var(--devmode-icon-scale-y, var(--devmode-icon-scale, 1)));
+  filter: drop-shadow(0 .8px 1px rgb(0 0 0 / .32));
+}
+
+.devmode-launch-icon[data-dev-mode-icon="debug"] {
+  --devmode-icon-scale: calc(17 / 14);
+}
+
+.devmode-launch-icon[data-dev-mode-icon="search"],
+.devmode-launch-icon[data-dev-mode-icon="refresh"] {
+  --devmode-icon-scale: calc(15 / 14);
+}
+
+:root[data-theme="light"] .devmode-launch-icon {
+  filter: drop-shadow(0 .8px 1px rgb(18 35 64 / .22));
+}
+
+/* Optical balance within the common 14px icon box; 1 / 14 adds 1px visually. */
+.devmode-launch-icon[data-dev-mode-icon="build"],
+.devmode-launch-icon[data-dev-mode-icon="configure"],
+.devmode-launch-icon[data-dev-mode-icon="diff"],
+.devmode-launch-icon[data-dev-mode-icon="blame"] {
+  --devmode-icon-scale: calc(1 + 1 / 14);
+  --devmode-icon-x: 0.15px;
+  --devmode-icon-y: -0.15px;
+}
+
+.devmode-launch-icon[data-dev-mode-icon="build"] {
+  --devmode-icon-scale: calc(1 + 1 / 14 + 24 / (14 * 20.4));
+}
+
+.devmode-launch-icon[data-dev-mode-icon="run"] {
+  --devmode-icon-scale: calc(1.08 - 1 / 14);
+  --devmode-icon-x: 0.35px;
+  --devmode-icon-y: -0.15px;
+}
+
+.devmode-launch-icon[data-dev-mode-icon="deploy"] {
+  --devmode-icon-scale: 1.10;
+  --devmode-icon-y: -0.133px;
+}
+
+.devmode-launch-icon[data-dev-mode-icon="minimap"] {
+  --devmode-icon-scale: calc(1 + 1 / 14);
+  --devmode-icon-y: -0.775px;
+}
+
+.devmode-launch-icon[data-dev-mode-icon="chat"] {
+  --devmode-icon-scale: calc(1.01 + 1 / 14);
+  /* Add 1px to the 21-unit silhouette inside its .94 SVG artwork scale. */
+  --devmode-icon-scale-y: calc(var(--devmode-icon-scale) + 24 / (14 * .94 * 21));
+  --devmode-icon-y: 0.530px;
+}
+
+.devmode-launch-icon[data-dev-mode-icon="new-task"] {
+  --devmode-icon-scale: calc(13 / 14);
+}
+
+.devmode-launch-icon[data-dev-mode-icon="collapse-chat"] {
+  /* Add 2px to the 18-unit silhouette without changing its width. */
+  --devmode-icon-scale-y: calc(1 + 2 * 24 / (14 * 18));
+}
+
+/* Keep the colored artwork visible while the task is running. The dot
+ * breathes (devmode-debug-pulse) so it reads as "in progress", not a
+ * static notification badge. */
+.devmode-launch-btn.is-running::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: devmode-debug-pulse 1.6s ease-in-out infinite;
+}
+
+.devmode-launch-pip {
+  position: absolute;
+  /* Inside the segment: the pill's overflow:hidden would clip the old
+   * -3px outset dot at the pill edge. */
+  top: 2px;
+  right: 2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--danger-text);
+  display: none;
+}
+
+.devmode-launch-btn.is-failed .devmode-launch-pip {
+  display: block;
+}
+
+.devmode-launch-btn[hidden] {
+  display: none;
+}
+
+/* Preserve the symbols' colors; wash and underline identify selected views. */
+.devmode-launch-btn.is-on {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 11%, var(--devmode-header-bg));
+}
+
+.devmode-launch-btn.is-on::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 6px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.devmode-editor-host.is-visible {
+  display: block;
+}
+
+.devmode-editor-host.is-diff-hidden {
+  display: none;
+}
+
+/* Side-by-side VCS comparison: labels stay outside Monaco so HEAD/BASE and
+   the editable local model are explicit even when the diff has no hunks. */
+.devmode-diff {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--devmode-editor-bg, #080808cc);
+}
+
+.devmode-diff[hidden] {
+  display: none;
+}
+
+.devmode-diff-headings {
+  flex: 0 0 26px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  border-bottom: 1px solid var(--divider);
+  color: var(--fg-muted);
+  font: 600 10px/1 var(--font-ui);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.devmode-diff-headings > span {
+  padding: 0 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-diff-headings > span + span {
+  border-left: 1px solid var(--divider);
+}
+
+.devmode-diff-editor {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Monaco packs the +/- lane flush against the line numbers; pad it so the sign
+   reads as a gutter marker instead of a digit. Pairs with lineDecorationsWidth
+   in EditorDiffController. Monaco dims the signs to the line-number gray, so
+   tint them with the same hues as the inserted/removed line washes (theme
+   colors in monacoSetup.ts) — the opacity override is needed because Monaco's
+   own rule is !important. */
+.devmode-diff .monaco-editor .insert-sign,
+.devmode-diff .monaco-editor .delete-sign,
+.devmode-diff .monaco-diff-editor .insert-sign,
+.devmode-diff .monaco-diff-editor .delete-sign {
+  padding-left: 8px;
+  opacity: 1 !important;
+  /* Monaco renders the +/- at a fixed 11px which reads oversized next to the
+     12.5px code font; shrink it into a compact gutter marker. */
+  font-size: 9px !important;
+}
+
+.devmode-diff .monaco-editor .insert-sign,
+.devmode-diff .monaco-diff-editor .insert-sign {
+  color: #3fb950;
+}
+
+.devmode-diff .monaco-editor .delete-sign,
+.devmode-diff .monaco-diff-editor .delete-sign {
+  color: #f85149;
+}
+
+.devmode-diff-notice {
+  position: absolute;
+  inset: 26px 0 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(20, 20, 20, 0.88);
+  color: var(--code-fg-muted);
+  font: 12px/1.4 var(--font-ui);
+  text-align: center;
+}
+
+.devmode-diff-notice[hidden] {
+  display: none;
+}
+
+.devmode-diff-notice.is-error {
+  color: #e5534b;
+}
+
+/* Annotate puts "author age  123" in the line-number box, which is exactly one
+   line tall. Wrapping there (at a space, or after a hyphen in names like
+   "yujeeloo-hue") paints the tail over the next row's label, so names look
+   doubled. Keep the whole gutter string on one line. */
+.devmode-editor-host .monaco-editor .margin-view-overlays .line-numbers {
+  white-space: pre;
+  word-break: keep-all;
+}
+
+/* Commit bands: one color per revision (slots handed out in blameFormat.ts),
+   drawn on the code-facing edge of the lines-decorations lane. Neighbouring
+   lines from one commit merge into a single stripe, so batches are readable
+   without decoding the author text. */
+.devmode-editor-host .monaco-editor .margin-view-overlays .cldr.devmode-blame-band {
+  box-shadow: inset -3px 0 0 var(--devmode-blame-band, transparent);
+}
+
+.devmode-blame-band-0 { --devmode-blame-band: #5aa9e6; }
+.devmode-blame-band-1 { --devmode-blame-band: #b083f0; }
+.devmode-blame-band-2 { --devmode-blame-band: #e0a458; }
+.devmode-blame-band-3 { --devmode-blame-band: #4fb286; }
+.devmode-blame-band-4 { --devmode-blame-band: #dd7f9a; }
+.devmode-blame-band-5 { --devmode-blame-band: #8fbf6f; }
+.devmode-blame-band-6 { --devmode-blame-band: #6fc3d1; }
+.devmode-blame-band-7 { --devmode-blame-band: #c08457; }
+
+/* Not committed yet — the app accent, so local edits stand apart from history. */
+.devmode-blame-band.is-local { --devmode-blame-band: #7ec8c8; }
+
+.devmode-blame-hover {
+  position: fixed;
+  z-index: var(--z-pop-hover);
+  width: max-content;
+  max-width: min(440px, calc(100vw - 16px));
+  max-height: min(320px, calc(100vh - 16px));
+  overflow: auto;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
+  color: var(--fg);
+  font: 11.5px/1.5 var(--font-ui);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+
+.devmode-blame-hover[hidden] {
+  display: none;
+}
+
+/* Transient clip while a toggle motion runs (gutter/minimap slide) — stops
+   sliding parts from spilling past the editor; removed on animationend. */
+.devmode-editor-host.is-motion-clip {
+  overflow: hidden;
+}
+
+.devmode-editor-status {
+  flex: 0 0 auto;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  /* Mirror the tab bar row so the editor column reads symmetric. */
+  height: var(--titlebar-height, 37px);
+  padding: 0 10px;
+  border-top: 1px solid var(--border);
+  background: rgba(var(--shade-rgb), 0.18);
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+:root[data-theme="light"] .devmode-editor-status:not(.is-panel-inline) {
+  border-top-color: #e1e6ec;
+  background: #ffffff;
+}
+
+.devmode-editor-status.is-visible {
+  display: flex;
+}
+
+/* The existing file/save/index information shares the panel's one row. */
+.devmode-editor-status.is-panel-inline {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: auto;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+}
+
+.devmode-editor-status.is-panel-inline .devmode-status-index {
+  flex: 0 1 auto;
+  max-width: 70%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.devmode-status-index {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+/* File info group (path + save state) — one flex row, same gap as bar.
+ * Pure status bar again: the task head lives in the unified panel now. */
+.devmode-status-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.devmode-status-file[hidden] {
+  display: none !important;
+}
+
+.devmode-status-path {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-status-state {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Right-edge expand toggle — opens the unified bottom panel. */
+.devmode-status-panel-btn {
+  flex: 0 0 auto;
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--fg-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.devmode-status-panel-btn:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+/* ----------------------------------------------------------- splitter */
+
+.devmode-chat-split {
+  flex: 0 0 1px;
+  width: 1px;
+  align-self: stretch;
+  position: relative;
+  z-index: 4;
+  cursor: col-resize;
+  touch-action: none;
+  -webkit-app-region: no-drag;
+  background: var(--pane-divider);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+/* The existing resize handles become the gaps between the three cards. */
+.app-shell.is-dev-mode .app-shell-resize,
+.devmode-chat-split {
+  flex-basis: var(--devmode-pane-gap, 8px);
+  width: var(--devmode-pane-gap, 8px);
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.app-shell.is-dev-mode .app-shell-resize::before,
+.devmode-chat-split::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 3px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--pane-divider-hover);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.app-shell.is-dev-mode .app-shell-resize:is(:hover, :focus-visible, .is-dragging),
+.devmode-chat-split:is(:hover, :focus-visible, .is-dragging) {
+  background: transparent;
+  box-shadow: none;
+}
+
+.app-shell.is-dev-mode .app-shell-resize:is(:hover, :focus-visible, .is-dragging)::before,
+.devmode-chat-split:is(:hover, :focus-visible, .is-dragging)::before {
+  opacity: 1;
+}
+
+.devmode-chat-split:focus-visible {
+  outline: none;
+}
+
+.devmode-workbench.is-chat-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* ------------------------------------------- chat collapse (right pane) */
+
+/* Collapse animation: pane + splitter shrink to zero width instead of
+ * display:none — the editor widens smoothly alongside. Contents are
+ * clipped by the pane's overflow:hidden; opacity fades the header a
+ * touch sooner so the text doesn't look squeezed. */
+.devmode-chat-pane {
+  transition:
+    flex-basis 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 140ms ease;
+}
+
+.devmode-chat-split {
+  transition:
+    background 120ms ease,
+    box-shadow 120ms ease,
+    opacity 160ms ease;
+}
+
+.devmode-workbench.is-chat-collapsed .devmode-chat-pane {
+  flex-basis: 0;
+  border-inline-width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.devmode-workbench.is-chat-collapsed .devmode-chat-split {
+  flex-basis: 0;
+  width: 0;
+  border-left-width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Drag-resize must not animate (width follows the pointer 1:1). */
+.devmode-workbench.is-chat-resizing .devmode-chat-pane,
+.devmode-workbench.is-chat-resizing .devmode-chat-split {
+  transition: none;
+}
+
+/* Keep the existing chat reveal inside the new capsule. */
+.devmode-launch-btn.devmode-chat-expand {
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    width 180ms ease,
+    opacity 180ms ease;
+}
+
+.devmode-launch-btn.devmode-chat-expand.is-in {
+  width: var(--devmode-launch-button-width, 27px);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .devmode-launch-btn,
+  .devmode-launch-btn.devmode-chat-expand {
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------------------- right */
+
+.devmode-chat-pane {
+  flex: 0 0 var(--devmode-chat-width, 380px);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  background: var(--bg-main);
+}
+
+.devmode-chat-header {
+  flex: 0 0 var(--devmode-toolbar-height, 34px);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  /* Share the editor tab bar and panel toolbar's 34px row. */
+  height: var(--devmode-toolbar-height, 34px);
+  /* Match the capsule's right inset to its vertical clearance inside the
+     header content box (the bottom divider occupies the remaining 1px). */
+  padding: 0 calc((var(--devmode-toolbar-height, 34px) - 1px - 27px) / 2) 0 8px;
+  /* Same header surface as the editor tab strip; the card owns the top edge. */
+  background: var(--devmode-header-bg);
+  border-top: 0;
+  border-bottom: 1px solid var(--devmode-header-line);
+}
+
+.devmode-chat-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  background: none;
+  border: 0;
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.devmode-chat-title:hover {
+  background: var(--hover);
+}
+
+.devmode-chat-title svg {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+}
+
+.devmode-chat-title-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+
+/* Session dropdown (s8) — anchored under the chat header. */
+
+.devmode-workspace-header {
+  flex: 0 0 var(--devmode-toolbar-height, 34px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--devmode-toolbar-height, 34px);
+  padding: 0 3px 0 6px;
+  border-top: 0;
+  border-radius: calc(var(--devmode-pane-radius, 10px) - 1px) calc(var(--devmode-pane-radius, 10px) - 1px) 0 0;
+  background: var(--devmode-header-bg);
+}
+
+.devmode-workspace-trigger {
+  flex: 1;
+  min-width: 0;
+  height: 27px;
+  font-weight: 500;
+}
+
+.devmode-workspace-trigger .devmode-chat-title-text {
+  flex: 1;
+  text-align: left;
+}
+
+.devmode-switcher-heading {
+  padding: 7px 9px 6px;
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+
+.devmode-switcher-divider {
+  margin: 4px 8px;
+  border-top: 1px solid var(--divider);
+}
+
+.devmode-session-menu.devmode-workspace-menu {
+  position: fixed;
+  right: auto;
+  max-width: calc(100vw - 16px);
+  background: var(--bg-elevated);
+  font-family: var(--font-ui);
+}
+
+.devmode-session-item.devmode-workspace-item,
+.devmode-session-item.devmode-task-new {
+  border: 0;
+  background: transparent;
+  font-family: var(--font-ui);
+}
+
+.devmode-session-item.devmode-workspace-item:hover,
+.devmode-session-item.devmode-task-new:hover {
+  background: var(--hover);
+}
+
+.devmode-workspace-item {
+  min-height: 48px;
+}
+
+.devmode-workspace-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  overflow-wrap: anywhere;
+}
+
+.devmode-workspace-path {
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+
+.devmode-task-new .devmode-launch-icon {
+  flex: 0 0 14px;
+}
+
+.devmode-session-menu {
+  position: absolute;
+  top: calc(var(--devmode-toolbar-height, 34px) + 1px);
+  /* Span the full chat-pane width (aligned to both edges). */
+  left: 8px;
+  right: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  /* Above the floating context pill (55) and Quick Open / Find (60);
+     below the right-click outline menu (80). */
+  z-index: var(--z-pop-pop);
+  padding: 4px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+}
+
+.devmode-session-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 9px;
+  border-radius: 6px;
+  color: var(--fg);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.devmode-session-item:hover {
+  background: var(--hover);
+}
+
+.devmode-session-item.is-active {
+  color: var(--accent);
+}
+
+.devmode-session-item:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* Overlay pair (delete left, archive flush-right) — mirrors the sidebar's
+   .session-row layout; hidden until row hover, like the sidebar. */
+.devmode-session-item .devmode-session-item-delete,
+.devmode-session-item .devmode-session-item-archive {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.devmode-session-item .devmode-session-item-archive {
+  right: 5px;
+}
+
+.devmode-session-item .devmode-session-item-delete {
+  right: 29px;
+}
+
+.devmode-session-item:hover .devmode-session-item-delete,
+.devmode-session-item:hover .devmode-session-item-archive {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.devmode-session-item .devmode-session-item-delete:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.devmode-session-item .devmode-session-item-archive:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.devmode-session-item .devmode-session-item-delete:disabled,
+.devmode-session-item .devmode-session-item-archive:disabled {
+  cursor: default;
+}
+
+.devmode-session-item .devmode-session-item-delete svg,
+.devmode-session-item .devmode-session-item-archive svg {
+  display: block;
+}
+
+/* Running rows never reveal the hover actions — spinner stays. */
+.devmode-session-item.is-running:hover .devmode-session-item-delete,
+.devmode-session-item.is-running:hover .devmode-session-item-archive {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.devmode-session-item-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The action pair overlays the row, so the title has to give up that strip
+   on hover — otherwise long titles run under the buttons. */
+.devmode-session-item:not(.is-running):hover .devmode-session-item-label {
+  padding-right: 46px;
+}
+
+/* Two-level switcher: project rows expand into their session lists. */
+
+.devmode-session-group-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.devmode-session-group-head:hover {
+  background: var(--hover);
+}
+
+.devmode-session-group-head.is-active {
+  color: var(--accent);
+}
+
+.devmode-session-group-head svg {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+}
+
+.devmode-session-group-head.is-active svg:last-of-type {
+  color: var(--accent);
+}
+
+/* Collapsed group: chevron points sideways (folder stays upright). */
+.devmode-session-group:not(.is-open) .devmode-session-group-head svg:first-of-type {
+  transform: rotate(-90deg);
+}
+
+.devmode-session-group-head svg:first-of-type {
+  transition: transform 120ms ease;
+}
+
+.devmode-session-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  /* Indent under the group head's folder icon. */
+  padding: 0 4px 4px 20px;
+}
+
+/* Running spinner (trailing, right-aligned) — same visual as the sidebar rows. */
+.devmode-session-item .session-running-spinner {
+  flex: 0 0 auto;
+}
+
+.devmode-session-menu-empty {
+  padding: 10px 12px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.devmode-chat-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.devmode-chat-body > * {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/*
+ * Conversation inset inside the narrow chat pane: the shared conversation
+ * screen assumes the wide main slot (28px sides on list + footer overlay).
+ * Halve both so messages and the composer stay on one grid without touching
+ * the main-window layout. Plan cards are full-bleed, so no other inset
+ * derives from these paddings.
+ */
+.devmode-chat-body .conversation-screen {
+  --conversation-side-inset: 14px;
+}
+
+/*
+ * Second inset layer: prose/cards sit `--conversation-card-radius` (10px)
+ * inside the list, so the pane's true side gap was 28 + 10 = 38px. Halving
+ * the variable (insets → 5px, card radius → 5px) lands the total at
+ * 14 + 5 ≈ 19px = half, and keeps prose / card edges on the same line.
+ */
+.devmode-chat-body .conversation-screen {
+  --conversation-card-radius: 5px;
+}
+
+/* Composer bottom inset matches the pane's side inset (the footer's default
+ * 20px reads tall next to the halved 14px sides inside the narrow card). */
+.devmode-chat-body .conversation-footer {
+  padding-bottom: var(--conversation-side-inset);
+}
+
+/* New Task form shares this pane — halve its 32px sides to match. */
+.devmode-chat-body .new-task-screen {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* ------------------------------------------- outline (s6 Solution tree) */
+
+.devmode-outline {
+  flex: 1 1 auto;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: transparent;
+}
+
+.devmode-sidebar-stack {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--devmode-pane-gap, 8px);
+  overflow: hidden;
+}
+
+/* Outline docking mirrors the bottom panel: collapsed, the outline head is the
+ * bottom row *of the files card* (the card's own bottom edge draws the seam,
+ * the outline drops its top border + corners); expanded, it detaches into its
+ * own card and the gutter becomes the drag handle. Instant, like the panel. */
+.devmode-sidebar-stack:has(> .devmode-doc-outline.is-collapsed) {
+  gap: 0;
+}
+
+.devmode-sidebar-stack:has(> .devmode-doc-outline.is-collapsed) > .devmode-files-card {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.devmode-sidebar-stack:has(> .devmode-doc-outline.is-collapsed) > .devmode-doc-outline {
+  border-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* Sidebar = two cards, not one: the workspace header + file tree share the
+ * top card, the document outline is its own card below it. Both carry the
+ * same edge as the editor / chat panes. */
+.devmode-files-card,
+.devmode-doc-outline {
+  border: 1px solid var(--devmode-pane-border, rgba(var(--tint-rgb), 0.1));
+  border-radius: var(--devmode-pane-radius, 10px);
+  background: var(--bg-main);
+  overflow: hidden;
+}
+
+.devmode-files-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.devmode-doc-outline {
+  flex: 0 0 var(--devmode-doc-outline-height, 180px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.devmode-doc-outline.is-collapsed {
+  flex: 0 0 auto;
+}
+
+/* The handle *is* the gutter between the two cards: its negative margins
+ * swallow the flex gap, so the cards keep exactly one --devmode-pane-gap of
+ * air whether the handle is shown or hidden (collapsed). */
+.devmode-doc-outline-resize {
+  flex: 0 0 var(--devmode-pane-gap, 8px);
+  height: var(--devmode-pane-gap, 8px);
+  width: 100%;
+  margin: calc(-1 * var(--devmode-pane-gap, 8px)) 0;
+  position: relative;
+  z-index: 4;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: row-resize;
+  touch-action: none;
+  -webkit-app-region: no-drag;
+}
+
+/* Highlight mirrors the workbench card splitters (.app-shell-resize::before):
+ * a 2px rounded pill of --pane-divider-hover faded in — never a 1px accent
+ * hairline. Inset by the card radius so it reads as part of the cards' edge. */
+.devmode-doc-outline-resize::before {
+  content: "";
+  position: absolute;
+  left: var(--devmode-pane-radius, 10px);
+  right: var(--devmode-pane-radius, 10px);
+  top: calc((var(--devmode-pane-gap, 8px) - 2px) / 2);
+  height: 2px;
+  border-radius: 2px;
+  background: var(--pane-divider-hover);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.devmode-doc-outline-resize:is(:hover, :focus-visible, .is-dragging)::before {
+  opacity: 1;
+}
+
+.devmode-doc-outline-resize:focus-visible {
+  outline: none;
+}
+
+.devmode-doc-outline-resize[hidden] {
+  display: none;
+}
+
+/* 1:1 tracking while dragging — the pill must not fade behind the pointer. */
+.devmode-doc-outline-resize.is-dragging::before {
+  transition: none;
+}
+
+.devmode-doc-outline-head {
+  flex: 0 0 var(--devmode-toolbar-height, 34px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 0 10px 0 8px;
+  border: 0;
+  /* Same header surface as the file tree / editor / chat cards: the card
+   * owns the outer edge, a hairline closes the header row. */
+  border-bottom: 1px solid var(--devmode-header-line);
+  background: var(--devmode-header-bg);
+  color: var(--fg);
+  font: 600 12px/1 var(--font-ui);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.devmode-doc-outline-head:hover {
+  color: var(--fg);
+  background: var(--devmode-header-hover);
+}
+
+.devmode-doc-outline-tw {
+  flex: 0 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-muted);
+}
+
+.devmode-doc-outline-tw svg {
+  transition: transform 120ms ease;
+  transform: rotate(90deg);
+}
+
+.devmode-doc-outline.is-collapsed .devmode-doc-outline-tw svg {
+  transform: rotate(0deg);
+}
+
+.devmode-doc-outline-title {
+  flex: 1 1 auto;
+  text-align: left;
+  min-width: 0;
+}
+
+.devmode-doc-outline-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 6px 10px;
+}
+
+.devmode-doc-outline.is-collapsed .devmode-doc-outline-body {
+  display: none;
+}
+
+/* Collapsed, the head *is* the card: its closing hairline would stack on the
+ * card's own bottom edge and read as a 2px double line. */
+.devmode-doc-outline.is-collapsed .devmode-doc-outline-head {
+  border-bottom: 0;
+}
+
+.devmode-doc-outline-empty {
+  padding: 10px 10px 6px;
+  color: var(--fg-muted);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.devmode-doc-outline-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  height: 26px;
+  margin: 0;
+  padding: 0 6px 0 calc(10px + var(--depth, 0) * 14px);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--fg);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.devmode-doc-outline-row:hover {
+  background: var(--hover);
+}
+
+.devmode-doc-outline-row.is-active .devmode-doc-outline-label {
+  color: var(--accent);
+}
+
+.devmode-doc-outline-row.is-access .devmode-doc-outline-label {
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+
+.devmode-doc-outline-icon {
+  flex: 0 0 12px;
+  display: inline-flex;
+  color: var(--fg-muted);
+}
+
+/* Symbol-kind ink for the row icons: braces = types, function, variable.
+ * Muted enough to stay under the name, distinct enough to scan by
+ * shape + color. Access rows draw no icon. */
+.devmode-doc-outline {
+  --outline-kind-type: #7fb4ff;
+  --outline-kind-fn: #8ddb9a;
+  --outline-kind-var: #f0b878;
+}
+
+.devmode-doc-outline-icon[data-kind="class"],
+.devmode-doc-outline-icon[data-kind="interface"],
+.devmode-doc-outline-icon[data-kind="struct"],
+.devmode-doc-outline-icon[data-kind="enum"],
+.devmode-doc-outline-icon[data-kind="type"] {
+  color: var(--outline-kind-type);
+}
+
+.devmode-doc-outline-icon[data-kind="function"] {
+  color: var(--outline-kind-fn);
+}
+
+.devmode-doc-outline-icon[data-kind="variable"] {
+  color: var(--outline-kind-var);
+}
+
+:root[data-theme="light"] .devmode-doc-outline {
+  --outline-kind-type: #0a6fd8;
+  --outline-kind-fn: #2f8f4e;
+  --outline-kind-var: #a2620a;
+}
+
+.devmode-doc-outline-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-doc-outline-label {
+  color: var(--fg);
+}
+
+.devmode-doc-outline-sig {
+  color: var(--fg-muted);
+}
+
+.devmode-outline-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* The rows pan by transform (see SolutionOutlineController.syncHorizontal),
+     so there must be no horizontal scroll range — shift+wheel would stack on
+     top of the pan. `clip` (not `hidden`) guarantees that. */
+  overflow-x: clip;
+  overscroll-behavior-x: contain;
+  padding: 8px 6px 16px;
+}
+
+.devmode-outline-placeholder {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 0 18px;
+  color: var(--fg-muted);
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.devmode-tree-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 26px;
+  /* Card-wide, never content-wide: the status chip anchors to the row's right
+     edge, so the pan below can never drag it around. */
+  width: 100%;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--fg);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* The only layer that pans. Indentation lives here too, so the row box (and
+ * anything anchored to it) stays put while deep content slides left. */
+.devmode-tree-row-inner {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: max-content;
+  padding-left: calc(10px + var(--depth, 0) * 14px);
+  transform: translateX(var(--pan-x, 0px));
+}
+
+.devmode-tree-row:hover {
+  background: var(--hover);
+}
+
+/* Selection = filename highlight only (no box chrome). */
+.devmode-tree-row.is-selected {
+  background: none;
+  box-shadow: none;
+}
+
+.devmode-tree-row.is-selected .devmode-tree-label {
+  color: var(--accent);
+}
+
+/* --------------------------------------------- vcs badges (status only) */
+
+.devmode-tree-st {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 15px;
+  padding: 2px 0;
+  text-align: center;
+  font: 600 9.5px/1 var(--font-mono);
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.devmode-tree-row .devmode-tree-label {
+  flex: 0 0 auto;
+}
+
+/* External-workspace project chip (Engine projects outside the repo). */
+.devmode-tree-external {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  flex: 0 0 auto;
+  font: 500 9.5px/1 var(--font-mono);
+  padding: 2px 4px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+  color: var(--fg-muted, #8b949e);
+  /* Opaque card base: row content slides underneath a pinned chip. */
+  background: color-mix(in srgb, currentColor 10%, var(--bg-main));
+}
+
+/* Tinted card base, not a translucent wash: the chips are pinned to the card's
+ * right edge while long labels slide underneath them. */
+.devmode-st-m { color: var(--vcs-modified); background: color-mix(in srgb, currentColor 12%, var(--bg-main)); }
+.devmode-st-a { color: var(--vcs-added); background: color-mix(in srgb, currentColor 12%, var(--bg-main)); }
+.devmode-st-d { color: var(--vcs-deleted); background: color-mix(in srgb, currentColor 12%, var(--bg-main)); }
+.devmode-st-u { color: var(--vcs-untracked); background: color-mix(in srgb, currentColor 12%, var(--bg-main)); }
+.devmode-st-c { color: var(--vcs-renamed); background: color-mix(in srgb, currentColor 14%, var(--bg-main)); }
+
+.devmode-tree-row.is-vcs-deleted .devmode-tree-label {
+  text-decoration: line-through;
+  opacity: 0.75;
+}
+
+/* Directory aggregate dot (highest-priority child badge). */
+.devmode-tree-dot {
+  flex: 0 0 auto;
+  margin-left: auto;
+  box-sizing: border-box;
+  /* Same fixed footprint as `.devmode-tree-st` so folder dots share the
+     letter chips' center column down the tree. */
+  width: 15px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.devmode-tree-dot::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.devmode-tree-dot.devmode-st-m { color: var(--vcs-modified); background: transparent; }
+.devmode-tree-dot.devmode-st-a { color: var(--vcs-added); background: transparent; }
+.devmode-tree-dot.devmode-st-d { color: var(--vcs-deleted); background: transparent; }
+.devmode-tree-dot.devmode-st-u { color: var(--vcs-untracked); background: transparent; }
+.devmode-tree-dot.devmode-st-c { color: var(--vcs-renamed); background: transparent; }
+
+/* —— Light: VCS badges go solid. Letter chips use vivid solid fills (gold
+ * with dark ink, the rest white ink, all ≥5:1 AA); the 6px directory
+ * aggregate dots swap their AA-calibrated dark mud for the vivid same hue
+ * (same philosophy as the provider health dot). Dark keeps the translucent
+ * wash, zero drift. */
+:root[data-theme="light"] .devmode-tree-st.devmode-st-m {
+  color: #452c00;
+  background: var(--gold-fill);
+}
+
+:root[data-theme="light"] .devmode-tree-st.devmode-st-a {
+  color: #ffffff;
+  background: var(--vcs-added);
+}
+
+:root[data-theme="light"] .devmode-tree-st.devmode-st-d {
+  color: #ffffff;
+  background: var(--vcs-deleted);
+}
+
+:root[data-theme="light"] .devmode-tree-st.devmode-st-u {
+  color: #ffffff;
+  background: var(--vcs-untracked);
+}
+
+:root[data-theme="light"] .devmode-tree-st.devmode-st-c {
+  color: #ffffff;
+  background: var(--vcs-renamed);
+}
+
+:root[data-theme="light"] .devmode-tree-dot.devmode-st-m { color: #f59e0b; }
+:root[data-theme="light"] .devmode-tree-dot.devmode-st-a { color: #19b04f; }
+:root[data-theme="light"] .devmode-tree-dot.devmode-st-d { color: #dc2626; }
+:root[data-theme="light"] .devmode-tree-dot.devmode-st-u { color: #2f81f7; }
+:root[data-theme="light"] .devmode-tree-dot.devmode-st-c { color: #8957e5; }
+
+/* Editor VCS line marks: a soft translucent wash behind the line numbers
+ * (marginClassName) — no bar, no whole-line tint, number stays readable. */
+.monaco-editor .vcs-lnbg-modified { background: rgba(210, 153, 34, 0.16); }
+.monaco-editor .vcs-lnbg-added { background: rgba(87, 171, 90, 0.16); }
+.monaco-editor .vcs-lnbg-deleted { background: rgba(229, 83, 75, 0.16); }
+
+/* --------------------------------------------- outline context menu */
+
+.devmode-ctx-menu {
+  position: fixed;
+  z-index: var(--z-pop-menu);
+  min-width: 220px;
+  max-width: 300px;
+  padding: 4px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+}
+
+.devmode-ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--fg);
+  font: 12px/1.2 var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.devmode-ctx-item:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.devmode-ctx-item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.devmode-ctx-item.is-danger {
+  color: var(--danger);
+}
+
+.devmode-ctx-item.is-danger:hover:not(:disabled) {
+  background: var(--danger-bg);
+}
+
+.devmode-ctx-hint {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--fg-muted);
+}
+
+.devmode-ctx-sep {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--divider);
+}
+
+.devmode-ctx-label {
+  padding: 5px 9px 3px;
+  font: 600 10px/1 var(--font-ui);
+  color: var(--fg-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------- commit dialog */
+
+.devmode-commit-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-pop-shield);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--scrim);
+}
+
+.devmode-commit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 520px;
+  max-width: min(84vw, calc(100% - 32px));
+  padding: 14px;
+  /* Same frosted surface as quick open / the editor context menu. */
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--tint-rgb), 0.07),
+    0 12px 32px rgba(var(--shadow-rgb), 0.45);
+}
+
+.devmode-commit-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.devmode-commit-header-icon {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+}
+
+.devmode-commit-title {
+  font: 600 12.5px/1.2 var(--font-ui);
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-commit-files {
+  max-height: 104px;
+  overflow-y: auto;
+  padding: 6px 8px;
+  border: 1px solid var(--divider);
+  border-radius: 7px;
+  background: rgba(var(--shade-rgb), 0.22);
+  scrollbar-width: thin;
+  scrollbar-color: var(--divider) transparent;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+.devmode-commit-file {
+  font: 11px/1.6 var(--font-mono, ui-monospace, monospace);
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+}
+
+.devmode-commit-file.is-more {
+  direction: ltr;
+  opacity: 0.7;
+}
+
+.devmode-commit-message {
+  min-height: 92px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: rgba(var(--shade-rgb), 0.28);
+  color: var(--fg);
+  font: 12.5px/1.5 var(--font-ui);
+  resize: vertical;
+  outline: none;
+}
+
+.devmode-commit-message:focus {
+  border-color: rgba(var(--tint-rgb), 0.28);
+}
+
+.devmode-commit-message::placeholder {
+  color: var(--fg-muted);
+}
+
+.devmode-commit-status {
+  min-height: 14px;
+  font: 11px/1.3 var(--font-ui);
+  color: var(--fg-muted);
+}
+
+.devmode-commit-status.is-error {
+  color: var(--danger);
+}
+
+.devmode-commit-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.devmode-commit-spacer {
+  flex: 1 1 auto;
+}
+
+.devmode-commit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 27px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: none;
+  color: var(--fg);
+  font: 12px/1 var(--font-ui);
+  cursor: pointer;
+}
+
+.devmode-commit-btn:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.devmode-commit-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.devmode-commit-btn.is-primary {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.devmode-commit-btn.is-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+  background: var(--accent);
+}
+
+.devmode-commit-btn-icon {
+  flex: 0 0 auto;
+}
+
+/* Swap the sparkle for a spinner while the model writes the message. */
+.devmode-commit-btn-icon.is-spinner {
+  display: none;
+  animation: devmode-commit-spin 900ms linear infinite;
+}
+
+.devmode-commit-btn.is-loading .devmode-commit-btn-icon:not(.is-spinner) {
+  display: none;
+}
+
+.devmode-commit-btn.is-loading .devmode-commit-btn-icon.is-spinner {
+  display: inline-flex;
+}
+
+@keyframes devmode-commit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .devmode-commit-btn-icon.is-spinner {
+    animation: none;
+  }
+}
+
+.devmode-tree-row[data-kind="solution"] .devmode-tree-label {
+  font-weight: 600;
+}
+
+.devmode-tree-row[data-kind="project"] .devmode-tree-label {
+  font-weight: 500;
+}
+
+.devmode-tree-row[data-kind="folder"] {
+  color: var(--fg-muted);
+}
+
+.devmode-tree-tw {
+  flex: 0 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-muted);
+}
+
+.devmode-tree-tw svg {
+  transition: transform 120ms ease;
+}
+
+.devmode-tree-branch
+  > .devmode-tree-row.is-branch[aria-expanded="true"]
+  .devmode-tree-tw
+  svg {
+  transform: rotate(90deg);
+}
+
+.devmode-tree-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  color: var(--fg-muted);
+}
+
+.devmode-tree-row[data-kind="solution"] .devmode-tree-icon,
+.devmode-tree-row[data-kind="project"] .devmode-tree-icon {
+  color: var(--accent);
+}
+
+/* Launchable file: same accent as solution/project glyphs — it is an
+ * action affordance, not a passive language badge. */
+.devmode-tree-row.is-runnable .devmode-tree-icon {
+  color: var(--accent);
+}
+
+.devmode-tree-loading {
+  color: var(--fg-muted);
+  cursor: default;
+}
+
+.devmode-tree-loading:hover {
+  background: none;
+}
+
+.devmode-launch-btn.devmode-outline-refresh.is-loading:disabled {
+  opacity: 1;
+  cursor: progress;
+}
+
+.devmode-outline-refresh.is-loading .devmode-launch-icon {
+  animation: devmode-action-spin 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .devmode-outline-refresh.is-loading .devmode-launch-icon {
+    animation: none;
+  }
+}
+
+@keyframes devmode-action-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ------------------------------------ VCS action popover (svn update) */
+
+.devmode-action-pop {
+  position: fixed;
+  z-index: var(--z-pop-menu);
+  width: 320px;
+  padding: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+}
+
+.devmode-action-pop-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.devmode-action-pop-message {
+  max-height: 108px;
+  overflow: auto;
+  width: 100%;
+  background: rgba(var(--tint-rgb), 0.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  font: 12px/1.5 var(--font-mono);
+  padding: 7px 9px;
+  outline: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.devmode-action-pop-message:empty {
+  display: none;
+}
+
+.devmode-action-pop-stats,
+.devmode-action-pop-info {
+  margin: 8px 0 10px;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.devmode-action-pop-stats.is-ok {
+  color: var(--success-text);
+}
+
+/* Update finished but left conflicts behind — needs the user, not a toast. */
+.devmode-action-pop-stats.is-warn {
+  color: var(--warn);
+}
+
+.devmode-action-pop-msg {
+  min-height: 15px;
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--danger-text);
+  overflow-wrap: anywhere;
+}
+
+.devmode-action-pop-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.devmode-btn-ghost {
+  height: 24px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font-size: 11.5px;
+  color: var(--fg-muted);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.devmode-btn-ghost:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.devmode-btn-primary {
+  height: 24px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  font-size: 11.5px;
+  color: var(--on-accent);
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.devmode-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.devmode-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ------------------------------------------------ unified panel */
+/* Terminal / Build / Run share one bottom strip of the editor column
+ * (was: task output panel + terminal drawer stacked). Open/close stays
+ * instant — an earlier drawer animation fought the editor reflow. */
+
+.devmode-panel {
+  flex: 0 0 var(--devmode-panel-height, 232px);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  container: devmode-panel / inline-size;
+  background: rgba(var(--shade-rgb), 0.35);
+  min-height: 0;
+}
+
+/* Every expanded bottom-panel view shares the same white Light surface. */
+:root[data-theme="light"] .devmode-panel {
+  background: #ffffff;
+}
+
+/* display:flex would beat the [hidden] UA rule — gate explicitly. */
+.devmode-panel[hidden] {
+  display: none;
+}
+
+/* Collapsed = tab strip only (pips stay live). */
+.devmode-panel.is-collapsed {
+  flex-basis: var(--devmode-toolbar-height, 34px);
+}
+
+/* Detached, the card owns the strip's top edge — same reason `.devmode-tabs`
+ * drops its own border. Collapsed, the strip keeps it: that hairline is the
+ * seam between editor content and the strip inside the shared editor card. */
+.devmode-editor-pane:has(> .devmode-panel:not(.is-collapsed)) > .devmode-panel > .devmode-panel-tabs {
+  border-top: 0;
+  border-radius: calc(var(--devmode-pane-radius, 10px) - 1px)
+    calc(var(--devmode-pane-radius, 10px) - 1px) 0 0;
+}
+
+/* Bottom corners: the inner surface clips itself. The panel root must stay
+ * unclipped, or the More menu could no longer open into the gutter above. */
+.devmode-editor-pane:has(> .devmode-panel:not(.is-collapsed)) > .devmode-panel > .devmode-panel-term,
+.devmode-editor-pane:has(> .devmode-panel:not(.is-collapsed)) > .devmode-panel > .devmode-panel-view {
+  border-radius: 0 0 calc(var(--devmode-pane-radius, 10px) - 1px)
+    calc(var(--devmode-pane-radius, 10px) - 1px);
+}
+
+.devmode-editor-pane:has(> .devmode-panel:not(.is-collapsed)) > .devmode-panel > .devmode-panel-term {
+  overflow: hidden;
+}
+
+/* The editor card owns the collapsed toolbar's outer bottom edge. */
+.devmode-panel.is-collapsed .devmode-panel-tabs {
+  border-bottom: 0;
+}
+
+.devmode-panel.is-collapsed .devmode-panel-view,
+.devmode-panel.is-collapsed .devmode-panel-term,
+.devmode-panel.is-collapsed .devmode-panel-progress,
+.devmode-panel.is-collapsed .devmode-panel-resize {
+  display: none;
+}
+
+.devmode-editor-pane:has(> .devmode-panel.is-resizing) {
+  cursor: row-resize;
+  user-select: none;
+}
+
+/* ------------------------------------------------------- panel resize */
+/* 1px rule at the panel's top edge — the visual divider, with a taller
+ * invisible hit target so it's easy to grab. */
+
+.devmode-panel-resize {
+  height: 1px;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  cursor: row-resize;
+  touch-action: none;
+  -webkit-app-region: no-drag;
+  /* The toolbar owns the line; the drag target must not darken it twice. */
+  background: transparent;
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.devmode-panel-resize::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -3px;
+  height: 7px;
+}
+
+.devmode-panel-resize:hover,
+.devmode-panel-resize:focus-visible,
+.devmode-panel-resize.is-dragging {
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.devmode-panel-resize:focus-visible {
+  outline: none;
+}
+
+/* Expanded, the handle *is* the gutter above the detached card — same
+ * vocabulary as the outline splitter: a 2px rounded pill of
+ * --pane-divider-hover, never an accent hairline. Collapsed it is hidden
+ * (see is-collapsed above), so these rules only ever apply detached. */
+.devmode-editor-pane:has(> .devmode-panel:not(.is-collapsed)) > .devmode-panel > .devmode-panel-resize {
+  top: calc(-1 * var(--devmode-pane-gap, 8px));
+  height: var(--devmode-pane-gap, 8px);
+}
+
+.devmode-editor-pane:has(> .devmode-panel:not(.is-collapsed)) > .devmode-panel > .devmode-panel-resize::before {
+  left: var(--devmode-pane-radius, 10px);
+  right: var(--devmode-pane-radius, 10px);
+  top: calc((var(--devmode-pane-gap, 8px) - 2px) / 2);
+  bottom: auto;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--pane-divider-hover);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.devmode-editor-pane:has(> .devmode-panel:not(.is-collapsed)) > .devmode-panel > .devmode-panel-resize:is(:hover, :focus-visible, .is-dragging) {
+  background: transparent;
+  box-shadow: none;
+}
+
+.devmode-editor-pane:has(> .devmode-panel:not(.is-collapsed)) > .devmode-panel > .devmode-panel-resize:is(:hover, :focus-visible, .is-dragging)::before {
+  opacity: 1;
+}
+
+.devmode-panel-resize[hidden] {
+  display: none;
+}
+
+.devmode-panel.is-resizing .devmode-panel-resize {
+  transition: none;
+}
+
+/* ------------------------------------------------------- tab strip */
+
+.devmode-panel-tabs {
+  flex: 0 0 var(--devmode-toolbar-height, 34px);
+  height: var(--devmode-toolbar-height, 34px);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  /* 6px all around the 22px tabs: (34-22)/2 vertical margin matched by the
+   * side insets, so the leading Terminal tab sits square in the corner. */
+  padding: 0 6px;
+  background: var(--devmode-header-bg);
+  font-size: 11.5px;
+  min-width: 0;
+  user-select: none;
+}
+
+.devmode-panel-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--fg-muted);
+  flex: 0 0 auto;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Light only: the strip sits on solid #edf0f4, where the accent tints used
+ * for hover (7%) and selected (12%) collapse into one another — the row read
+ * as one flat wash. Light therefore raises the selected pill to white with an
+ * accent label (the same "white card + hairline" language as the sidebar
+ * cards) and keeps hover as a white mist. Scoped to the strip: the overflow
+ * menu reuses .devmode-panel-tab / -ghost on a white popup, where a white
+ * pill would disappear, so it keeps the --hover / --active fallbacks. */
+:root[data-theme="light"] .devmode-panel-tabs {
+  --devmode-strip-hover-bg: rgba(255, 255, 255, .72);
+  --devmode-strip-hover-ring: inset 0 0 0 1px rgba(18, 67, 117, .10);
+  --devmode-strip-on-bg: #ffffff;
+  --devmode-strip-on-fg: var(--accent);
+  --devmode-strip-on-ring: inset 0 0 0 1px rgba(0, 107, 214, .24);
+  --devmode-strip-on-shadow: 0 1px 2px rgba(18, 52, 86, .10);
+}
+
+.devmode-panel-tab:hover {
+  background: var(--devmode-strip-hover-bg, var(--hover));
+  color: var(--fg);
+  box-shadow: var(--devmode-strip-hover-ring, none);
+}
+
+.devmode-panel-tab.is-on {
+  background: var(--devmode-strip-on-bg, var(--active, rgba(255, 255, 255, 0.1)));
+  color: var(--devmode-strip-on-fg, var(--fg));
+  box-shadow: var(--devmode-strip-on-ring, none), var(--devmode-strip-on-shadow, none);
+}
+
+.devmode-panel-tab svg {
+  opacity: 0.8;
+}
+
+/* Run status pip inside a task tab — visible from any tab. */
+.devmode-panel-pip {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: none;
+  flex: 0 0 auto;
+}
+
+.devmode-panel-pip.is-running {
+  display: block;
+  /* Integer geometry + own compositing layer. A 9px ring centred in the
+   * 22px tab sat at 6.5px (half a device pixel), so every animated frame
+   * re-rasterized the 1.5px hairline at a slightly different subpixel
+   * offset and the ring looked like it drifted instead of spinning in
+   * place. 10px centres at 6px; will-change keeps the ring on one cached
+   * texture that the compositor merely rotates. */
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--accent);
+  border-top-color: transparent;
+  background: none;
+  will-change: transform;
+  animation: devmode-action-spin 0.8s linear infinite;
+}
+
+.devmode-panel-pip.is-ok {
+  display: block;
+  background: var(--success);
+}
+
+.devmode-panel-pip.is-failed {
+  display: block;
+  background: var(--danger-text);
+}
+
+/* Spacer between tabs and actions — tabs left, actions right. The strip
+ * carries no status text: pips live on the tabs, task meta in tooltips. */
+
+.devmode-panel-tabs-spacer {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.devmode-panel-more.is-on {
+  background: var(--active);
+  color: var(--fg);
+}
+
+.devmode-panel-more-label {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.devmode-panel-more-label[hidden] {
+  display: none;
+}
+
+.devmode-panel-more-menu {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 10px;
+  z-index: var(--z-pop-menu);
+  min-width: 200px;
+  max-width: calc(100% - 20px);
+  padding: 5px;
+  border: 1px solid var(--pane-divider);
+  border-radius: 7px;
+  background: #202329;
+  box-shadow: 0 8px 28px #0006;
+}
+
+:root[data-theme="light"] .devmode-panel-more-menu {
+  background: #f7f8fa;
+}
+
+.devmode-panel-more-menu[hidden] {
+  display: none;
+}
+
+.devmode-panel-more-menu.opens-down {
+  top: calc(var(--devmode-toolbar-height, 34px) + 4px);
+  bottom: auto;
+}
+
+.devmode-panel-overflow-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.devmode-panel-more-menu .devmode-panel-tab,
+.devmode-panel-more-menu .devmode-panel-ghost {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  justify-content: flex-start;
+}
+
+.devmode-panel-more-clear {
+  margin-top: 4px;
+}
+
+@container devmode-panel (max-width: 480px) {
+  .devmode-panel-tabs > .devmode-panel-tab {
+    padding: 0 7px;
+  }
+  .devmode-panel-tabs > .devmode-panel-tab .devmode-panel-tab-label,
+  .devmode-editor-status.is-panel-inline .devmode-status-path {
+    display: none;
+  }
+  .devmode-panel-more-label {
+    max-width: 96px;
+  }
+}
+
+/* ------------------------------------------------------ ghost buttons */
+
+.devmode-panel-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  font-size: 11px;
+  color: var(--fg-muted);
+  flex: 0 0 auto;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.devmode-panel-ghost.is-icon {
+  width: 22px;
+  padding: 0;
+  justify-content: center;
+}
+
+.devmode-panel-ghost:hover:not(:disabled) {
+  /* Same white mist as the strip tabs in Light; the hairline ring stays on
+   * the tab pills (a ring around a 22px icon reads as a chip). */
+  background: var(--devmode-strip-hover-bg, var(--hover));
+  color: var(--fg);
+}
+
+.devmode-panel-ghost:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.devmode-panel-ghost.is-danger:hover:not(:disabled) {
+  color: var(--danger-text);
+}
+
+.devmode-panel-tab[hidden] {
+  display: none;
+}
+
+.devmode-panel-ghost[hidden] {
+  display: none !important;
+}
+
+/* ------------------------------------------------------ task log view */
+
+.devmode-panel-view {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 12px 10px;
+  font: 11.5px/17px var(--font-mono);
+  color: var(--fg-muted);
+}
+
+.devmode-panel-view[hidden] {
+  display: none;
+}
+
+.devmode-panel-line {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.devmode-panel-line.is-err {
+  color: var(--danger-text);
+}
+
+.devmode-panel-line.is-dim {
+  color: rgba(var(--tint-rgb), 0.28);
+}
+
+/* Exit summary closing a finished task log (— exit 0 · 4.6s). */
+.devmode-panel-line.is-end-ok {
+  color: var(--success-text);
+}
+
+.devmode-panel-line.is-end-bad {
+  color: var(--danger-text);
+}
+
+/* ------------------------------------------------------ references view */
+
+.devmode-references {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.devmode-references-status {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  color: var(--fg-muted);
+  border-bottom: 1px solid rgba(var(--tint-rgb), 0.055);
+}
+
+.devmode-references-word {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+/* Kind filter chips (read / write / call / address) under the status line. */
+.devmode-references-filters {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 5px 10px;
+  border-bottom: 1px solid rgba(var(--tint-rgb), 0.055);
+}
+
+.devmode-references-filters:empty {
+  display: none;
+  border-bottom: none;
+}
+
+.devmode-references-chip {
+  appearance: none;
+  border: 1px solid rgba(var(--tint-rgb), 0.16);
+  background: transparent;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10.5px;
+  color: var(--fg-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.devmode-references-chip:hover {
+  background: rgba(var(--tint-rgb), 0.07);
+}
+
+.devmode-references-chip.is-active {
+  border-color: rgba(var(--tint-rgb), 0.4);
+  background: rgba(var(--tint-rgb), 0.12);
+  color: var(--fg);
+}
+
+.devmode-references-empty {
+  padding: 14px 10px;
+  color: var(--fg-muted);
+  font-size: 11.5px;
+}
+
+.devmode-references-list {
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Centered spinner state while a semantic/text search runs. */
+.devmode-references-loading {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+}
+
+/* `display: flex` above would override the [hidden] attribute's UA style. */
+.devmode-references-loading[hidden] {
+  display: none;
+}
+
+.devmode-references-spinner {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--tint-rgb), 0.22);
+  border-top-color: rgb(var(--tint-rgb));
+  animation: devmode-references-spin 0.8s linear infinite;
+}
+
+@keyframes devmode-references-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* File group head — icon + name + dir + hit count, sticky on scroll. */
+.devmode-references-file {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px 4px 8px;
+  color: var(--fg);
+  background: var(--surface-2, #1b1b1b);
+  border-bottom: 1px solid rgba(var(--tint-rgb), 0.06);
+}
+
+:root[data-theme="light"] .devmode-references-file {
+  background: #ffffff;
+  border-bottom-color: #e5e8ec;
+}
+
+.devmode-references-file svg {
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+
+.devmode-references-filename {
+  flex: 0 0 auto;
+}
+
+.devmode-references-dir {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--fg-dim, #6a6a6a);
+  font-size: 10.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-references-count {
+  flex: 0 0 auto;
+  font: 600 10px/1 var(--font-mono);
+  color: var(--fg-muted);
+  background: rgba(var(--tint-rgb), 0.07);
+  border-radius: 8px;
+  padding: 2px 7px;
+}
+
+/* Usage row — indented under the group head with a guide rule. */
+.devmode-references-row {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 10px 2px 26px;
+  color: var(--fg-muted);
+  background: transparent;
+  border: 0;
+  text-align: left;
+  font: 12px/1.7 var(--font-mono);
+}
+
+.devmode-references-row::before {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(var(--tint-rgb), 0.07);
+}
+
+.devmode-references-row:hover,
+.devmode-references-row:focus-visible {
+  color: var(--fg);
+  background: var(--row-hover, rgba(255, 255, 255, 0.05));
+  outline: none;
+}
+
+.devmode-references-line {
+  font: 10.5px/1.4 var(--font-mono);
+  color: var(--fg-dim, #6a6a6a);
+  background: rgba(var(--tint-rgb), 0.05);
+  border-radius: 4px;
+  padding: 1px 6px;
+  justify-self: start;
+  white-space: nowrap;
+}
+
+.devmode-references-row:hover .devmode-references-line,
+.devmode-references-row:focus-visible .devmode-references-line {
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.devmode-references-code {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
+  font: inherit;
+  color: inherit;
+}
+
+.devmode-references-hit {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* call/write/address badges — plain reads stay unbadged (tooltip only). */
+.devmode-references-kindbadge {
+  font: 600 9.5px/1 var(--font-mono);
+  padding: 2px 6px;
+  border-radius: 4px;
+  justify-self: end;
+}
+
+.devmode-references-kindbadge.is-call {
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.12);
+}
+
+.devmode-references-kindbadge.is-write {
+  color: var(--badge-gold);
+  background: rgba(214, 169, 74, 0.12);
+}
+
+.devmode-references-kindbadge.is-address {
+  color: var(--fg-muted);
+  background: rgba(var(--tint-rgb), 0.08);
+}
+
+/* ------------------------------------------------------ debug panel */
+
+/* Coral gradient discs share the launch icons' subtle depth. The 10px
+ * artwork stays centered in Monaco's full-size glyph hit target. */
+.monaco-editor .glyph-margin {
+  min-width: 22px;
+}
+
+.monaco-editor .devmode-debug-breakpoint {
+  background: none;
+  cursor: pointer;
+}
+
+.monaco-editor .devmode-debug-breakpoint::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(145deg, #ff977e 0%, #ff536e 46%, #e52a64 100%);
+  box-shadow: inset 0 1px 0 #ffffff5c, inset 0 -1px 1px #9b113440,
+    0 0 0 1px #ff738e24;
+  transition: box-shadow 120ms ease;
+  pointer-events: none;
+}
+
+.monaco-editor .devmode-debug-breakpoint::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 20px;
+  max-height: calc(100% - 2px);
+  border-radius: 5px;
+  transform: translate(-50%, -50%);
+  background: #ff536e12;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+
+.monaco-editor .devmode-debug-breakpoint:hover::after {
+  opacity: 1;
+}
+
+.monaco-editor .devmode-debug-breakpoint:hover::before {
+  box-shadow: inset 0 1px 0 #ffffff6e, 0 0 0 2px #ff536e28,
+    0 0 7px #ff536e30;
+}
+
+.monaco-editor .devmode-debug-breakpoint.is-conditional::before {
+  background: linear-gradient(145deg, #ff977e, #ff536e 46%, #e52a64);
+  mask-image: radial-gradient(circle, transparent 0 3px, #000 3px);
+  box-shadow: 0 0 0 1px #ff738e24;
+}
+
+.monaco-editor .devmode-debug-breakpoint.is-disabled::before {
+  background: linear-gradient(145deg, #929ba7, #65707e);
+  opacity: .65;
+  box-shadow: inset 0 1px 0 #ffffff24, 0 0 0 1px #a3afbe17;
+}
+
+.monaco-editor .devmode-debug-breakpoint.is-conditional.is-disabled::before {
+  background: linear-gradient(145deg, #929ba7, #65707e);
+  box-shadow: 0 0 0 1px #a3afbe17;
+}
+
+.monaco-editor .devmode-debug-breakpoint.is-preview::before {
+  border: 1px solid #ff738e8c;
+  background: #ff536e24;
+  box-shadow: none;
+}
+
+.monaco-editor .devmode-debug-breakpoint.is-preview::after {
+  width: 4px;
+  height: 4px;
+  border-radius: 0;
+  background:
+    linear-gradient(#ff8da3, #ff8da3) center / 4px 1px no-repeat,
+    linear-gradient(#ff8da3, #ff8da3) center / 1px 4px no-repeat;
+  opacity: 1;
+}
+
+.monaco-editor .devmode-debug-bp-hover-line {
+  background: #ff536e0a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monaco-editor .devmode-debug-breakpoint::before,
+  .monaco-editor .devmode-debug-breakpoint::after {
+    transition: none;
+  }
+}
+
+.monaco-editor .devmode-debug-bp-ln {
+  background: rgba(255, 83, 110, 0.16);
+}
+
+.monaco-editor .devmode-debug-bp-ln.is-disabled {
+  background: rgba(115, 119, 125, 0.16);
+}
+
+/* Lucide ArrowRight is serialized into this custom property by the editor. */
+.monaco-editor .devmode-debug-current-arrow {
+  background: var(--devmode-debug-arrow) center / 15px 15px no-repeat;
+}
+
+.monaco-editor .devmode-debug-current-line {
+  background: rgba(214, 169, 74, 0.2);
+  box-shadow: inset 2px 0 0 #d6a94a;
+}
+
+/* Selected caller frame — green arrow + wash, distinct from the gold
+   current-execution marker (VS Code's focused-frame convention). */
+.monaco-editor .devmode-debug-frame-arrow {
+  background: var(--devmode-debug-frame-arrow) center / 15px 15px no-repeat;
+}
+
+/* Monaco can combine glyph classes on a paused breakpoint. Keep the
+ * execution/frame arrow visible instead of drawing a disc over it. */
+.monaco-editor .devmode-debug-breakpoint:is(.devmode-debug-current-arrow, .devmode-debug-frame-arrow)::before,
+.monaco-editor .devmode-debug-breakpoint:is(.devmode-debug-current-arrow, .devmode-debug-frame-arrow)::after {
+  content: none;
+}
+
+.monaco-editor .devmode-debug-frame-line {
+  background: rgba(87, 171, 90, 0.14);
+  box-shadow: inset 2px 0 0 #57ab5a;
+}
+
+/* Agent line flash — read_file (blue) / patch added (green) / deleted (red).
+   One-shot 1.5s fade approved in the flash demo (variant C); the editor
+   surface keeps the dark content island across themes, so fixed rgba like
+   the debug markers above, not theme tokens. */
+.monaco-editor .devmode-flash-read,
+.monaco-editor .devmode-flash-add,
+.monaco-editor .devmode-flash-del,
+.monaco-editor .devmode-flash-write {
+  animation: devmode-flash-wash 1.5s ease-out 1 both;
+}
+
+.monaco-editor .devmode-flash-read {
+  --devmode-flash-bg: rgba(56, 139, 253, 0.32);
+  --devmode-flash-bar: #388bfd;
+}
+
+.monaco-editor .devmode-flash-add {
+  --devmode-flash-bg: rgba(63, 185, 80, 0.32);
+  --devmode-flash-bar: #3fb950;
+}
+
+.monaco-editor .devmode-flash-del {
+  --devmode-flash-bg: rgba(248, 81, 73, 0.32);
+  --devmode-flash-bar: #f85149;
+}
+
+/* Whole-file write (replace-mode write_file, no hunks): lighter green —
+ * the entire file washing at patch-hunk strength would shout. */
+.monaco-editor .devmode-flash-write {
+  --devmode-flash-bg: rgba(63, 185, 80, 0.2);
+  --devmode-flash-bar: #3fb950;
+}
+
+@keyframes devmode-flash-wash {
+  0% {
+    background: var(--devmode-flash-bg);
+    box-shadow: inset 2px 0 0 var(--devmode-flash-bar);
+  }
+  55% {
+    background: var(--devmode-flash-bg);
+    box-shadow: inset 2px 0 0 var(--devmode-flash-bar);
+  }
+  100% {
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monaco-editor .devmode-flash-read,
+  .monaco-editor .devmode-flash-add,
+  .monaco-editor .devmode-flash-del,
+  .monaco-editor .devmode-flash-write {
+    animation: none;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+/* Interactive debugger value inspector. It lives on document.body so it can
+   remain open while the pointer moves from Monaco into a nested property. */
+.devmode-debug-hover {
+  position: fixed;
+  z-index: var(--z-inspector);
+  width: min(520px, calc(100vw - 16px));
+  max-height: min(440px, calc(100vh - 16px));
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  box-shadow: var(--shadow-lg);
+  font: 11.5px/1.45 var(--font-mono);
+}
+
+.devmode-debug-hover[hidden] {
+  display: none;
+}
+
+/* The UA stylesheet declares `font-family: monospace` on <code>, and a UA rule
+   that matches the element beats the inherited stack from the popover. Without
+   this the title/values fell back to Chrome's default fixed-width face
+   (Consolas on Windows) while the name/type beside them used JetBrains Mono. */
+.devmode-debug-hover code,
+.devmode-debug-variable code {
+  font-family: var(--font-mono);
+}
+
+.devmode-debug-hover-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  height: 28px;
+  padding: 0 9px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.devmode-debug-hover-head code {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-debug-hover-head span {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-debug-hover-tree {
+  max-height: 410px;
+  padding: 4px;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--divider) transparent;
+}
+
+.devmode-debug-hover-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: max-content;
+  height: 22px;
+  padding: 0 6px 0 calc(4px + var(--debug-hover-depth) * 14px);
+  border-radius: 4px;
+}
+
+.devmode-debug-hover-row:hover {
+  background: var(--hover);
+}
+
+.devmode-debug-hover-row.is-root {
+  background: none;
+}
+
+.devmode-debug-hover-toggle {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 3px;
+  padding: 0;
+  background: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.devmode-debug-hover-toggle svg {
+  flex: 0 0 auto;
+  display: block;
+}
+
+.devmode-debug-hover-toggle:hover:not(:disabled) {
+  background: var(--active);
+  color: var(--fg);
+}
+
+/* Only the glyph rotates — the square hover background must not visibly
+   spin with it (a 3px-radius square at 90° looks the same at rest, but
+   the 100ms transition gives it away). */
+.devmode-debug-hover-toggle.is-open svg {
+  transform: rotate(90deg);
+}
+
+.devmode-debug-hover-toggle svg {
+  transition: transform 100ms ease;
+}
+
+.devmode-debug-hover-toggle.is-loading {
+  opacity: 0.45;
+}
+
+.devmode-debug-hover-toggle:disabled {
+  cursor: default;
+}
+
+.devmode-debug-hover-name {
+  flex: 0 0 auto;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-debug-hover-value {
+  flex: 0 1 auto;
+  min-width: 40px;
+  max-width: 280px;
+  overflow: hidden;
+  color: var(--badge-gold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-debug-hover-type {
+  flex: 0 0 auto;
+  max-width: 170px;
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-debug-hover-more {
+  padding: 3px 8px 3px 26px;
+  color: var(--fg-muted);
+  font: 10.5px/1.4 var(--font-ui);
+}
+
+.devmode-debug-hover-more.is-error {
+  color: var(--danger-text);
+}
+
+.devmode-debug-hover-more.is-action {
+  display: block;
+  width: calc(100% - 8px);
+  margin: 2px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--accent);
+  text-align: left;
+  cursor: pointer;
+}
+
+.devmode-debug-hover-more.is-action:hover {
+  background: var(--hover);
+}
+
+/* Fills the panel body; the lists scroll inside it so the toolbar and
+   the section headings stay pinned. */
+.devmode-debug {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 12px;
+  color: var(--fg);
+  font: 11.5px/1.4 var(--font-mono);
+}
+
+.devmode-debug-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(var(--tint-rgb), 0.12);
+  flex: 0 0 auto;
+}
+
+/* Foreign-session banner: the tab keeps showing a session that belongs to
+ * another workspace (workspace switches no longer stop it). */
+.devmode-debug-foreign {
+  display: flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--fg-muted);
+  background: rgba(var(--tint-rgb), 0.06);
+  border-bottom: 1px solid rgba(var(--tint-rgb), 0.12);
+  flex: 0 0 auto;
+  cursor: default;
+}
+
+.devmode-debug-foreign[hidden] {
+  display: none;
+}
+
+.devmode-debug-action {
+  width: 25px;
+  height: 23px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.devmode-debug-action:hover:not(:disabled) {
+  color: var(--fg);
+  background: var(--hover);
+}
+
+.devmode-debug-action:active:not(:disabled) {
+  color: var(--fg);
+  background: var(--hover);
+  box-shadow: inset 0 1px 2px rgba(var(--shade-rgb), 0.28);
+}
+
+.devmode-debug-action:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.devmode-debug-toolbar-sep {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 14px;
+  margin: 0 4px;
+  background: var(--divider);
+}
+
+/* Continue / Stop keep traffic-light colors so the actions read at a glance. */
+.devmode-debug-continue:not(:disabled) {
+  color: var(--success-text);
+  background: rgba(127, 183, 126, 0.16);
+}
+
+.devmode-debug-continue:not(:disabled):hover,
+.devmode-debug-continue:not(:disabled):active {
+  color: var(--success-text);
+  background: rgba(127, 183, 126, 0.28);
+}
+
+.devmode-debug-stop:not(:disabled) {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.devmode-debug-stop:not(:disabled):hover,
+.devmode-debug-stop:not(:disabled):active {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.devmode-debug-action.is-stopping:not(:disabled) {
+  color: var(--danger);
+  background: var(--danger-soft);
+  box-shadow: inset 0 1px 2px rgba(var(--shade-rgb), 0.28);
+}
+
+/* Context action hints remain readable on the semantic filled face. */
+.devmode-ctx-item:is(.action-primary, .action-danger) .devmode-ctx-hint {
+  color: inherit;
+}
+
+.devmode-debug-status {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg-muted);
+}
+
+.devmode-debug-status.is-stopped {
+  color: var(--warn);
+}
+
+.devmode-debug-status.is-error {
+  color: var(--danger-text);
+}
+
+.devmode-debug-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr);
+  grid-template-rows: minmax(92px, 0.42fr) minmax(0, 1fr);
+  gap: 0 18px;
+  padding-top: 7px;
+}
+
+.devmode-debug-body .devmode-debug-breakpoints {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.devmode-debug-body .devmode-debug-locals {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.devmode-debug-body .devmode-debug-stack {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  padding-top: 7px;
+  border-top: 1px solid var(--divider);
+}
+
+.devmode-debug-body section {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.devmode-debug-section-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 4px;
+}
+
+.devmode-debug-section-action {
+  flex: 0 0 auto;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--fg-muted);
+  font: 600 10.5px/1.4 var(--font-ui);
+  cursor: pointer;
+}
+
+.devmode-debug-section-action:hover {
+  color: var(--fg);
+}
+
+.devmode-debug-section {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--divider) transparent;
+  overscroll-behavior: contain;
+}
+
+.devmode-debug-stack-pane {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.36fr) minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.devmode-debug-threads,
+.devmode-debug-stack-frames {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--divider) transparent;
+}
+
+.devmode-debug-threads {
+  padding-right: 4px;
+  border-right: 0;
+}
+
+.devmode-debug-stack-frames {
+  padding-left: 8px;
+}
+
+.devmode-debug-thread {
+  width: 100%;
+  min-width: 0;
+  display: block;
+  padding: 3px 6px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fg-muted);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-debug-thread:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.devmode-debug-thread.is-selected {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.devmode-debug-body h3 {
+  flex: 0 0 auto;
+  margin: 0 0 4px;
+  color: var(--fg-muted);
+  font: 600 10.5px/1.4 var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.devmode-debug-section-head h3 {
+  margin: 0;
+}
+
+.devmode-debug-bp {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  border-radius: 4px;
+}
+
+.devmode-debug-bp:hover {
+  background: var(--hover);
+}
+
+.devmode-debug-bp-enabled {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  margin: 0 3px 0 4px;
+  accent-color: var(--danger-text);
+  cursor: pointer;
+}
+
+.devmode-debug-bp.is-disabled .devmode-debug-bp-open {
+  color: var(--fg-muted);
+}
+
+.devmode-debug-bp-open {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 5px;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.devmode-debug-bp-mark {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger-text);
+}
+
+.devmode-debug-bp-mark.is-conditional {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--danger-text);
+}
+
+.devmode-debug-bp-mark.is-disabled {
+  background: #73777d;
+  box-shadow: none;
+}
+
+.devmode-debug-bp-mark.is-conditional.is-disabled {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px #73777d;
+}
+
+.devmode-debug-bp-open strong {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.devmode-debug-bp-cond {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg-muted);
+}
+
+.devmode-debug-bp-action {
+  flex: 0 0 auto;
+  opacity: 0;
+}
+
+.devmode-debug-bp:hover .devmode-debug-bp-action,
+.devmode-debug-bp:focus-within .devmode-debug-bp-action {
+  opacity: 1;
+}
+
+.devmode-debug-row,
+.devmode-debug-variable {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 5px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fg);
+  text-align: left;
+}
+
+.devmode-debug-variable code {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg-muted);
+}
+
+/* `name  value` reads as a pair — the value must not float to the far edge
+   the way a stack frame's file:line does. */
+.devmode-debug-variable {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.devmode-debug-variable > span {
+  flex: 0 0 auto;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-debug-variable code {
+  flex: 1 1 auto;
+}
+
+.devmode-debug-row:hover {
+  background: var(--hover);
+}
+
+.devmode-debug-row {
+  justify-content: flex-start;
+}
+
+.devmode-debug-empty {
+  color: rgba(var(--tint-rgb), 0.28);
+  padding: 3px 5px;
+}
+
+/* ------------------------------------------------ Debug panel v2
+   Four peer columns, consistent row rhythm, and explicit stopped-thread /
+   current-frame states. These rules intentionally follow the existing
+   JellyBot tokens instead of introducing a separate debugger palette. */
+.devmode-debug {
+  padding: 0;
+  container: devmode-debug / inline-size;
+}
+
+.devmode-debug-toolbar {
+  padding: 5px 10px;
+}
+
+.devmode-debug-state {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-left: 10px;
+}
+
+.devmode-debug-status-detail {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-debug-status {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: auto;
+  height: 19px;
+  margin-left: 0;
+  padding: 0 9px 0 7px;
+  overflow: visible;
+  border-radius: 999px;
+  background: var(--hover);
+  color: var(--fg-muted);
+  font: 600 10.5px/1 var(--font-ui);
+  letter-spacing: 0.02em;
+}
+
+.devmode-debug-status::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Running is green. JellyBot cyan is reserved for build/start activity. */
+.devmode-debug-status.is-running {
+  background: rgba(127, 183, 126, 0.14);
+  color: var(--success-text);
+}
+
+.devmode-debug-status.is-building,
+.devmode-debug-status.is-starting {
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+}
+
+.devmode-debug-status.is-stopped {
+  background: rgba(214, 169, 74, 0.14);
+  color: var(--badge-gold);
+}
+
+.devmode-debug-status.is-error {
+  background: rgba(229, 83, 75, 0.14);
+  color: var(--danger-text);
+}
+
+.devmode-debug-status.is-stopping {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.devmode-debug-status.is-running::before,
+.devmode-debug-status.is-building::before,
+.devmode-debug-status.is-starting::before,
+.devmode-debug-status.is-stopping::before {
+  animation: devmode-debug-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes devmode-debug-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.28;
+  }
+}
+
+.devmode-debug-body {
+  display: grid;
+  grid-template-columns:
+    minmax(120px, var(--debug-col-1, 0.8fr)) 5px
+    minmax(120px, var(--debug-col-2, 1.45fr)) 5px
+    minmax(120px, var(--debug-col-3, 1.3fr)) 5px
+    minmax(120px, var(--debug-col-4, 1.15fr));
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+  padding-top: 0;
+}
+
+.devmode-debug-col {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 0;
+}
+
+.devmode-debug-col-resize {
+  position: relative;
+  min-width: 5px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.devmode-debug-col-resize::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 1px;
+  background: var(--divider);
+  transition:
+    width 100ms ease,
+    left 100ms ease,
+    background 100ms ease;
+}
+
+.devmode-debug-col-resize:hover::after,
+.devmode-debug-col-resize:focus-visible::after,
+.devmode-debug.is-resizing-columns .devmode-debug-col-resize::after {
+  left: 1px;
+  width: 3px;
+  background: var(--accent);
+}
+
+.devmode-debug-col-resize:focus-visible {
+  outline: none;
+}
+
+.devmode-debug-col-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 25px;
+  padding: 0 8px 0 10px;
+}
+
+.devmode-debug-col-icon {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-muted);
+  opacity: 1;
+}
+
+.devmode-debug-col-head h3,
+.devmode-debug-body .devmode-debug-col-head h3 {
+  margin: 0;
+  color: var(--fg-muted);
+  font: 600 10.5px/1.4 var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.devmode-debug-count {
+  flex: 0 0 auto;
+  min-width: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--hover);
+  color: var(--fg-muted);
+  font: 600 9.5px/15px var(--font-ui);
+  text-align: center;
+}
+
+.devmode-debug-count[hidden] {
+  display: none;
+}
+
+.devmode-debug-col-head .devmode-debug-section-action {
+  margin-left: auto;
+  padding: 2px 5px;
+  border-radius: 4px;
+  opacity: 0;
+}
+
+.devmode-debug-col:hover
+  .devmode-debug-col-head
+  .devmode-debug-section-action {
+  opacity: 1;
+}
+
+.devmode-debug-col-head .devmode-debug-section-action:hover {
+  background: var(--hover);
+}
+
+.devmode-debug-list {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 0 4px 6px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--divider) transparent;
+  overscroll-behavior: contain;
+}
+
+.devmode-debug-thread,
+.devmode-debug-frame,
+.devmode-debug-variable,
+.devmode-debug-bp {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 22px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+}
+
+.devmode-debug-thread:hover,
+.devmode-debug-frame:hover,
+.devmode-debug-variable:hover,
+.devmode-debug-bp:hover {
+  background: var(--hover);
+}
+
+.devmode-debug-row-main {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-debug-row-aside {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: auto;
+  padding-left: 4px;
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-debug-thread,
+.devmode-debug-frame {
+  position: relative;
+  margin-bottom: 2px;
+  padding: 0 10px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.devmode-debug-thread .devmode-debug-row-main,
+.devmode-debug-frame .devmode-debug-row-main {
+  font-weight: 400;
+}
+
+.devmode-debug-thread-dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--fg-muted);
+  opacity: 0.45;
+}
+
+.devmode-debug-thread-dot.is-running {
+  background: var(--success-text);
+  opacity: 0.85;
+}
+
+.devmode-debug-thread-dot.is-paused {
+  background: var(--badge-gold);
+  opacity: 1;
+}
+
+.devmode-debug-thread-id {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  opacity: 0.7;
+}
+
+.devmode-debug-thread-tag {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--badge-gold);
+  font: 500 9.5px/15px var(--font-ui);
+}
+
+.devmode-debug-frame-index {
+  flex: 0 0 auto;
+  width: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  opacity: 0.6;
+}
+
+.devmode-debug-frame.is-current .devmode-debug-frame-index {
+  color: var(--badge-gold);
+  opacity: 1;
+}
+
+/* On-demand symbol (PDB) load in flight: a ring takes over the index lane
+   (ordinal or current arrow) until the adapter answers. The ordinal is a
+   text node — color alone keeps its flex box, which overflows the 15px lane
+   and flex-shrinks the ring into an ellipse; font-size 0 collapses it. */
+.devmode-debug-frame.is-pdb-loading .devmode-debug-frame-index {
+  font-size: 0;
+  line-height: 0;
+  color: transparent;
+  opacity: 1;
+}
+
+.devmode-debug-frame.is-pdb-loading .devmode-debug-frame-index svg {
+  display: none;
+}
+
+.devmode-debug-frame.is-pdb-loading .devmode-debug-frame-index::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent);
+  border-top-color: transparent;
+  animation: devmode-action-spin 0.8s linear infinite;
+}
+
+.devmode-debug-frame.is-external .devmode-debug-row-main,
+.devmode-debug-frame.is-external .devmode-debug-row-aside {
+  color: var(--fg-muted);
+  opacity: 0.75;
+}
+
+/* Match navigation-selection.css: soft accent row, rounded short marker,
+ * and medium accent text. Paused dots and the top-frame arrow retain their
+ * semantic color independently of which row the user selects. */
+.devmode-debug-thread.is-selected,
+.devmode-debug-thread.is-selected:hover,
+.devmode-debug-frame.is-selected,
+.devmode-debug-frame.is-selected:hover {
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.devmode-debug-thread.is-selected::before,
+.devmode-debug-frame.is-selected::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 12px;
+  transform: translateY(-50%);
+  border-radius: 3px;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+.devmode-debug-thread.is-selected .devmode-debug-row-main,
+.devmode-debug-frame.is-selected .devmode-debug-row-main {
+  color: var(--accent);
+  font-weight: 500;
+  opacity: 1;
+}
+
+.devmode-debug-thread:focus-visible,
+.devmode-debug-frame:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.devmode-debug-variable {
+  justify-content: flex-start;
+}
+
+/* Lazy tree in the Variables column — same shape as the editor hover:
+   toggle + name + value + type, children indented under their parent. */
+.devmode-debug-variable-node {
+  min-width: 0;
+}
+
+.devmode-debug-variable-toggle {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 3px;
+  padding: 0;
+  background: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.devmode-debug-variable-toggle svg {
+  flex: 0 0 auto;
+  display: block;
+  transition: transform 100ms ease;
+}
+
+.devmode-debug-variable-toggle:hover:not(:disabled) {
+  background: var(--active);
+  color: var(--fg);
+}
+
+.devmode-debug-variable-toggle.is-open svg {
+  transform: rotate(90deg);
+}
+
+.devmode-debug-variable-toggle:disabled {
+  cursor: default;
+}
+
+.devmode-debug-variable-children {
+  min-width: 0;
+}
+
+.devmode-debug-variable-children[hidden] {
+  display: none;
+}
+
+.devmode-debug-variable-children .devmode-debug-variable {
+  padding-left: calc(6px + var(--debug-var-depth) * 14px);
+}
+
+.devmode-debug-variable-empty {
+  padding: 2px 6px 2px 24px;
+  color: var(--fg-muted);
+  font-size: 10.5px;
+}
+
+.devmode-debug-variable-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--accent);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-debug-variable-type {
+  flex: 0 0 auto;
+  max-width: 34%;
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  opacity: 0.75;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devmode-debug-bp {
+  gap: 5px;
+}
+
+.devmode-debug-bp-mark {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 4px;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.devmode-debug-bp-mark::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--danger-text);
+}
+
+.devmode-debug-bp-mark:hover {
+  background: var(--active);
+}
+
+.devmode-debug-bp-mark.is-conditional {
+  background: none;
+  box-shadow: none;
+}
+
+.devmode-debug-bp-mark.is-conditional::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--danger-text);
+}
+
+.devmode-debug-bp-mark.is-disabled {
+  background: none;
+  box-shadow: none;
+}
+
+.devmode-debug-bp-mark.is-disabled::before {
+  background: #73777d;
+}
+
+.devmode-debug-bp-mark.is-conditional.is-disabled::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px #73777d;
+}
+
+.devmode-debug-bp-open {
+  gap: 0;
+  padding: 0;
+}
+
+.devmode-debug-bp-cond {
+  flex: 0 1 auto;
+  max-width: 45%;
+  margin-left: auto;
+  padding: 0 5px;
+  border-radius: 3px;
+  background: rgba(var(--tint-rgb), 0.05);
+  font: 10.5px/15px var(--font-mono);
+}
+
+.devmode-debug-bp-action {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+}
+
+@container devmode-debug (max-width: 820px) {
+  .devmode-debug-body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .devmode-debug-col-resize {
+    display: none;
+  }
+
+  .devmode-debug-stack-col,
+  .devmode-debug-breakpoints-col {
+    border-left: 1px solid var(--divider);
+  }
+
+  .devmode-debug-variables-col,
+  .devmode-debug-breakpoints-col {
+    border-top: 1px solid var(--divider);
+  }
+
+  .devmode-debug-thread-col {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .devmode-debug-stack-col {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .devmode-debug-variables-col {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .devmode-debug-breakpoints-col {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+/* --------------------------------------------------- Debug Console */
+
+.devmode-debug-console {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--fg);
+  font: 11.5px/1.5 var(--font-mono);
+}
+
+.devmode-debug-console-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.devmode-debug-console-toolbar input {
+  flex: 1 1 auto;
+  min-width: 120px;
+  height: 24px;
+  border: 1px solid var(--divider);
+  border-radius: 5px;
+  padding: 0 8px;
+  outline: none;
+  background: rgba(var(--shade-rgb), 0.18);
+  color: var(--fg);
+  font: 11px/1 var(--font-mono);
+}
+
+:root[data-theme="light"] .devmode-debug-console-toolbar input {
+  background: #ffffff;
+}
+
+.devmode-debug-console-toolbar input:focus {
+  border-color: var(--accent);
+}
+
+.devmode-debug-console-count {
+  flex: 0 0 auto;
+  min-width: 36px;
+  color: var(--fg-muted);
+  text-align: right;
+}
+
+.devmode-debug-console-action {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.devmode-debug-console-action:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.devmode-debug-console-action.is-copied {
+  color: #42e882;
+}
+
+.devmode-debug-console-output {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 5px 10px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--divider) transparent;
+}
+
+.devmode-debug-console-row {
+  display: grid;
+  grid-template-columns: max-content 14px minmax(0, 1fr);
+  gap: 7px;
+  padding: 1px 3px;
+  border-radius: 3px;
+}
+
+.devmode-debug-console-row:hover {
+  background: var(--hover);
+}
+
+.devmode-debug-console-row time,
+.devmode-debug-console-direction {
+  color: rgba(var(--tint-rgb), 0.34);
+  user-select: none;
+}
+
+.devmode-debug-console-row.is-send .devmode-debug-console-direction {
+  color: var(--link);
+}
+
+.devmode-debug-console-row.is-receive .devmode-debug-console-direction {
+  color: var(--success-text);
+}
+
+.devmode-debug-console-row.is-error,
+.devmode-debug-console-row.is-error .devmode-debug-console-direction {
+  color: var(--danger-text);
+}
+
+.devmode-debug-console-text {
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.devmode-debug-console-empty {
+  color: rgba(var(--tint-rgb), 0.28);
+  padding: 5px 3px;
+}
+
+/* --------------------------------------------------- terminal view */
+/* Output + input form only — the tab strip owns the chrome now.
+ * display:flex would beat the [hidden] UA rule — gate explicitly, or the
+ * terminal form leaks under the Build/Run tabs. */
+
+.devmode-panel-term {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.devmode-panel-term[hidden] {
+  display: none;
+}
+
+.terminal-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Dark by default; Light overrides the surface and text together below. */
+  background: var(--code-surface);
+}
+
+:root[data-theme="light"] .terminal-pane {
+  background: #ffffff;
+}
+
+.terminal-pane-output {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 2px 12px 8px;
+  overflow: auto;
+  color: var(--code-fg-muted);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  line-height: 17px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+:root[data-theme="light"] .terminal-pane-output {
+  color: var(--fg);
+}
+
+.terminal-pane-chunk.is-stderr {
+  color: #e5534b;
+}
+
+.terminal-pane-chunk.is-meta {
+  color: #7ec8c8;
+}
+
+/* Agent shell mirror start line — amber agent family, distinct from the
+   user's own meta ($ cmd) teal. */
+.terminal-pane-chunk.is-agent {
+  color: #e3b341;
+}
+
+:root[data-theme="light"] .terminal-pane-chunk.is-stderr {
+  color: var(--danger-text);
+}
+
+:root[data-theme="light"] .terminal-pane-chunk.is-meta {
+  color: var(--accent);
+}
+
+:root[data-theme="light"] .terminal-pane-chunk.is-agent {
+  color: #9a6700;
+}
+
+.terminal-pane-divider {
+  display: block;
+  height: 0;
+  margin: 6px 0;
+  border: 0;
+  border-top: 1px solid var(--divider);
+}
+
+.terminal-pane-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--divider);
+  flex: 0 0 auto;
+}
+
+/* Cwd readout — left of the prompt in the input row (was the strip head). */
+.terminal-pane-form .terminal-pane-cwd {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 320px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  color: var(--fg-dim, #6a6a6a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-pane-prompt {
+  flex: 0 0 auto;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  font-weight: 650;
+  color: #7ec8c8;
+}
+
+:root[data-theme="light"] .terminal-pane-prompt {
+  color: var(--accent);
+}
+
+.terminal-pane-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 24px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+:root[data-theme="light"] .terminal-pane-input {
+  border: 1px solid #d9dfe6;
+  background: #ffffff;
+}
+
+:root[data-theme="light"] .terminal-pane-input::placeholder {
+  color: var(--fg-muted);
+}
+
+.terminal-pane-input:focus {
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 0 0 1px rgba(126, 200, 200, 0.4);
+}
+
+:root[data-theme="light"] .terminal-pane-input:focus {
+  border-color: var(--accent);
+  background: #ffffff;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.terminal-pane-input:disabled {
+  opacity: 0.55;
+}
+
+/* Agent mirror presentation — command staged in the input box (amber),
+   ring-pulse flash, then clear (docs/demo/terminal-agent-mirror). */
+.terminal-pane-input.is-agent-filled {
+  color: #e3b341;
+}
+
+.terminal-pane-input.flash-ring {
+  animation: terminal-agent-ring 300ms ease-in-out 3;
+}
+
+@keyframes terminal-agent-ring {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(227, 179, 65, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(227, 179, 65, 0.55);
+  }
+}
+
+:root[data-theme="light"] .terminal-pane-input.is-agent-filled {
+  color: #9a6700;
+}
+
+:root[data-theme="light"] .terminal-pane-input.flash-ring {
+  animation-name: terminal-agent-ring-light;
+}
+
+@keyframes terminal-agent-ring-light {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(154, 103, 0, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(154, 103, 0, 0.45);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-pane-input.flash-ring {
+    animation: none;
+  }
+}
+
+.terminal-pane-btn {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--fg-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.terminal-pane-btn:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.terminal-pane-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.terminal-pane-btn.is-stop:not(:disabled) {
+  color: #e5534b;
+}
+
+:root[data-theme="light"] .terminal-pane-btn.is-stop:not(:disabled) {
+  color: var(--danger-text);
+}
+
+/* ------------------------------------------------- quick open (⌘T) */
+
+.devmode-quickopen {
+  position: absolute;
+  /* Below the tab bar row, horizontally centered in the editor pane. */
+  top: calc(var(--titlebar-height, 37px) + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 720px;
+  max-width: calc(100% - 24px);
+  max-height: min(480px, calc(100% - 64px));
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-pop-palette);
+  overflow: hidden;
+  /* Elevated shell surface + frost; was #0f0f0f @ 95% pre-tokenization. */
+  background: var(--bg-elevated);
+  border: 1px solid var(--pane-divider);
+  border-radius: 7px;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: var(--shadow-xl);
+}
+
+.devmode-quickopen[hidden] {
+  display: none !important;
+}
+
+.devmode-quickopen-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 12px; flex: 0 0 auto; border-bottom: 1px solid var(--pane-divider); }
+.devmode-quickopen-tabs { display: flex; align-items: center; gap: 16px; }
+.devmode-quickopen-tabs button { height: 34px; border: 0; border-bottom: 2px solid transparent; padding: 0 1px; background: none; color: var(--fg-muted); font: 12px var(--font-ui); cursor: pointer; }
+.devmode-quickopen-tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.devmode-quickopen-scope { display: flex; align-items: center; gap: 6px; color: var(--fg-muted); font: 11px var(--font-ui); white-space: nowrap; cursor: pointer; }
+.devmode-quickopen-scope[hidden] { display: none; }
+.devmode-quickopen-scope input { margin: 0; width: 12px; height: 12px; accent-color: var(--accent); }
+.devmode-quickopen-clear { display: inline-flex; flex-shrink: 0; align-items: center; padding: 4px; border: 0; background: none; color: var(--fg-muted); cursor: pointer; }
+.devmode-quickopen-header button:focus-visible, .devmode-quickopen-clear:focus-visible, .devmode-quickopen-scope input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.devmode-quickopen-row {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 43px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--pane-divider);
+}
+
+.devmode-quickopen-row > svg {
+  flex: 0 0 auto;
+  color: var(--fg-muted);
+}
+
+.devmode-quickopen-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: 14px var(--font-ui);
+  outline: none;
+}
+
+.devmode-quickopen-input::placeholder {
+  color: var(--fg-muted);
+}
+
+.devmode-quickopen-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 5px 0;
+}
+
+.devmode-quickopen-label {
+  padding: 6px 12px 3px;
+  font: 400 11px/1.4 var(--font-ui);
+  color: var(--fg-muted);
+}
+
+.devmode-quickopen-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  margin: 0;
+  padding: 0 12px;
+  border-radius: 0;
+  cursor: pointer;
+  color: var(--fg);
+  font-size: 12px;
+  min-width: 0;
+}
+
+.devmode-quickopen-item:hover {
+  background: var(--hover);
+}
+
+.devmode-quickopen-item.is-sel { background: color-mix(in srgb, var(--accent) 12%, var(--bg-elevated)); }
+.devmode-quickopen-item mark { color: var(--accent); background: transparent; font-weight: 600; }
+.devmode-quickopen-content { display: flex; align-items: baseline; flex: 1 1 auto; gap: 12px; min-width: 0; }
+.devmode-quickopen-project { flex: 0 1 48px; min-width: 20px; max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; color: var(--fg-muted); font: 11px var(--font-ui); }
+
+.devmode-quickopen-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  color: var(--fg-muted);
+}
+
+.devmode-quickopen-item[data-kind="symbol"] .devmode-quickopen-icon {
+  color: var(--accent);
+}
+
+.devmode-quickopen-name {
+  flex: 0 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+.devmode-quickopen-detail {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  direction: ltr;
+  font-size: 11px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.devmode-quickopen-hint {
+  padding: 40px 13px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--fg-muted);
+}
+
+.devmode-quickopen-meta {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-top: 1px solid var(--pane-divider);
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.devmode-quickopen-count {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.devmode-quickopen-note {
+  margin-left: auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.devmode-quickopen-keys { display: flex; flex-shrink: 0; align-items: center; gap: 16px; }
+.devmode-quickopen-keys > span { display: inline-flex; align-items: center; gap: 4px; }
+.devmode-quickopen-keys kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 4px; border: 1px solid var(--pane-divider); border-radius: 3px; background: var(--surface-2); color: var(--fg); box-shadow: 0 1px 0 var(--divider); font: 11px/1 var(--font-ui); }
+@media (max-width: 540px) {
+  .devmode-quickopen-header { flex-wrap: wrap; gap: 0; padding-bottom: 7px; }
+  .devmode-quickopen-tabs { width: 100%; justify-content: space-between; }
+  .devmode-quickopen-meta { flex-wrap: wrap; padding-top: 6px; padding-bottom: 6px; gap: 4px; }
+  .devmode-quickopen-note:not(:empty) { width: 100%; margin-left: 0; }
+  .devmode-quickopen-name { max-width: 60%; }
+}
+
+/* Quick Open jump landing wash — Monaco whole-line decoration class. */
+.monaco-editor .quickopen-jump-flash {
+  background: rgba(126, 200, 200, 0.16);
+}
+
+/* F12 search tip. Monaco owns the root's display/position/max-width;
+ * the inner surface owns layout so inline display:block cannot break it.
+ * Vertical padding leaves breathing room on either side of the anchor. */
+.clangd-search-tip {
+  z-index: 40;
+  width: max-content;
+  padding: 5px 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.clangd-search-tip-content {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  max-width: min(360px, calc(100vw - 24px));
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--tint-rgb), 0.05),
+    var(--shadow-lg);
+  font: 400 11.5px/18px var(--font-ui);
+  letter-spacing: normal;
+  white-space: nowrap;
+  color: var(--fg);
+}
+
+.clangd-search-tip-content::before {
+  content: "";
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border: 1.5px solid rgba(var(--accent-rgb), 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  transform-origin: center;
+  animation: clangd-tip-spin 0.8s linear infinite;
+}
+
+.clangd-search-tip-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clangd-search-tip-cancel {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  margin-left: 2px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+  color: var(--fg-muted);
+  font-size: 10.5px;
+}
+
+.clangd-search-tip-cancel kbd {
+  padding: 0 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--hover);
+  color: var(--fg-muted);
+  font: 500 10px/16px var(--font-ui);
+}
+
+@keyframes clangd-tip-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clangd-search-tip-content::before {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------- find widget (⌘F / Ctrl+H) */
+
+/* Custom replacement for Monaco's built-in find widget — same frosted
+ * panel language as the context menu + quick open. Absolute overlay in
+ * the editor pane, top-right (below the tab bar row). Find is one row;
+ * replace adds a second row (Ctrl+H / ⌘⌥F or the chevron). */
+.devmode-find {
+  position: absolute;
+  top: calc(var(--titlebar-height, 37px) + 8px);
+  right: 14px;
+  z-index: var(--z-pop-palette);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 420px;
+  padding: 6px;
+  /* Elevated shell surface + frost; was #0f0f0f @ 95% pre-tokenization. */
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--tint-rgb), 0.07),
+    0 6px 16px rgba(var(--shadow-rgb), 0.32),
+    0 12px 32px rgba(var(--shadow-rgb), 0.45);
+}
+
+.devmode-find[hidden] {
+  display: none !important;
+}
+
+.devmode-find-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+}
+
+.devmode-find-input {
+  flex: 1 1 auto;
+  min-width: 140px;
+  height: 22px;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: 12px var(--font-mono);
+  outline: none;
+}
+
+.devmode-find-input::placeholder {
+  color: var(--fg-muted);
+}
+
+.devmode-find-count {
+  flex: 0 0 auto;
+  min-width: 58px;
+  text-align: center;
+  font: 10.5px var(--font-mono);
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+.devmode-find-btn,
+.devmode-find-toggle,
+.devmode-find-gutter {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--fg-muted);
+}
+
+.devmode-find-btn,
+.devmode-find-toggle {
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.devmode-find-btn:hover:not(:disabled),
+.devmode-find-toggle:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.devmode-find-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.devmode-find-toggle.is-on {
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.devmode-find-toggles {
+  flex: 0 0 auto;
+  display: inline-flex;
+  gap: 2px;
+  padding-left: 4px;
+  border-left: 1px solid var(--divider);
+}
+
+.devmode-find-reveal svg {
+  transition: transform 120ms ease;
+}
+
+.devmode-find.is-replace .devmode-find-reveal svg {
+  transform: rotate(90deg);
+}
+
+.devmode-find-replace[hidden] {
+  display: none !important;
+}
+
+/* Match decorations — current bright accent, others dim (custom widget
+ * drives these classes via editor.createDecorationsCollection). */
+.monaco-editor .findmatch-current {
+  background: rgba(126, 200, 200, 0.45);
+  border-radius: 1px;
+}
+
+.monaco-editor .findmatch-other {
+  background: rgba(126, 200, 200, 0.18);
+  border-radius: 1px;
+}
+
+/* ===== Top context pill (latest prompt / active task) — overlay-demo ===== */
+.devmode-ctxpill {
+  position: absolute;
+  /* Below the 34px Dev Mode header, centered in its pane. */
+  top: calc(var(--devmode-toolbar-height, 34px) + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(78%, 640px);
+  /* Left 16px: breathing room for text and the rounded end; right 5px: the
+     20px fold button nests exactly concentric in the 30px pill's right
+     half-circle (r15), leaving a 5px ring all around. */
+  height: 30px;
+  padding: 0 5px 0 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-elevated) 82%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+  /* Same neutral rim as the sibling floating panes (Quick Open / Find):
+     --hairline (2% white) is the sidebar rule — as a pill border it reads
+     as no border at all in dark. Light overrides with its
+     mist-blue rim. */
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 14px rgba(var(--shadow-rgb), 0.4);
+  cursor: default;
+  user-select: none;
+  /* width tweens on content changes (JS re-measures, CSS animates).
+     Height never changes — the folded dots strip keeps the same 30px. */
+  transition:
+    width 200ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+  z-index: var(--z-pop-pill); /* below Quick Open / Find (60) */
+}
+.devmode-ctxpill[hidden] {
+  display: none !important;
+}
+
+/* Task strip owns the line: step titles may use the column's real estate —
+ * the prompt-echo cap (78%/640) truncated long steps while space sat idle.
+ * Shrink-to-fit still applies: short steps keep the tight pill. */
+.devmode-ctxpill.is-task {
+  max-width: min(92%, 860px);
+}
+/* The chat pane is narrow (~380px) — its pill stretches to the pane width. */
+.devmode-chat-pane .devmode-ctxpill {
+  max-width: calc(100% - 16px);
+}
+/* Editor status strip (chat collapsed): progress lines run long — raise
+ * the cap so a full command line stays readable (640px permanently
+ * ellipsized them), and keep the width tween short so growth doesn't
+ * flash an ellipsis mid-transition. The chat pill keeps its 200ms tween. */
+.devmode-editor-pane .devmode-ctxpill {
+  max-width: min(88%, 960px);
+  transition:
+    width 120ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+}
+/* Normal mode: the conversation screen has no header row of its own — the
+ * pill floats just below the app titlebar (the screen's top edge). */
+.conversation-screen .devmode-ctxpill {
+  top: 10px;
+}
+.devmode-ctxpill:hover {
+  border-color: var(--border);
+}
+
+/* Body text: single-line ellipsis */
+.devmode-ctxpill .ctxpill-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12.5px;
+  /* ≥1.4 keeps g/y descenders inside the line box — overflow:hidden
+   * (ellipsis) would clip them at line-height 1. */
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fg);
+}
+.devmode-ctxpill .ctxpill-text b {
+  font-weight: 600;
+  color: var(--accent);
+}
+/* Per-letter rise on status/prompt text swap (variant A) — each character
+ * of the new text fades in with a ~14ms stagger (inline transition-delay).
+ * Plain text under prefers-reduced-motion (JS skips the spans entirely). */
+.devmode-ctxpill .ctxpill-text .ctxpill-char {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(5px);
+}
+/* A lone space inside an inline-block collapses to zero width under
+ * nowrap — preserve it so word gaps survive the per-letter morph. */
+.devmode-ctxpill .ctxpill-text .ctxpill-char-space {
+  white-space: pre;
+}
+.devmode-ctxpill .ctxpill-text.is-morph-in .ctxpill-char {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 180ms ease,
+    transform 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.devmode-ctxpill .ctxpill-sep {
+  color: var(--fg-muted);
+  margin: 0 7px;
+}
+
+/* Secondary info (small mono text) */
+.devmode-ctxpill .ctxpill-meta {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-muted);
+  letter-spacing: 0.02em;
+}
+
+/* File-reference badge (option A): a count chip next to the text; expands
+ * into the full echo for file-only prompts ("3 files"). Tooltip uses the
+ * native title (multi-line file names). */
+.devmode-ctxpill .ctxpill-files {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: default;
+}
+.devmode-ctxpill .ctxpill-files.is-solo {
+  padding: 0 8px;
+}
+.devmode-ctxpill .ctxpill-files svg {
+  display: block;
+}
+/* [hidden] hard gate — display:inline-flex would override the UA hidden rule. */
+.devmode-ctxpill .ctxpill-files[hidden] {
+  display: none;
+}
+.devmode-ctxpill.is-folded .ctxpill-files {
+  display: none;
+}
+
+/* Task-state spinner */
+.devmode-ctxpill .ctxpill-spin {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--fg-muted) 26%, transparent);
+  border-top-color: var(--success-text);
+  animation: devmode-ctxpill-spin 0.7s linear infinite;
+  display: none;
+}
+@keyframes devmode-ctxpill-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.devmode-ctxpill.is-running .ctxpill-spin {
+  display: block;
+}
+/* Spinner leads the content → concentric with the pill's left cap (r15):
+ * center at 15px = 1px border + 7.5px padding + 6.5px half of the 13px
+ * ring. (Text still breathes at 16px when no spinner shows.) */
+.devmode-ctxpill.is-running {
+  padding-left: 7.5px;
+}
+
+/* Step progress dots */
+.devmode-ctxpill .ctxpill-steps {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+.devmode-ctxpill .ctxpill-steps i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: block;
+  background: color-mix(in srgb, var(--fg-muted) 34%, transparent);
+}
+.devmode-ctxpill .ctxpill-steps i.done {
+  background: var(--success-text);
+}
+.devmode-ctxpill .ctxpill-steps i.cur {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+/* Manual fold button — concentric with the pill's right half-circle (shown only when expanded; the whole bar is clickable when folded) */
+.devmode-ctxpill .ctxpill-fold {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.devmode-ctxpill .ctxpill-fold:hover {
+  background: color-mix(in srgb, var(--fg) 10%, transparent);
+  color: var(--fg);
+}
+.devmode-ctxpill .ctxpill-fold svg {
+  display: block;
+}
+
+
+
+/* No-fold variant (editor status strip): the right cap has no fold button —
+ * text needs its own breathing room there instead of the button's 5px ring. */
+.devmode-ctxpill.no-fold {
+  padding-right: 14px;
+}
+
+/* —— Notice state (command feedback, formerly the composer slash-hint):
+ * no fold arrow — the right end gets the no-fold 14px breathing room
+ * instead; once the notice ends and the prompt/task state returns, the
+ * arrow comes back as usual (existing fold behavior untouched). */
+.devmode-ctxpill.is-notice .ctxpill-fold {
+  display: none;
+}
+
+.devmode-ctxpill.is-notice {
+  padding-right: 14px;
+}
+
+/* —— State A: User Prompt — border matches the resting state (neutral
+ * grey --border); no more cyan echo of the user bubble (user asked for
+ * uniform grey outlines in Dark). */
+.devmode-ctxpill.is-prompt {
+  border-color: var(--border);
+}
+
+/* —— Folded state: same-height 3-dot indicator —— */
+/* Height unchanged (30px); content becomes 3 solid dot handles (a spinner
+ * in front when running, so state is not lost); the fold button hides and
+ * the whole bar is the click target (clicking temporarily expands; prompt
+ * visibility returns to auto fold/expand on the next change). */
+.devmode-ctxpill.is-folded {
+  padding: 0 12px;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--bg-elevated) 70%, transparent);
+}
+.devmode-ctxpill.is-folded .ctxpill-fold {
+  display: none;
+}
+.devmode-ctxpill.is-folded .ctxpill-text,
+.devmode-ctxpill.is-folded .ctxpill-steps,
+.devmode-ctxpill.is-folded .ctxpill-meta {
+  display: none;
+}
+/* Folded + spinner: folded height stays 30px → left half-circle r15,
+ * matching the concentric geometry of the expanded running state (1px
+ * border + 8.5px padding + 6.5px half-width). */
+.devmode-ctxpill.is-folded.is-running {
+  padding-left: 8.5px;
+}
+.devmode-ctxpill.is-folded:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+/* 3-dot fold indicator: solid dot handles (flex layout, geometrically
+   centered, unaffected by font metrics); hover brightens to echo that the
+   whole bar is clickable. */
+.devmode-ctxpill .ctxpill-dots {
+  display: none;
+  flex: 0 0 auto;
+  gap: 4px;
+  align-items: center;
+}
+.devmode-ctxpill .ctxpill-dots i {
+  /* 3px — quieter folded affordance (was 6px). */
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  display: block;
+  background: var(--fg-muted);
+  transition: background 120ms ease;
+}
+.devmode-ctxpill.is-folded .ctxpill-dots {
+  display: flex;
+}
+/* Folded hover — the whole strip is the click target, so the whole strip
+ * highlights: brighter fill + neutral rim (Dark stays non-accent) and the
+ * dots come up to full fg. (The old rule re-stated the resting dot color —
+ * a visual no-op.) */
+.devmode-ctxpill.is-folded:hover {
+  background: color-mix(in srgb, var(--bg-elevated) 94%, transparent);
+  border-color: color-mix(in srgb, var(--fg) 15%, transparent);
+}
+.devmode-ctxpill.is-folded:hover .ctxpill-dots i {
+  background: var(--fg);
+}
+
+/* ---- doneFade: success dwell + leave fade (editor status strip) ----
+   Turn end swaps the spinner for a green check + "Done", dwells 3s,
+   then leaves via variant B (scale .94 + fade, .38s). The keyframe
+   carries the centering translateX(-50%) — the pill is horizontally
+   centered via transform, so a bare scale would snap it off-center. */
+.devmode-ctxpill .ctxpill-check {
+  flex: 0 0 auto;
+  display: none;
+  width: 14px;
+  height: 14px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 22%,
+    #33cf49 0%,
+    #28c840 55%,
+    #1da833 100%
+  );
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+.devmode-ctxpill.is-done .ctxpill-spin {
+  display: none;
+}
+/* Done dwell keeps the cap-concentric rule (is-running is already off, so
+ * the base 16px padding would apply): 1px border + 7px padding + 7px half
+ * of the 14px disc = center at 15px = left-cap circle. */
+.devmode-ctxpill.is-done {
+  padding-left: 7px;
+}
+.devmode-ctxpill.is-done .ctxpill-check {
+  display: inline-flex;
+}
+.devmode-ctxpill.is-done .ctxpill-text {
+  font-weight: 550;
+}
+.devmode-ctxpill.is-leaving {
+  animation: devmode-ctxpill-leave 0.38s ease forwards;
+  pointer-events: none;
+}
+@keyframes devmode-ctxpill-leave {
+  to {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.94);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .devmode-ctxpill,
+  .devmode-ctxpill .ctxpill-dots i {
+    transition: none;
+  }
+  .devmode-ctxpill .ctxpill-spin {
+    animation-duration: 1.6s;
+  }
+  /* doneFade: JS skips the class (hides directly); belt and braces in case
+     the class lands anyway (e.g. mid-flight theme of the matchMedia flip). */
+  .devmode-ctxpill.is-leaving {
+    animation: none;
+  }
+}
+
+/* —— Light-only "Mist Blue" palette (user-chosen B option): accent-leaning
+ * pale blue-white glass + blue outline + theme-blue double shadow. Applies
+ * only to the Light theme (Dark keeps the default treatment, zero drift). */
+:root[data-theme="light"] .devmode-ctxpill {
+  background: rgba(240, 246, 252, 0.9);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
+  border-color: rgba(var(--accent-rgb), 0.22);
+  box-shadow:
+    0 1px 3px rgba(var(--shadow-rgb), 0.08),
+    0 8px 24px rgba(var(--shadow-rgb), 0.14);
+}
+:root[data-theme="light"] .devmode-ctxpill:hover {
+  border-color: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+/* Light folded hover: whole-strip affordance — near-solid mist-blue glass
+ * (stays translucent, per the frost-chrome rule: hover deepens, never an
+ * opaque swap) + stronger accent rim + accent dots. */
+:root[data-theme="light"] .devmode-ctxpill.is-folded:hover {
+  background: rgba(234, 243, 252, 0.96);
+  border-color: rgba(var(--accent-rgb), 0.4);
+}
+:root[data-theme="light"] .devmode-ctxpill.is-folded:hover .ctxpill-dots i {
+  background: var(--accent);
+}
+
+/* Spinner head: the base uses --success-text (#1e7a3c in Light — AA-tuned
+ * for text, reads muddy on a 1.5px ring). Join the vivid dot/fill family
+ * (#19b04f) instead. Applies to the pill in BOTH the chat strip and the
+ * editor status strip (same component). Dark keeps the token. */
+:root[data-theme="light"] .devmode-ctxpill .ctxpill-spin {
+  border-top-color: #19b04f;
+}
+
+/* ======================================================================
+   Build progress strip (devmode-panel-progress) — glance row under the
+   tab strip while the Build tab presents a live UBT run. Shares the
+   devtask:progress source with the conversation build card.
+   ====================================================================== */
+
+.devmode-panel-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px;
+  background: rgba(var(--accent-rgb), 0.06);
+  border-bottom: 1px solid rgba(var(--tint-rgb), 0.07);
+  font-size: 11.5px;
+  color: var(--fg-muted);
+  min-width: 0;
+}
+
+.devmode-panel-progress[hidden] {
+  display: none;
+}
+
+.devmode-panel-progress-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 1px 7px;
+  border-radius: 99px;
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+}
+
+/* Analyzing — the chip's Loader icon spins (same cadence as the tab pip). */
+.devmode-panel-progress-chip.is-spin svg {
+  animation: devmode-action-spin 0.8s linear infinite;
+}
+
+.devmode-panel-progress-counts {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 11.5px;
+  color: var(--fg);
+  white-space: nowrap;
+}
+
+.devmode-panel-progress-bar {
+  position: relative;
+  flex: 1 1 auto;
+  max-width: 220px;
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(var(--tint-rgb), 0.1);
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.devmode-panel-progress-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  border-radius: 99px;
+  background: var(--accent);
+  transition: width 240ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.devmode-panel-progress-bar-fill.indeterminate {
+  width: 100%;
+  background: none;
+}
+
+.devmode-panel-progress-bar-fill.indeterminate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--accent-rgb), 0.85),
+    transparent
+  );
+  animation: devmode-panel-progress-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes devmode-panel-progress-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.devmode-panel-progress-bar-fill.linking::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  background: rgba(var(--accent-rgb), 0.5);
+  animation: devmode-panel-progress-breathe 1.2s ease-in-out infinite;
+}
+
+@keyframes devmode-panel-progress-breathe {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .devmode-panel-progress-chip.is-spin svg {
+    animation: none;
+  }
+
+  .devmode-launch-btn.is-running::before {
+    animation: none;
+    opacity: 0.6;
+  }
+
+  .devmode-panel-progress-bar-fill.indeterminate::before,
+  .devmode-panel-progress-bar-fill.linking::after {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+.devmode-panel-progress-pct {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 11.5px;
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+
+.devmode-panel-progress-eta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-muted);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}

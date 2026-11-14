@@ -1,0 +1,238 @@
+.new-task-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-height: 100%;
+  /* Extra bottom padding lifts the optical center above true midpoint. */
+  padding: 28px 32px 18vh;
+}
+
+:root[data-theme="dark"] .new-task-screen .task-composer {
+  background: rgba(var(--tint-rgb), 0.03);
+}
+
+.welcome-hero {
+  text-align: center;
+  max-width: 560px;
+}
+
+/* Artwork carries ~10% transparent padding, so the squircle reads ~83px here. */
+.welcome-hero-icon {
+  display: block;
+  width: 104px;
+  height: 104px;
+  margin: 0 auto 10px;
+  user-select: none;
+}
+
+.welcome-title {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.new-task-workspace-bar {
+  position: relative;
+  width: min(100%, 640px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.new-task-workspace-bar[hidden] {
+  display: none;
+}
+
+.new-task-workspace-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--hover);
+  color: var(--fg);
+  padding: 6px 12px 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.new-task-workspace-btn:hover,
+.new-task-workspace-btn.is-open {
+  border-color: var(--focus-border);
+  background: var(--active);
+}
+
+.new-task-workspace-icon {
+  display: inline-flex;
+  color: var(--fg-muted);
+}
+
+.new-task-workspace-icon svg,
+.new-task-workspace-chevron svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.new-task-workspace-chevron {
+  display: inline-flex;
+  color: var(--fg-muted);
+  margin-left: 2px;
+  transition: transform 120ms ease;
+}
+
+.new-task-workspace-btn.is-open .new-task-workspace-chevron {
+  transform: rotate(180deg);
+}
+
+.new-task-workspace-label {
+  color: var(--fg-muted);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.new-task-workspace-name {
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.new-task-workspace-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  transform-origin: top center;
+  opacity: 0;
+  z-index: 20;
+  width: min(100%, 360px);
+  max-height: min(360px, 50vh);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  box-shadow: 0 12px 40px rgba(var(--shadow-rgb), 0.45);
+  transition:
+    opacity 160ms ease,
+    transform 160ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.new-task-workspace-menu.is-open {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.new-task-workspace-menu[hidden] {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .new-task-workspace-menu,
+  .new-task-workspace-menu.is-open {
+    transition: none;
+  }
+}
+
+.new-task-workspace-menu-empty {
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.new-task-workspace-menu-divider {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border);
+}
+
+.new-task-workspace-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.new-task-workspace-item:hover {
+  background: var(--hover);
+}
+
+.new-task-workspace-item.is-active {
+  background: var(--active);
+}
+
+.new-task-workspace-item-name {
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.new-task-workspace-item-path {
+  font-size: 11px;
+  color: var(--fg-muted);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.new-task-workspace-item-create {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+}
+
+.new-task-workspace-item-create-icon {
+  display: inline-flex;
+  color: inherit;
+}
+
+.new-task-workspace-item-create-icon svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+/* ===== Light: workspace pill joins the white-control family — pure
+ * white face + theme border + foreground (ink) icons instead of the
+ * hover-wash fill and muted glyphs. Hover / open keep their wash + focus
+ * border. The portaled menu keeps var(--bg) white but swaps the Dark
+ * 45% lift shadow for a light one. ===== */
+:root[data-theme="light"] .new-task-workspace-btn {
+  background: #ffffff;
+}
+
+:root[data-theme="light"] .new-task-workspace-icon,
+:root[data-theme="light"] .new-task-workspace-chevron {
+  color: #43536b;
+}
+
+:root[data-theme="light"] .new-task-workspace-menu {
+  box-shadow: 0 12px 40px rgba(18, 52, 86, 0.14);
+}

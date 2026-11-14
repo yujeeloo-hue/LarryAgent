@@ -1,0 +1,67 @@
+.content-card-ask-user { display: flex; flex-direction: column; gap: 14px; }
+.content-card-ask-user [hidden] { display: none !important; }
+.content-card-ask-user-question { margin: 0; color: var(--fg); font-size: 15px; font-weight: 550; line-height: 1.5; overflow-wrap: anywhere; }
+.content-card-ask-user-context { margin: -6px 0 0; color: var(--fg-muted); font-size: 12px; line-height: 1.5; }
+.content-card-ask-user-options { display: flex; flex-direction: column; gap: 7px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.content-card-ask-user-option { display: flex; align-items: flex-start; gap: 11px; box-sizing: border-box; width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--fg); text-align: left; cursor: pointer; }
+.content-card-ask-user-option input { flex: 0 0 auto; width: 15px; height: 15px; margin: 3px 0 0; accent-color: var(--accent); }
+.content-card-ask-user-option-text { flex: 1 1 auto; min-width: 0; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.content-card-ask-user-option-label { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; font-weight: 500; }
+.content-card-ask-user-recommended { color: var(--accent); font-size: 11px; font-weight: 400; }
+.content-card-ask-user-option-description { display: block; margin-top: 3px; color: var(--fg-muted); font-size: 12px; }
+.content-card-ask-user-option:hover { background: var(--hover); }
+.content-card-ask-user-option.is-selected { border-color: rgba(var(--accent-rgb), .65); background: rgba(var(--accent-rgb), .08); }
+.content-card-ask-user-option:has(input:disabled) { opacity: .55; cursor: default; }
+.content-card-ask-user-custom { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.content-card-ask-user-editor-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; color: var(--fg); font-size: 13px; }
+.content-card-ask-user-editor-heading label { font-weight: 500; }
+.content-card-ask-user-optional { color: var(--fg-muted); font-size: 12px; }
+.content-card-ask-user-use-custom { margin-left: auto; padding: 2px 0; border: 0; background: transparent; color: var(--accent); font: inherit; font-size: 12px; cursor: pointer; }
+.content-card-ask-user-custom-input { display: block; box-sizing: border-box; width: 100%; min-width: 0; min-height: 108px; padding: 11px 12px; border: 1px solid var(--border); border-radius: 8px; background: rgba(var(--shade-rgb), .18); color: var(--fg); font: inherit; font-size: 13px; line-height: 1.6; resize: vertical; }
+:root[data-theme="light"] .content-card-ask-user-custom-input { background: #fff; }
+.content-card-ask-user-custom-input::placeholder { color: var(--fg-muted); }
+.content-card-ask-user-custom-input:focus-visible { outline: 2px solid rgba(var(--accent-rgb), .65); outline-offset: 2px; }
+.content-card-ask-user-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.content-card-ask-user-hint { flex: 1 1 180px; min-width: 0; color: var(--fg-muted); font-size: 11px; line-height: 1.5; }
+.content-card-ask-user-confirm { flex: 0 0 auto; margin-left: auto; padding: 8px 13px; border: 1px solid transparent; border-radius: 7px; background: var(--accent); color: var(--on-accent); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.content-card-ask-user-confirm:hover:not(:disabled) { filter: brightness(1.05); }
+.content-card-ask-user-confirm:disabled { opacity: .4; cursor: default; }
+.content-card-ask-user-answer { display: flex; flex-direction: column; gap: 5px; color: var(--fg); font-size: 13px; }
+.content-card-ask-user-answer p { margin: 0; }
+.content-card-ask-user-answer-title { font-weight: 500; }
+.content-card-ask-user-answer-caption { margin-top: 8px !important; color: var(--fg-muted); font-size: 12px; }
+.content-card-ask-user-answer-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
+@media (pointer: coarse) {
+  .content-card-ask-user-option { min-height: 44px; }
+  .content-card-ask-user-confirm, .content-card-ask-user-use-custom { min-height: 44px; }
+  .content-card-ask-user-custom-input { font-size: 16px; }
+}
+
+/* Dark asks stay neutral even when the user chooses a neon accent. These
+   selectors also override the legacy whole-card is-asking tint on both clients. */
+:root:not([data-theme="light"]) .content-card-tool-invocation.content-card-ask-user-tool.is-asking {
+  background: var(--bg-elevated, var(--bg));
+  border-color: rgba(var(--tint-rgb), .12);
+}
+:root:not([data-theme="light"]) .content-card-ask-user-option {
+  background: rgba(var(--tint-rgb), .025);
+  border-color: rgba(var(--tint-rgb), .1);
+}
+:root:not([data-theme="light"]) .content-card-ask-user-option:hover {
+  background: rgba(var(--tint-rgb), .055);
+}
+:root:not([data-theme="light"]) .content-card-ask-user-option.is-selected {
+  background: rgba(var(--tint-rgb), .065);
+  border-color: rgba(var(--accent-rgb), .38);
+}
+:root:not([data-theme="light"]) .content-card-ask-user-recommended,
+:root:not([data-theme="light"]) .content-card-ask-user-use-custom {
+  color: var(--fg-muted);
+}
+:root:not([data-theme="light"]) .content-card-ask-user-use-custom:hover {
+  color: var(--fg);
+}
+:root:not([data-theme="light"]) .content-card-ask-user-custom-input {
+  background: rgba(var(--shade-rgb), .22);
+  border-color: rgba(var(--tint-rgb), .12);
+}

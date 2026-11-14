@@ -1,0 +1,57 @@
+/* Shared by the desktop renderer (including its auxiliary windows) and Relay.
+ * Rotate the square CSS box, independent of an SVG path's painted bounds.
+ * Keep the box rigid: a flex-shrunk ring becomes an ellipse and appears to
+ * wobble even when its transform origin is at the centre. Colours, sizes,
+ * animation timing and reduced-motion rules stay with each component. */
+
+svg.conversation-reasoning-spinner,
+svg.content-card-subagent-status-icon.is-in-progress,
+svg.content-card-tool-run-spinner,
+svg.content-card-plan-tool-status-icon.is-in-progress,
+.content-card-tool-run-spinner svg,
+.content-card-plan-step.is-in_progress svg.content-card-plan-step-icon,
+.subagents-tab .subagents-tab-spinner svg,
+.pw-spin,
+.devmode-commit-btn-icon.is-spinner,
+.devmode-outline-refresh.is-loading svg,
+.devmode-panel-progress-chip.is-spin svg,
+.workspace-changes-toolbar-btn.is-busy svg,
+.tool-stats-refresh.is-busy svg,
+.timeline-action.is-busy svg,
+.up-icon-btn.is-busy svg,
+.dev-refresh.spinning svg,
+.m-refresh-btn.spinning svg,
+.files-panel-iconbtn.is-busy svg {
+  transform-box: border-box;
+  transform-origin: 50% 50%;
+  flex-shrink: 0;
+}
+
+.session-running-spinner,
+.content-card-plan-step-spinner,
+.content-card-display-image-generating-spinner,
+.nws-spinner,
+.devmode-panel-pip.is-running,
+.devmode-ctxpill .ctxpill-spin,
+.devmode-launch-btn.is-running::before,
+.devmode-debug-frame.is-pdb-loading .devmode-debug-frame-index::before,
+.spinner,
+.dev-dot.online.busy,
+.session-light.is-run,
+.composer-attachment-chip-spinner {
+  box-sizing: border-box;
+  transform-box: border-box;
+  transform-origin: 50% 50%;
+  flex-shrink: 0;
+}
+
+/* A span must remain transformable outside flex/grid parents too. Do not
+ * override the state-driven display rules on tab pips or context pills. */
+.session-running-spinner,
+.content-card-plan-step-spinner,
+.content-card-display-image-generating-spinner,
+.nws-spinner,
+.spinner,
+.composer-attachment-chip-spinner {
+  display: inline-block;
+}

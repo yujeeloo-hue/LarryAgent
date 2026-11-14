@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Dev Mode · 折叠合并 / 展开独立卡片</title>
+<style>
+  :root{
+    --font-ui:"Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    --font-mono:"JetBrains Mono","Cascadia Mono",Consolas,ui-monospace,monospace;
+    --radius:10px;
+  }
+
+  /* ------------------------------------------------------------ dark */
+  :root[data-theme="dark"]{
+    --bg-app:#0e1013;
+    --bg-main:#16181c;
+    --header-bg:rgba(23,25,28,.72);
+    --header-line:rgba(255,255,255,.07);
+    --border:rgba(255,255,255,.10);
+    --fg:#e7e9ec;
+    --fg-muted:#98a1ab;
+    --fg-dim:#6d7681;
+    --hover:rgba(255,255,255,.07);
+    --active:rgba(255,255,255,.10);
+    --accent:#00e5ff;
+    --success:#3fb950;
+    --danger:#f85149;
+    --code-fg:#cfd6dd;
+    --code-kw:#7ca6f7; --code-ty:#b392f0; --code-fn:#79c0ff; --code-st:#a5d6a7; --code-cm:#6b7681;
+    --panel-body:#131519;
+    --kind-type:#7fb4ff; --kind-fn:#8ddb9a; --kind-var:#f0b878;
+  }
+
+  /* ----------------------------------------------------------- light */
+  :root[data-theme="light"]{
+    --bg-app:#eef1f5;
+    --bg-main:#ffffff;
+    --header-bg:#edf0f4;
+    --header-line:#e1e6ec;
+    --border:rgba(18,67,117,.13);
+    --fg:#17202b;
+    --fg-muted:#536171;
+    --fg-dim:#7a8798;
+    --hover:rgba(255,255,255,.72);
+    --active:rgba(0,122,255,.12);
+    --accent:#006bd6;
+    --success:#0a7d3e;
+    --danger:#b91c1c;
+    --code-fg:#25323f;
+    --code-kw:#0550ae; --code-ty:#8250df; --code-fn:#0969da; --code-st:#0a7d3e; --code-cm:#8a9bab;
+    --panel-body:#ffffff;
+    --kind-type:#0a6fd8; --kind-fn:#2f8f4e; --kind-var:#a2620a;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg-app); color:var(--fg);
+    font:13px/1.5 var(--font-ui);
+    padding:20px 24px 32px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .head{max-width:1040px;margin:0 0 14px}
+  .head h1{font-size:15px;font-weight:650;margin:0 0 4px}
+  .head p{margin:0;color:var(--fg-muted);font-size:12px}
+  .head code{font:11px/1 var(--font-mono);background:var(--header-bg);padding:2px 5px;border-radius:4px}
+
+  /* ------------------------------------------------------- controls */
+  .controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;max-width:1040px;margin:0 0 14px}
+  .ctl-label{font-size:11px;color:var(--fg-muted);margin-right:2px}
+  .seg{display:inline-flex;align-items:stretch;height:26px;border:1px solid var(--border);border-radius:7px;overflow:hidden;background:var(--bg-main)}
+  .seg button{
+    height:100%;padding:0 10px;border:0;border-left:1px solid var(--border);
+    background:none;color:var(--fg-muted);font:inherit;font-size:11.5px;cursor:pointer;
+    -webkit-appearance:none;appearance:none;transition:background 110ms ease,color 110ms ease;
+  }
+  .seg button:first-child{border-left:0}
+  .seg button:hover{background:var(--hover);color:var(--fg)}
+  .seg button.is-on{background:var(--active);color:var(--accent);font-weight:600}
+  .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+  /* ---------------------------------------------------------- stage */
+  .stage{
+    display:flex;align-items:stretch;gap:var(--gap,8px);
+    height:560px;max-width:1040px;
+    --bar-h:34px;      /* one row height: tab strips, outline head, panel bar */
+    --gap:8px;         /* gutter that exists only while a card is detached */
+  }
+
+  .stack{display:flex;flex-direction:column;min-height:0;min-width:0}
+  .stack.side{flex:0 0 292px}
+  .stack.main{flex:1 1 auto}
+
+  .card{
+    display:flex;flex-direction:column;min-height:0;
+    border:1px solid var(--border);border-radius:var(--radius);
+    background:var(--bg-main);overflow:hidden;
+  }
+
+  /* --- merged: the second card docks into the first one, no gutter --- */
+  .stack:has(> .card[data-open="false"]) > .card:not([data-open="false"]){
+    border-bottom-left-radius:0;
+    border-bottom-right-radius:0;
+    /* its bottom border stays: it is the single seam hairline */
+  }
+  .stack > .card[data-open="false"]{
+    flex:0 0 auto;
+    height:calc(var(--bar-h) + 1px); /* 34px row + the card's own bottom border */
+    border-top-width:0;             /* the seam is the upper card's hairline */
+    border-top-left-radius:0;
+    border-top-right-radius:0;
+  }
+
+  /* --- gutter: exists only while the second card is detached --------- */
+  .gutter{
+    flex:0 0 auto;height:var(--gap);width:100%;
+    position:relative;cursor:row-resize;touch-action:none;
+    background:transparent;
+  }
+  .stack:has(> .card[data-open="false"]) > .gutter{
+    height:0;pointer-events:none;cursor:default;
+  }
+  /* Drag highlight mirrors the workbench splitters: a 2px rounded pill
+   * inset by the card radius, faded in — never a 1px hairline. */
+  .gutter::before{
+    content:"";position:absolute;
+    left:var(--radius);right:var(--radius);
+    top:calc((var(--gap) - 2px) / 2);height:2px;border-radius:2px;
+    background:var(--pane-divider-hover,var(--accent));
+    opacity:0;pointer-events:none;transition:opacity 120ms ease;
+  }
+  .gutter:is(:hover,:focus-visible)::before{opacity:.55}
+
+  /* --------------------------------------------------- editor card */
+  .editor-card{flex:1 1 auto;min-height:0}
+
+  /* Real app geometry: tabs stretch the full 33px content box (34px bar −
+   * 1px hairline) and the active tab carries a 2px top accent bar. */
+  .ed-tabs{
+    flex:0 0 var(--bar-h);display:flex;align-items:stretch;
+    padding:0 6px 0 0;background:var(--header-bg);
+    border-bottom:1px solid var(--header-line);overflow:hidden;
+  }
+  .ed-tab{display:flex;align-items:center;gap:6px;padding:0 10px 0 12px;font-size:12px;color:var(--fg-muted);white-space:nowrap}
+  .ed-tab .dot{width:6px;height:6px;border-radius:50%;background:var(--fg-dim)}
+  .ed-tab:hover{background:var(--hover);color:var(--fg)}
+  .ed-tab.is-on{background:var(--active);color:var(--fg);font-weight:600;box-shadow:inset 0 2px 0 0 var(--accent)}
+  .ed-tab.is-dirty .dot{background:var(--accent)}
+  .ed-tab .close{color:var(--fg-dim);font-size:13px;line-height:1;margin-left:2px}
+
+  .ed-code{flex:1 1 auto;min-height:0;overflow:auto;padding:8px 0 12px;font:12px/1.8 var(--font-mono);color:var(--code-fg)}
+  .ed-line{display:flex;gap:16px;padding:0 14px}
+  .ed-line .no{width:26px;flex:0 0 auto;text-align:right;color:var(--fg-dim);user-select:none}
+  .kw{color:var(--code-kw)} .ty{color:var(--code-ty)} .fn{color:var(--code-fn)}
+  .st{color:var(--code-st)} .cm{color:var(--code-cm)}
+
+  /* ---------------------------------------------------- panel card */
+  .panel-card{flex:0 0 auto;background:var(--header-bg)}
+  .panel-card[data-open="true"]{height:232px}  /* PANEL_DEFAULT_HEIGHT */
+
+  .panel-bar{
+    flex:0 0 var(--bar-h);display:flex;align-items:center;gap:2px;
+    padding:0 6px;background:var(--header-bg);
+    border-bottom:1px solid transparent;
+    min-width:0;user-select:none;font-size:11.5px;
+  }
+  .panel-card[data-open="true"] .panel-bar{border-bottom-color:var(--header-line)}
+
+  .p-tab{
+    position:relative;display:inline-flex;align-items:center;gap:6px;
+    height:22px;padding:0 9px;border:0;border-radius:5px;background:none;
+    color:var(--fg-muted);font:inherit;font-size:11.5px;flex:0 0 auto;cursor:pointer;
+    -webkit-appearance:none;appearance:none;
+    transition:background 110ms ease,color 110ms ease,box-shadow 110ms ease;
+  }
+  .p-tab svg{opacity:.8}
+  .p-tab:hover{background:var(--hover);color:var(--fg)}
+  .p-tab.is-on{background:var(--active);color:var(--fg)}
+  :root[data-theme="light"] .p-tab:hover{background:rgba(255,255,255,.72);color:var(--fg);box-shadow:inset 0 0 0 1px rgba(18,67,117,.10)}
+  :root[data-theme="light"] .p-tab.is-on{background:#fff;color:var(--accent);box-shadow:inset 0 0 0 1px rgba(0,107,214,.24),0 1px 2px rgba(18,52,86,.10)}
+  .p-tab:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+  .pip{width:7px;height:7px;border-radius:50%;display:none;flex:0 0 auto}
+  .pip.is-ok{display:block;background:var(--success)}
+  .pip.is-failed{display:block;background:var(--danger)}
+  .pip.is-running{
+    display:block;width:10px;height:10px;
+    border:1.5px solid var(--accent);border-top-color:transparent;
+    background:none;animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .bar-spacer{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:10px;padding:0 8px}
+  .status-path{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg-muted);font-size:11px}
+  .status-state{flex:0 0 auto;color:var(--fg-muted);font-size:11px;white-space:nowrap}
+  .status-state.is-dirty{color:var(--accent)}
+  .status-index{flex:0 1 auto;color:var(--accent);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .p-ghost{
+    display:inline-flex;align-items:center;justify-content:center;
+    height:22px;padding:0 8px;border:0;border-radius:5px;background:none;
+    color:var(--fg-muted);font:inherit;font-size:11px;flex:0 0 auto;cursor:pointer;
+    -webkit-appearance:none;appearance:none;transition:background 110ms ease,color 110ms ease;
+  }
+  .p-ghost.is-icon{width:22px;padding:0}
+  .p-ghost:hover{background:var(--hover);color:var(--fg)}
+  .p-ghost.is-danger:hover{color:var(--danger)}
+  .p-ghost:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .p-ghost .chev{transition:transform 170ms cubic-bezier(.4,0,.2,1)}
+  .panel-card[data-open="true"] .p-ghost .chev{transform:rotate(180deg)}
+
+  /* resting shape: tabs stay, secondary actions hide while collapsed */
+  .panel-card[data-open="false"] .p-ghost.is-danger{display:none}
+
+  .panel-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:var(--panel-body)}
+  .panel-card[data-open="false"] .panel-body{display:none}
+
+  .progress{
+    flex:0 0 auto;display:flex;align-items:center;gap:8px;
+    padding:5px 12px;border-bottom:1px solid var(--border);
+    font-size:11px;color:var(--fg-muted);
+  }
+  .progress-chip{padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+  .progress-bar{flex:1 1 auto;height:4px;border-radius:2px;background:var(--border);overflow:hidden}
+  .progress-bar i{display:block;height:100%;width:62%;background:var(--accent);border-radius:2px}
+  .progress-pct{font-variant-numeric:tabular-nums;color:var(--fg)}
+
+  .log{flex:1 1 auto;min-height:0;overflow:auto;padding:4px 12px 10px;font:11.5px/17px var(--font-mono);color:var(--fg-muted)}
+  .log-line{white-space:pre-wrap;overflow-wrap:anywhere}
+  .log-line.is-meta{color:var(--accent)}
+  .log-line.is-err{color:var(--danger)}
+  .log-line.is-dim{color:var(--fg-dim)}
+  .log-line.is-ok{color:var(--success)}
+
+  .term-form{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:6px 10px;border-top:1px solid var(--border)}
+  .term-cwd{flex:0 1 auto;min-width:0;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:11px/1 var(--font-mono);color:var(--fg-muted)}
+  .term-input{flex:1 1 auto;min-width:0;height:22px;border:0;background:none;outline:none;color:var(--fg);font:11.5px/1 var(--font-mono)}
+  .term-input::placeholder{color:var(--fg-dim)}
+
+  /* --------------------------------------------------- sidebar cards */
+  .files-card{flex:1 1 auto;min-height:0}
+  .files-head{
+    flex:0 0 var(--bar-h);display:flex;align-items:center;gap:6px;
+    padding:0 3px 0 8px;border-bottom:1px solid var(--header-line);
+    background:var(--header-bg);font-size:12px;font-weight:600;
+  }
+  .files-head .name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .files-body{flex:1 1 auto;min-height:0;overflow:auto;padding:4px 6px 8px}
+  .tree-row{display:flex;align-items:center;gap:5px;height:24px;padding:0 6px;border-radius:5px;font-size:11.5px;color:var(--fg-muted)}
+  .tree-row:hover{background:var(--hover);color:var(--fg)}
+  .tree-row.is-on{background:var(--active);color:var(--accent)}
+  .tree-row .tw{width:12px;flex:0 0 12px;display:inline-flex;align-items:center;justify-content:center;color:var(--fg-dim)}
+  .tree-row .nm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tree-row .st{font:10px/1 var(--font-mono);color:var(--kind-var)}
+
+  /* outline card — same dock/detach rule as the panel */
+  .outline-card{flex:0 0 auto;background:var(--header-bg)}
+  .outline-card[data-open="true"]{height:180px}
+  .outline-head{
+    flex:0 0 var(--bar-h);display:flex;align-items:center;gap:6px;width:100%;
+    padding:0 8px;border:0;background:none;color:var(--fg);
+    font:600 12px/1 var(--font-ui);text-align:left;cursor:pointer;
+    -webkit-appearance:none;appearance:none;
+  }
+  .outline-card[data-open="true"] .outline-head{border-bottom:1px solid var(--header-line)}
+  .outline-head:hover{background:var(--hover)}
+  .outline-head .tw{width:12px;flex:0 0 12px;display:inline-flex;align-items:center;justify-content:center;color:var(--fg-muted)}
+  .outline-head .tw svg{transition:transform 120ms ease;transform:rotate(90deg)}
+  .outline-card[data-open="false"] .outline-head .tw svg{transform:rotate(0deg)}
+  .outline-head .title{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .outline-head .count{flex:0 0 auto;font:11px/1 var(--font-mono);color:var(--fg-muted)}
+  .outline-body{flex:1 1 auto;min-height:0;overflow:auto;padding:4px 6px 8px}
+  .outline-card[data-open="false"] .outline-body{display:none}
+  .o-row{
+    display:flex;align-items:center;gap:5px;width:100%;height:26px;
+    padding:0 6px 0 calc(6px + var(--depth,0) * 10px);
+    border:0;border-radius:5px;background:none;color:inherit;
+    font:inherit;font-size:11.5px;text-align:left;cursor:pointer;
+    -webkit-appearance:none;appearance:none;
+  }
+  .o-row:hover{background:var(--hover)}
+  .o-row .kind{width:12px;flex:0 0 12px;display:inline-flex;align-items:center;justify-content:center;font:9px/1 var(--font-mono);font-weight:700}
+  .o-row .kind[data-kind="type"]{color:var(--kind-type)}
+  .o-row .kind[data-kind="fn"]{color:var(--kind-fn)}
+  .o-row .kind[data-kind="var"]{color:var(--kind-var)}
+  .o-row .nm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg)}
+  .o-row .ln{flex:0 0 auto;font:10px/1 var(--font-mono);color:var(--fg-dim)}
+  .o-row.is-on .nm{color:var(--accent)}
+
+  /* -------------------------------------------------------- motion */
+  .stage[data-motion="on"] .card{transition:height 170ms cubic-bezier(.4,0,.2,1),border-radius 170ms ease}
+  .stage[data-motion="on"] .gutter{transition:height 170ms cubic-bezier(.4,0,.2,1)}
+  @media (prefers-reduced-motion:reduce){
+    .stage[data-motion="on"] .card,
+    .stage[data-motion="on"] .gutter,
+    .p-ghost .chev,
+    .outline-head .tw svg,
+    .p-tab{transition:none}
+    .pip.is-running{animation-duration:2.4s}
+  }
+
+  .note{max-width:1040px;margin:12px 0 0;font-size:11px;color:var(--fg-dim);line-height:1.7}
+  .note code{font:11px/1 var(--font-mono);background:var(--header-bg);padding:1px 4px;border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>Dev Mode · 折叠时合并，展开才独立成卡片</h1>
+  <p>底边状态栏 + 它撑开的面板、以及左侧 Outline，都走同一条规则：<strong>折叠 = 仍属于上面那张卡片</strong>（无缝、无间隙、只留一条 hairline），<strong>展开 = 脱开成为独立卡片</strong>（让出 <code>--devmode-pane-gap</code> 走廊，走廊即拖拽手柄）。</p>
+</div>
+
+<div class="controls">
+  <span class="ctl-label">Bottom panel</span>
+  <div class="seg" id="panelSeg">
+    <button type="button" data-open="false" class="is-on">Collapsed</button>
+    <button type="button" data-open="true">Expanded</button>
+  </div>
+  <span class="ctl-label">Outline</span>
+  <div class="seg" id="outlineSeg">
+    <button type="button" data-open="false" class="is-on">Collapsed</button>
+    <button type="button" data-open="true">Expanded</button>
+  </div>
+  <span class="ctl-label">Theme</span>
+  <div class="seg" id="themeSeg">
+    <button type="button" data-theme="dark" class="is-on">Dark</button>
+    <button type="button" data-theme="light">Light</button>
+  </div>
+</div>
+
+<div class="stage" id="stage" data-motion="off">
+  <!-- ==================================================== sidebar -->
+  <div class="stack side">
+    <div class="card files-card">
+      <div class="files-head">
+        <span class="name">JellyBot</span>
+        <button class="p-ghost is-icon" title="Refresh">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>
+        </button>
+      </div>
+      <div class="files-body">
+        <div class="tree-row"><span class="tw">▸</span><span class="nm">src</span></div>
+        <div class="tree-row"><span class="tw">▸</span><span class="nm">components</span></div>
+        <div class="tree-row is-on"><span class="tw"></span><span class="nm">JellyComponent.cpp</span><span class="st">M</span></div>
+        <div class="tree-row"><span class="tw"></span><span class="nm">JellyComponent.h</span><span class="st">M</span></div>
+        <div class="tree-row"><span class="tw"></span><span class="nm">JellyCache.cpp</span></div>
+        <div class="tree-row"><span class="tw">▸</span><span class="nm">config</span></div>
+        <div class="tree-row"><span class="tw"></span><span class="nm">tasks.json</span><span class="st">A</span></div>
+        <div class="tree-row"><span class="tw"></span><span class="nm">README.md</span></div>
+      </div>
+    </div>
+
+    <div class="gutter" title="Drag to resize"></div>
+
+    <div class="card outline-card" id="outline" data-open="false">
+      <button type="button" class="outline-head" id="outlineToggle" aria-expanded="false">
+        <span class="tw"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+        <span class="title">Outline</span>
+        <span class="count">18</span>
+      </button>
+      <div class="outline-body">
+        <button class="o-row" style="--depth:0"><span class="kind" data-kind="type">C</span><span class="nm">UJellyComponent</span><span class="ln">L12</span></button>
+        <button class="o-row" style="--depth:1"><span class="kind" data-kind="fn">ƒ</span><span class="nm">BeginPlay</span><span class="ln">L61</span></button>
+        <button class="o-row is-on" style="--depth:1"><span class="kind" data-kind="fn">ƒ</span><span class="nm">GetCache</span><span class="ln">L71</span></button>
+        <button class="o-row" style="--depth:1"><span class="kind" data-kind="fn">ƒ</span><span class="nm">BroadcastReady</span><span class="ln">L88</span></button>
+        <button class="o-row" style="--depth:1"><span class="kind" data-kind="var">v</span><span class="nm">Cache</span><span class="ln">L96</span></button>
+        <button class="o-row" style="--depth:0"><span class="kind" data-kind="type">C</span><span class="nm">FJellyCache</span><span class="ln">L120</span></button>
+        <button class="o-row" style="--depth:1"><span class="kind" data-kind="fn">ƒ</span><span class="nm">Prime</span><span class="ln">L134</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================= main -->
+  <div class="stack main">
+    <div class="card editor-card">
+      <div class="ed-tabs">
+        <span class="ed-tab is-on is-dirty"><span class="dot"></span>JellyComponent.cpp<span class="close">×</span></span>
+        <span class="ed-tab"><span class="dot"></span>JellyComponent.h<span class="close">×</span></span>
+        <span class="ed-tab"><span class="dot"></span>tasks.json<span class="close">×</span></span>
+      </div>
+      <div class="ed-code">
+        <div class="ed-line"><span class="no">61</span><span><span class="kw">void</span> <span class="ty">UJellyComponent</span>::<span class="fn">BeginPlay</span>()</span></div>
+        <div class="ed-line"><span class="no">62</span><span>{</span></div>
+        <div class="ed-line"><span class="no">63</span><span>    <span class="ty">Super</span>::<span class="fn">BeginPlay</span>();</span></div>
+        <div class="ed-line"><span class="no">64</span><span></span></div>
+        <div class="ed-line"><span class="no">65</span><span>    <span class="cm">// Warm the symbol cache before the first query.</span></span></div>
+        <div class="ed-line"><span class="no">66</span><span>    Cache.<span class="fn">Prime</span>(<span class="st">L"Jelly"</span>);</span></div>
+        <div class="ed-line"><span class="no">67</span><span>    <span class="kw">if</span> (Cache.<span class="fn">IsReady</span>())</span></div>
+        <div class="ed-line"><span class="no">68</span><span>        <span class="fn">BroadcastReady</span>();</span></div>
+        <div class="ed-line"><span class="no">69</span><span>}</span></div>
+        <div class="ed-line"><span class="no">70</span><span></span></div>
+        <div class="ed-line"><span class="no">71</span><span><span class="ty">FJellyCache</span>&amp; <span class="ty">UJellyComponent</span>::<span class="fn">GetCache</span>()</span></div>
+        <div class="ed-line"><span class="no">72</span><span>{</span></div>
+        <div class="ed-line"><span class="no">73</span><span>    <span class="kw">return</span> Cache;</span></div>
+        <div class="ed-line"><span class="no">74</span><span>}</span></div>
+      </div>
+    </div>
+
+    <div class="gutter" title="Drag to resize"></div>
+
+    <div class="card panel-card" id="panel" data-open="false">
+      <div class="panel-bar">
+        <button type="button" class="p-tab is-on" data-view="terminal" title="Terminal">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          <span>Terminal</span>
+        </button>
+        <button type="button" class="p-tab" data-view="build" title="Build">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Build</span>
+          <span class="pip is-running"></span>
+        </button>
+
+        <div class="bar-spacer">
+          <span class="status-path" title="Source/JellyBot/Private/Components/JellyComponent.cpp">Source/JellyBot/Private/Components/JellyComponent.cpp</span>
+          <span class="status-state is-dirty">2 unsaved</span>
+          <span class="status-index">Indexing 1,204 / 3,890</span>
+        </div>
+
+        <button type="button" class="p-ghost is-danger" title="Terminate the process group">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
+        </button>
+        <button type="button" class="p-ghost is-icon" title="Clear output">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+        <button type="button" class="p-ghost is-icon" id="panelToggle" title="Expand panel" aria-label="Expand panel">
+          <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      </div>
+
+      <div class="panel-body">
+        <div class="log" data-view="terminal">
+          <div class="log-line is-meta">$ npm run gate</div>
+          <div class="log-line is-dim">> jellybot@0.9.14 gate</div>
+          <div class="log-line is-dim">> tsc --build &amp;&amp; node run-tests.mjs</div>
+          <div class="log-line">building root…</div>
+          <div class="log-line">building relay…</div>
+          <div class="log-line is-ok">✓ typecheck ok (3.2s)</div>
+          <div class="log-line">running 2148 tests…</div>
+          <div class="log-line is-err">✗ devmodePanelCard.test.ts — not yet written</div>
+          <div class="log-line is-dim">— exit 1 · 6.4s</div>
+        </div>
+        <div class="log" data-view="build" hidden>
+          <div class="progress">
+            <span class="progress-chip">Building</span>
+            <span class="progress-counts">142 / 230 actions</span>
+            <span class="progress-bar"><i></i></span>
+            <span class="progress-pct">62%</span>
+            <span class="progress-eta">~38s</span>
+          </div>
+          <div class="log-line">[1/230] Compile JellyComponent.cpp</div>
+          <div class="log-line">[2/230] Compile JellyCache.cpp</div>
+          <div class="log-line is-dim">[3/230] Link UnrealEditor-JellyBot.dylib</div>
+          <div class="log-line is-dim">…</div>
+        </div>
+        <div class="term-form" data-view="terminal">
+          <span class="term-cwd">~/Developer/JellyBot</span>
+          <input class="term-input" type="text" placeholder="Run a command…" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="note">
+  实现映射：折叠态不动现有 DOM（<code>.devmode-panel.is-collapsed</code> 仍贴在 <code>.devmode-editor-pane</code> 内，<code>.devmode-doc-outline.is-collapsed</code> 仍贴在文件卡片内）；
+  展开态两者各自成为独立卡片，中间那 <code>--devmode-pane-gap</code>（8px）走廊即拖拽手柄，高亮沿用 <code>--pane-divider-hover</code> 2px 圆角 pill。
+</p>
+
+<script>
+  const stage = document.getElementById("stage");
+  const panel = document.getElementById("panel");
+  const outline = document.getElementById("outline");
+
+  function setGroup(segId, attr, value) {
+    document.querySelectorAll("#" + segId + " button").forEach((b) => {
+      b.classList.toggle("is-on", b.dataset[attr] === value);
+    });
+  }
+
+  function setOpen(card, open, segId, toggleBtn) {
+    card.dataset.open = String(open);
+    setGroup(segId, "open", String(open));
+    if (toggleBtn) {
+      const label = open ? "Collapse" : "Expand";
+      toggleBtn.title = label;
+      toggleBtn.setAttribute("aria-label", label);
+    }
+    if (card === outline) {
+      document.getElementById("outlineToggle").setAttribute("aria-expanded", String(open));
+    }
+  }
+
+  document.getElementById("panelSeg").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (btn) setOpen(panel, btn.dataset.open === "true", "panelSeg", document.getElementById("panelToggle"));
+  });
+  document.getElementById("outlineSeg").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (btn) setOpen(outline, btn.dataset.open === "true", "outlineSeg");
+  });
+  document.getElementById("themeSeg").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    document.documentElement.dataset.theme = btn.dataset.theme;
+    setGroup("themeSeg", "theme", btn.dataset.theme);
+  });
+
+  document.getElementById("panelToggle").addEventListener("click", () => {
+    setOpen(panel, panel.dataset.open === "false", "panelSeg", document.getElementById("panelToggle"));
+  });
+  document.getElementById("outlineToggle").addEventListener("click", () => {
+    setOpen(outline, outline.dataset.open === "false", "outlineSeg");
+  });
+
+  // Tabs inside the panel card — picking one expands the card.
+  document.querySelectorAll(".p-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const view = tab.dataset.view;
+      document.querySelectorAll(".p-tab").forEach((t) => t.classList.toggle("is-on", t === tab));
+      document.querySelectorAll("[data-view]").forEach((el) => {
+        if (el.classList.contains("p-tab")) return;
+        el.hidden = el.dataset.view !== view;
+      });
+      if (panel.dataset.open === "false") {
+        setOpen(panel, true, "panelSeg", document.getElementById("panelToggle"));
+      }
+    });
+  });
+
+  // ---- host params -------------------------------------------------
+  function apply(values) {
+    if ("gutter" in values) {
+      stage.style.setProperty("--gap", Number(values.gutter) + "px");
+    }
+    if ("detachMotion" in values) {
+      stage.dataset.motion = values.detachMotion ? "on" : "off";
+    }
+  }
+
+  window.addEventListener("message", (e) => {
+    if (e.data && e.data.type === "jellybot-demo-params") apply(e.data.values);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+[Unit]
+Description=JellyBot Agent — headless device node (web console controlled)
+Documentation=https://jellybot.cloud
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jellybot-agent
+Group=jellybot-agent
+# platformCaps headless tier — must be visible before the runtime graph loads.
+Environment=JELLYBOT_HEADLESS=1
+# Default workspace (auto-created on first store boot) points at the service home.
+WorkingDirectory=/srv/jellybot-agent
+ExecStart=/opt/jellybot-agentd/current/bin/agentd run
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=20
+
+# --- hardening (the /opt + /usr trees stay read-only) ---
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# Writable state: config (settings.json), runtime data, workspaces.
+ReadWritePaths=/etc/jellybot-agent /var/lib/jellybot-agent /srv/jellybot-agent
+
+[Install]
+WantedBy=multi-user.target
