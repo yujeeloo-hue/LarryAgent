@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none">
+  <defs><mask id="Eye-m"><rect width="24" height="24" fill="white" /><circle cx="12" cy="12" r="4.5" fill="black" /></mask></defs>
+  <path d="M2.15 10.35C4.5 6.2 7.8 3.6 12 3.6s7.5 2.6 9.85 6.75q.95 1.65 0 3.3C19.5 17.8 16.2 20.4 12 20.4S4.5 17.8 2.15 13.65q-.95-1.65 0-3.3Z" fill="currentColor" mask="url(#Eye-m)" />
+  <circle cx="12" cy="12" r="2.25" fill="currentColor" />
+</svg>

@@ -1,0 +1,23 @@
+[Unit]
+Description=JellyBot Remote Relay (device bridge + web console)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=__PREFIX__
+Environment=RELAY_HOST=127.0.0.1
+Environment=RELAY_PORT=__PORT__
+Environment=RELAY_PUBLIC_DIR=__PREFIX__/public
+Environment=RELAY_BASE_PATH=__BASE_PATH__
+Environment=NODE_ENV=production
+ExecStart=__NODE__ __PREFIX__/dist/index.js
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=__PREFIX__/data
+
+[Install]
+WantedBy=multi-user.target

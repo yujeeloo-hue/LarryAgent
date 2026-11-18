@@ -1,0 +1,9 @@
+[Unit]
+Description=JellyBot agentd root updater (processes console update requests)
+Documentation=https://jellybot.cloud
+
+[Service]
+Type=oneshot
+ExecStart=/opt/jellybot-agentd/current/bin/agentd process-update-queue
+TimeoutStartSec=900
+ProtectHome=read-only

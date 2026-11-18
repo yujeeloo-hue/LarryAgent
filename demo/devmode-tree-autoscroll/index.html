@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dev Mode 文件树 · 横滚跟随纵向视口（缓动）</title>
+<style>
+  :root {
+    --tint-rgb: 255, 255, 255;
+    --bg-app: #0e1013;
+    --bg-card: #16181d;
+    --fg: #d5dae1;
+    --fg-muted: #8b949e;
+    --accent: #4aa3ff;
+    --line: rgba(var(--tint-rgb), 0.1);
+    --hover: rgba(var(--tint-rgb), 0.06);
+    --font: -apple-system, "Segoe UI", "Noto Sans SC", system-ui, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: radial-gradient(1200px 700px at 20% -10%, #1b2028 0%, var(--bg-app) 60%);
+    color: var(--fg);
+    font: 13px/1.5 var(--font);
+  }
+  .stage {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px;
+  }
+
+  .card {
+    width: 288px;
+    height: min(460px, 66vh);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .card-head {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    height: 34px;
+    padding: 0 10px;
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .card-head .count { margin-left: auto; font: 500 10px var(--font-mono); color: var(--fg-muted); }
+  .body-wrap { position: relative; flex: 1 1 auto; min-height: 0; }
+
+  /* Horizontal pan is programmatic: no horizontal scrollbar, content still
+     overflows (rows are max-content) so scrollLeft has room to move. */
+  .body {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    /* clip, not hidden: the pan is a transform now, so no horizontal scroll
+       range may exist (shift+wheel would otherwise stack on top of it). */
+    overflow-x: clip;
+    padding: 8px 6px 16px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--tint-rgb), 0.16) transparent;
+  }
+
+  .row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 26px;
+    width: 100%;
+    padding: 0 6px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  /* Only this layer pans; the row itself stays card-wide so the status chip
+     can sit on the right edge no matter how deep the row is indented. */
+  .row-inner {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: max-content;
+    padding-left: calc(10px + var(--depth, 0) * 14px);
+    transform: translateX(var(--pan-x, 0px));
+  }
+  .row:hover { background: var(--hover); }
+  .row[data-kind="folder"] { color: var(--fg-muted); }
+  .row[data-kind="solution"] .label { font-weight: 600; }
+  .row[data-kind="project"] .label { font-weight: 500; }
+  .row[data-kind="solution"] .icon,
+  .row[data-kind="project"] .icon { color: var(--accent); }
+
+  .tw { flex: 0 0 12px; display: inline-flex; align-items: center; justify-content: center; color: var(--fg-muted); }
+  .tw svg { transition: transform 120ms ease; }
+  .row[aria-expanded="true"] .tw svg { transform: rotate(90deg); }
+  .icon { flex: 0 0 auto; display: inline-flex; color: var(--fg-muted); }
+  .label { flex: 0 0 auto; }
+  .badge {
+    /* Outside .row-inner on purpose: the pan must never drag it along. */
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    flex: 0 0 auto;
+    font: 600 9.5px/1 var(--font-mono);
+    color: #d29922;
+    background: #2a2113;
+    border-radius: 4px;
+    padding: 2px 4px;
+  }
+
+  .hud {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font: 11px var(--font-mono);
+    color: var(--fg-muted);
+  }
+  .hud b { color: var(--fg); font-weight: 600; }
+  .hud .sep { opacity: .35; }
+  .verdict { font: 11.5px var(--font); color: var(--fg-muted); min-height: 18px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="card">
+    <div class="card-head"><span>Solution</span><span class="count" id="count"></span></div>
+    <div class="body-wrap">
+      <div class="body" id="body"></div>
+    </div>
+  </div>
+  <div class="hud">
+    <span>scrollLeft <b id="sl">0</b></span><span class="sep">·</span>
+    <span>目标 <b id="tg">0</b></span><span class="sep">·</span>
+    <span>基准 <b id="base">L0</b></span>
+  </div>
+  <div class="verdict" id="verdict">纵向滚动看看：可见的最浅层往下走，整棵树缓动左移</div>
+</div>
+
+<script>
+// ------------------------------------------------------------- geometry
+// Mirrors devmode.css: body padding-left 6, row padding-left 10 + depth * 14.
+const LEAD = 10;
+const STEP = 14;
+const flushOf = (level) => (level <= 0 ? 0 : LEAD + level * STEP);
+
+// ------------------------------------------------------------ tree data
+let uid = 0;
+const n = (label, kind, children) => ({ id: `n${++uid}`, label, kind, children: children || [] });
+const files = (...names) => names.map((name) => n(name, "file"));
+
+const TREE = [
+  n("NF.sln", "solution", [
+    n("NF", "project", [
+      n("Source", "folder", [
+        n("NF", "folder", [
+          n("Private", "folder", [
+            n("Character", "folder", [
+              n("Animation", "folder", [
+                n("NFCharacterAnimInstance.cpp", "file"),
+                n("NFCharacterAnimationComponent.cpp", "file"),
+                n("AnimationNotifies", "folder", [
+                  n("AnimNotify_FootStep.cpp", "file"),
+                  n("AnimNotify_SneakTransition.cpp", "file"),
+                  n("AnimNotify_WeaponSwitchUpperBody.cpp", "file"),
+                ]),
+                n("Montages", "folder", [
+                  n("NFCharacterAnimMontage_UpperBody.cpp", "file"),
+                  n("NFCharacterAnimMontage_AdditiveFire.cpp", "file"),
+                ]),
+              ]),
+              n("Components", "folder", [
+                n("NFCharacterAnimationComponent.cpp", "file"),
+                n("NFCharacterMovementComponent.cpp", "file"),
+              ]),
+              n("NFCharacter.cpp", "file"),
+              n("NFCharacterMovement.cpp", "file"),
+            ]),
+            n("Protocol", "folder", [
+              n("NFFootstepProtocolDefinitions.cpp", "file"),
+              n("NFReplicationGraphDefinitions.cpp", "file"),
+            ]),
+            n("UI", "folder", [
+              n("NFHudWidgetController.cpp", "file"),
+              n("NFInventoryPanelWidget.cpp", "file"),
+            ]),
+            n("Audio", "folder", [
+              n("NFAudioSubsystemSettings.cpp", "file"),
+              n("NFWwiseFootstepResolver.cpp", "file"),
+            ]),
+          ]),
+        ]),
+      ]),
+      n("Config", "folder", files("DefaultEngine.ini", "DefaultGame.ini", "DefaultInput.ini")),
+    ]),
+  ]),
+];
+
+const svg = (body, size) =>
+  `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" ` +
+  `stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+const CHEVRON = svg('<path d="M9 6l6 6-6 6"/>', 12);
+const FOLDER = svg('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>', 13);
+const FILE = svg('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>', 13);
+const SOLUTION = svg('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>', 13);
+
+const bodyEl = document.getElementById("body");
+const slEl = document.getElementById("sl");
+const tgEl = document.getElementById("tg");
+const baseEl = document.getElementById("base");
+const countEl = document.getElementById("count");
+const verdictEl = document.getElementById("verdict");
+
+const open = new Set();
+let probeMode = false;
+
+// -------------------------------------------------------------- render
+function flatten(nodes, depth, out) {
+  for (const node of nodes) {
+    out.push({ node, depth });
+    if (node.children.length && open.has(node.id)) flatten(node.children, depth + 1, out);
+  }
+  return out;
+}
+
+function buildRow(node, depth) {
+  const row = document.createElement("div");
+  row.className = "row";
+  row.dataset.kind = node.kind;
+  row.dataset.id = node.id;
+  row.dataset.depth = String(depth);
+  row.style.setProperty("--depth", String(depth));
+
+  const inner = document.createElement("div");
+  inner.className = "row-inner";
+
+  const tw = document.createElement("div");
+  tw.className = "tw";
+  const expandable = node.children.length > 0;
+  if (expandable) {
+    tw.innerHTML = CHEVRON;
+    row.setAttribute("aria-expanded", open.has(node.id) ? "true" : "false");
+  }
+
+  const icon = document.createElement("span");
+  icon.className = "icon";
+  icon.innerHTML = node.kind === "solution" ? SOLUTION : node.kind === "file" ? FILE : FOLDER;
+
+  const label = document.createElement("span");
+  label.className = "label";
+  label.textContent = node.label;
+
+  inner.append(tw, icon, label);
+  row.append(inner);
+
+  if (node.kind === "file") {
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.textContent = "M";
+    row.append(badge);
+  }
+
+  if (expandable) row.addEventListener("click", () => toggle(node));
+  return row;
+}
+
+function render() {
+  const rows = flatten(TREE, 0, []);
+  bodyEl.replaceChildren(...rows.map(({ node, depth }) => buildRow(node, depth)));
+  countEl.textContent = String(rows.length);
+}
+
+function toggle(node) {
+  if (open.has(node.id)) open.delete(node.id);
+  else open.add(node.id);
+  render();
+  syncHorizontal();
+}
+
+// ------------------------------------------------- vertical → horizontal
+/**
+ * Depth of the shallowest row whose vertical centre is inside the viewport.
+ * Everything above it (the ancestor chain, e.g. NF.sln) has scrolled out of
+ * the vertical view, so nothing forces us to keep room for it horizontally.
+ */
+function baseLevel() {
+  const view = bodyEl.getBoundingClientRect();
+  let best = Infinity;
+  for (const row of bodyEl.querySelectorAll(".row")) {
+    const rect = row.getBoundingClientRect();
+    const middle = (rect.top + rect.bottom) / 2;
+    if (middle < view.top || middle > view.bottom) continue;
+    best = Math.min(best, Number(row.dataset.depth));
+  }
+  return best === Infinity ? 0 : best;
+}
+
+// ----------------------------------------------------------- the easing
+const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+const reduceMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+let duration = 200;      // ms, tunable from the demo params
+let targetLeft = 0;      // where the pan wants to be
+let panLeft = 0;         // where the pan actually is
+let tweenId = 0;
+let tweenFrom = 0;
+let tweenStart = 0;
+
+const setPan = (x) => bodyEl.style.setProperty("--pan-x", `${-x}px`);
+
+/**
+ * Re-derive the horizontal target from the vertical viewport and glide there.
+ *
+ * The target is only replaced when the base level actually changes, so the
+ * scroll events our own tween produces never restart the animation — one
+ * continuous ease follows the viewport instead of stuttering once per frame.
+ */
+function syncHorizontal(immediate) {
+  const level = baseLevel();
+  // Not clamped against content width: a tree of short names never fills the
+  // card, and that whitespace is the price of keeping deep rows left-flush.
+  const want = flushOf(level);
+  paint(undefined, level);
+
+  if (Math.abs(want - targetLeft) < 0.5) return;
+  targetLeft = want;
+  startTween(immediate === true);
+}
+
+function startTween(immediate) {
+  if (tweenId) {
+    cancelAnimationFrame(tweenId);
+    tweenId = 0;
+  }
+  const from = panLeft;
+  if (immediate || reduceMotion() || duration <= 0 || Math.abs(targetLeft - from) < 0.5) {
+    panLeft = targetLeft;
+    setPan(panLeft);
+    paint();
+    return;
+  }
+  tweenFrom = from;
+  tweenStart = performance.now();
+  tweenId = requestAnimationFrame(step);
+}
+
+function step(now) {
+  const t = Math.min(1, (now - tweenStart) / duration);
+  panLeft = tweenFrom + (targetLeft - tweenFrom) * easeOutCubic(t);
+  setPan(panLeft);
+  paint();
+  if (t < 1) {
+    tweenId = requestAnimationFrame(step);
+  } else {
+    tweenId = 0;
+    panLeft = targetLeft;
+    setPan(panLeft);
+    paint();
+  }
+}
+
+function paint(pendingLeft, level) {
+  const left = pendingLeft === undefined ? panLeft : pendingLeft;
+  const base = level === undefined ? baseLevel() : level;
+  slEl.textContent = String(Math.round(left));
+  tgEl.textContent = String(Math.round(targetLeft));
+  baseEl.textContent = `L${base}`;
+  verdictEl.textContent =
+    base === 0
+      ? "根层仍在纵向视口内 → 横向目标为 0"
+      : `L0…L${base - 1} 已纵向滚出 → 缓动到 L${base} 贴左`;
+}
+
+bodyEl.addEventListener("scroll", () => {
+  if (probeMode) return;
+  paint();
+  syncHorizontal(false);
+});
+
+// Open everything so the tree is tall enough to scroll and deep enough to
+// overflow horizontally.
+function openAll(nodes) {
+  for (const node of nodes) {
+    if (!node.children.length) continue;
+    open.add(node.id);
+    openAll(node.children);
+  }
+}
+openAll(TREE);
+render();
+syncHorizontal(true);
+
+window.addEventListener("message", (event) => {
+  if (event.data?.type !== "jellybot-demo-params") return;
+  const values = event.data.values || {};
+  if (typeof values.duration === "number") {
+    duration = values.duration;
+    startTween(false);
+  }
+});
+
+// ---------------------------------------------------------- headless probe
+if (location.search.includes("probe=1")) {
+  window.setTimeout(() => {
+    probeMode = true;
+    const out = [];
+    for (const left of [0, 66, 122]) {
+      panLeft = left;
+      setPan(left);
+      const port = bodyEl.getBoundingClientRect();
+      const gaps = [...bodyEl.querySelectorAll(".badge")].map((chip) =>
+        Math.round(port.right - chip.getBoundingClientRect().right),
+      );
+      out.push(`pan=${left} gaps=[${gaps.join(",")}]`);
+    }
+    // Real UE trees carry short deep names: the pan must still reach L6/L8
+    // even though that content never fills the card.
+    for (const row of bodyEl.querySelectorAll(".row")) {
+      if (Number(row.dataset.depth) >= 5) {
+        const label = row.querySelector(".label");
+        if (label) label.textContent = label.textContent.slice(0, 4);
+      }
+    }
+    const wants = [4, 6, 8].map((depth) => `L${depth}->${flushOf(depth)}`);
+    verdictEl.textContent = `PROBE ${out.join(" | ")} wants=[${wants.join(",")}]`;
+    verdictEl.id = "probe";
+  }, 300);
+}
+</script>
+</body>
+</html>

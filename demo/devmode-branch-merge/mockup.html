@@ -1,0 +1,120 @@
+<style>
+  #jelly-merge-demo { width:100%; font:13px var(--font-ui); color:var(--fg); background:var(--bg); -webkit-font-smoothing:antialiased; }
+  #jelly-merge-demo [hidden] { display:none !important; }
+  #jelly-merge-demo .jm-review { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; font:11.5px var(--font-ui); color:var(--fg-muted); }
+  #jelly-merge-demo .jm-review-title { margin-right:auto; }
+  #jelly-merge-demo .jm-theme { padding:4px 9px; border:1px solid var(--pane-divider); border-radius:5px; background:var(--bg-elevated); color:var(--fg-muted); font:11.5px var(--font-ui); cursor:pointer; }
+  #jelly-merge-demo .jm-theme[aria-pressed="true"] { color:var(--fg); background:var(--active); }
+  #jelly-merge-demo .jm-stage { position:relative; background:var(--bg); border-radius:var(--devmode-pane-radius,10px); }
+  #jelly-merge-demo .jm-stage > .devmode-editor-pane { min-height:620px; }
+  #jelly-merge-demo .jm-static-tab { flex:0 1 auto; }
+  #jelly-merge-demo .jm-label-marker { display:inline-block; width:12px; height:12px; background:#3178c6; border-radius:2px; color:#fff; font:600 7px/12px var(--font-ui); text-align:center; }
+  #jelly-merge-demo .collaborative-editor { min-height:550px; }
+  #jelly-merge-demo .collaborative-canvas { display:flex; position:relative; min-height:490px; background:#080808cc; }
+  #jelly-merge-demo .jm-panes { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); flex:1; position:relative; min-width:0; }
+  #jelly-merge-demo .jm-pane { min-width:0; position:relative; background:#080808cc; }
+  #jelly-merge-demo .jm-right { border-left:1px solid #ffffff12; }
+  #jelly-merge-demo .jm-code { padding:9px 0 30px; font:12.5px/19px var(--font-mono); color:#e4e9f2; }
+  #jelly-merge-demo .jm-row { display:grid; grid-template-columns:47px minmax(0,1fr); min-height:19px; padding-right:15px; }
+  #jelly-merge-demo .jm-row code { font:inherit; color:inherit; white-space:pre-wrap; overflow-wrap:anywhere; padding:0; background:transparent; }
+  #jelly-merge-demo .jm-number { color:#566172; text-align:right; padding-right:17px; user-select:none; }
+  #jelly-merge-demo .jm-kw { color:#ff6edb; }
+  #jelly-merge-demo .jm-type { color:#39dfff; }
+  #jelly-merge-demo .jm-str { color:#57e6ad; }
+  #jelly-merge-demo .jm-comment { color:#8290a8; font-style:italic; }
+  #jelly-merge-demo .jm-removed { background:#f8514921; }
+  #jelly-merge-demo .jm-added { background:#3fb95021; }
+  #jelly-merge-demo .jm-gap { background:repeating-linear-gradient(135deg,transparent 0 3px,#ffffff0d 3px 4px); }
+  #jelly-merge-demo .jm-pane-lock { float:right; color:var(--accent); text-transform:none; font-weight:400; letter-spacing:0; }
+  #jelly-merge-demo .jm-freeze { position:absolute; inset:0; background:#00000018; cursor:wait; z-index:2; touch-action:none; }
+  #jelly-merge-demo .is-busy .jm-code { opacity:.53; user-select:none; }
+  #jelly-merge-demo .jm-progress { position:absolute; z-index:5; top:50%; left:50%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:8px; width:min(410px,calc(100% - 24px)); padding:10px 12px; background:var(--bg-elevated); border:1px solid var(--pane-divider); border-radius:7px; box-shadow:var(--shadow-lg); font:11.5px/1.5 var(--font-ui); }
+  #jelly-merge-demo .jm-progress-copy { min-width:0; }
+  #jelly-merge-demo .jm-progress-sub { font-size:11px; color:var(--fg-muted); }
+  #jelly-merge-demo .jm-progress-step { margin-left:auto; color:var(--fg-muted); font:10px var(--font-mono); white-space:nowrap; }
+  #jelly-merge-demo .jm-status-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #jelly-merge-demo .jm-modal-host { position:absolute; inset:0; z-index:90; pointer-events:none; }
+  #jelly-merge-demo .jm-modal-host > .devmode-commit-backdrop { position:absolute; pointer-events:auto; }
+  #jelly-merge-demo .jm-branch-files { max-height:none; }
+  #jelly-merge-demo .jm-branch-file { padding:3px 0; }
+  #jelly-merge-demo .jm-branch-file + .jm-branch-file { border-top:1px solid var(--border); margin-top:6px; padding-top:8px; }
+  #jelly-merge-demo .jm-branch-meta { display:flex; align-items:center; gap:6px; font:11px/1.6 var(--font-ui); color:var(--fg-muted); }
+  #jelly-merge-demo .jm-branch-meta input { accent-color:var(--accent); margin:0 2px 0 0; }
+  #jelly-merge-demo .jm-branch-meta svg { width:12px; height:12px; }
+  #jelly-merge-demo .jm-branch-meta label { cursor:pointer; display:flex; align-items:center; gap:6px; }
+  #jelly-merge-demo .jm-branch-name { color:var(--fg); font:11px var(--font-mono); }
+  #jelly-merge-demo .jm-card-state { margin-left:auto; font:10px var(--font-mono); color:var(--vcs-modified); }
+  #jelly-merge-demo .jm-file-path { margin:4px 0 1px 21px; font:11px/1.6 var(--font-mono); overflow-wrap:anywhere; color:var(--fg-muted); }
+  #jelly-merge-demo .jm-generate-row { display:flex; align-items:center; justify-content:space-between; gap:10px; font:11.5px var(--font-ui); color:var(--fg-muted); }
+  #jelly-merge-demo .jm-selection-count { margin-left:auto; color:var(--fg-muted); font:11px var(--font-ui); }
+  #jelly-merge-demo .jm-file-status { color:var(--fg-muted); font:11px var(--font-mono); margin-left:auto; white-space:nowrap; }
+  #jelly-merge-demo .jm-lock-spinner { width:11px; height:11px; border:1.5px solid rgba(var(--accent-rgb),.25); border-top-color:var(--accent); border-radius:50%; animation:devmode-commit-spin .9s linear 8; flex:0 0 auto; }
+  #jelly-merge-demo button:disabled { cursor:default; }
+  #jelly-merge-demo .jm-merge:disabled, #jelly-merge-demo .jm-open-commit:disabled { opacity:.45; }
+  @media(max-width:700px) {
+    #jelly-merge-demo .jm-static-tab { display:none; }
+    #jelly-merge-demo .jm-code { font-size:11px; }
+    #jelly-merge-demo .jm-row { grid-template-columns:32px minmax(0,1fr); padding-right:8px; }
+    #jelly-merge-demo .jm-number { padding-right:10px; }
+    #jelly-merge-demo .jm-file-status { display:none; }
+  }
+  @media(max-width:450px) {
+    #jelly-merge-demo .devmode-editor-launch { display:none; }
+    #jelly-merge-demo .jm-panes { grid-template-columns:minmax(0,1fr); }
+    #jelly-merge-demo .jm-right { border-left:0; border-top:1px solid #ffffff12; }
+    #jelly-merge-demo .devmode-diff-headings { font-size:9px; }
+    #jelly-merge-demo .devmode-diff-headings > span { padding-inline:7px; }
+    #jelly-merge-demo .jm-pane-lock { float:none; display:block; margin-top:3px; }
+    #jelly-merge-demo .jm-branch-meta { flex-wrap:wrap; }
+    #jelly-merge-demo .jm-file-path { margin-left:0; }
+    #jelly-merge-demo .jm-selection-count { font-size:10px; }
+  }
+  @media(prefers-reduced-motion:reduce) { #jelly-merge-demo *, #jelly-merge-demo *::after { animation:none !important; transition:none !important; } }
+</style>
+<div id="jelly-merge-demo" data-theme="dark" lang="zh-CN" aria-label="JellyBot Dev Mode 分支双视图演示">
+  <div class="jm-review">
+    <span class="jm-review-title">Dev Mode · 分支双视图 Demo</span>
+    <button class="jm-theme" type="button" data-theme-choice="dark" aria-pressed="true">Dark</button>
+    <button class="jm-theme" type="button" data-theme-choice="light" aria-pressed="false">Light</button>
+  </div>
+  <div class="jm-stage">
+    <div class="devmode-editor-pane">
+      <div class="devmode-editor-root is-collaborative-view">
+        <div class="devmode-tabs">
+          <div class="devmode-tabs-scroll">
+            <div class="devmode-tab jm-static-tab"><span class="jm-label-marker">TS</span><span class="devmode-tab-label">devServerUrl.ts</span><span class="devmode-tab-dot"></span><button type="button" class="devmode-tab-close" aria-label="Close local tab" disabled>×</button></div>
+            <div class="devmode-tab is-collaborative-tab is-active"><span class="devmode-tab-label">devServerUrl.ts ●</span><button type="button" class="devmode-tab-close" aria-label="Return to local editor" disabled>×</button></div>
+          </div>
+          <div class="devmode-editor-launch"><div class="devmode-launch-pill" role="group" aria-label="Workspace tasks and views">
+            <button type="button" class="devmode-launch-btn" data-launch="build" aria-label="Build" disabled></button>
+            <button type="button" class="devmode-launch-btn" data-launch="run" aria-label="Debug" disabled></button>
+            <button type="button" class="devmode-launch-btn devmode-launch-config" data-launch="configure" aria-label="Configure tasks" disabled></button>
+            <button type="button" class="devmode-launch-btn" data-launch="diff" aria-label="Show side-by-side diff" disabled></button>
+            <button type="button" class="devmode-launch-btn" data-launch="blame" aria-label="Annotate (blame)" disabled></button>
+            <button type="button" class="devmode-launch-btn is-on" data-launch="branch" aria-label="Toggle collaborative dual view" aria-pressed="true"></button>
+          </div></div>
+        </div>
+        <div class="collaborative-editor">
+          <div class="collaborative-actions"><button type="button" class="devmode-btn-ghost jm-merge" aria-label="AI Merge">AI Merge</button><button type="button" class="devmode-btn-ghost jm-open-commit" aria-label="Commit">Commit</button></div>
+          <div class="devmode-diff-headings"><span>Working copy · JellyBot <span class="jm-pane-lock jm-left-lock" hidden>Locked</span></span><span>Collaborative · feature/preview <span class="jm-pane-lock jm-right-lock" hidden>Locked</span></span></div>
+          <div class="collaborative-canvas">
+            <div class="jm-panes">
+              <section class="jm-pane jm-left" aria-label="main 工作副本"><div class="jm-code jm-left-code" aria-label="左侧示例代码"></div></section>
+              <section class="jm-pane jm-right" aria-label="feature/preview 协作分支"><div class="jm-code jm-right-code" aria-label="右侧示例代码"></div></section>
+              <div class="jm-freeze" hidden aria-hidden="true"></div>
+            </div>
+            <div class="jm-progress" role="status" aria-live="polite" lang="en" hidden><span class="jm-lock-spinner" aria-hidden="true"></span><div class="jm-progress-copy"><div class="jm-progress-text">Analyzing both versions…</div><div class="jm-progress-sub">Both editors are locked during the merge.</div></div><span class="jm-progress-step">1 / 4</span></div>
+          </div>
+          <div class="collaborative-notice jm-merge-notice"></div>
+        </div>
+      </div>
+      <div class="devmode-panel is-collapsed"><div class="devmode-panel-tabs">
+        <button type="button" class="devmode-panel-tab" disabled><i data-icon="Terminal"></i><span class="devmode-panel-tab-label">Terminal</span></button>
+        <button type="button" class="devmode-panel-tab" disabled><i data-icon="Hammer"></i><span class="devmode-panel-tab-label">Build</span></button>
+        <div class="devmode-panel-tabs-spacer"><div class="devmode-editor-status is-visible is-panel-inline" role="status" aria-live="polite"><span class="devmode-status-notice jm-status-text">Demo · No files or commits will be changed.</span></div></div>
+        <button type="button" class="devmode-panel-ghost is-icon" aria-label="Expand panel" disabled><i data-icon="ChevronUp"></i></button>
+      </div></div>
+    </div>
+    <div class="jm-modal-host"></div>
+  </div>
+</div>

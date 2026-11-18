@@ -1,0 +1,59 @@
+@import "./mono-icon.css";
+
+.library-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--mono-icon-ink);
+  background: var(--mono-icon-badge);
+}
+
+:root:not([data-theme="light"]) .library-icon-badge {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.library-icon-badge .app-mono-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.library-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: none;
+  width: 28px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(var(--tint-rgb), 0.16);
+  cursor: pointer;
+}
+
+.library-switch::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--fg-muted);
+  transition: transform 140ms ease;
+}
+
+.library-switch:checked { background: var(--accent); }
+.library-switch:checked::before { background: var(--on-accent); transform: translateX(12px); }
+.library-switch:disabled { opacity: 0.45; cursor: not-allowed; }
+.library-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+:root[data-theme="light"] .library-switch:not(:checked) { background: rgba(18, 67, 117, 0.12); }
+
+@media (prefers-reduced-motion: reduce) {
+  .library-switch::before { transition: none; }
+}

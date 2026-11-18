@@ -1,0 +1,107 @@
+# Dependencies
+node_modules/
+
+# Build
+out/
+dist/
+release/
+release-*/
+release2/
+build/helpers/
+build/Applications.alias
+*.tsbuildinfo
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs & caches
+logs/
+*.log
+.npm
+.pnpm-store/
+.cache/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Local agent data (settings + SQLite sessions DB)
+.jellybot/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Relay runtime credentials & state (never commit — see docs/audits/sensitive-info-watch.md)
+relay/data/
+
+# Local scratch / handoff notes (not for the repo)
+HANDOFF.md
+# Demo review artifacts — present_demo / Auto V2 graph write here; transient,
+# auto-cleaned by the demo_cleanup node. Local-only, never for the repo.
+demos/
+# docs/ is fully local-only (user directive 2026-10-30): working documents,
+# audits, plans, WORKLOG/HANDOFF — everything under any docs/ is untracked.
+docs/*
+demo.js
+
+# Local run probes / scratch (not for the repo)
+.run/
+
+# Atomic-write temp files that leak into the repo root when a queue dir resolves to cwd
+/.????????.json
+
+# Agent project memory (local; do not commit)
+PROJECT.md
+
+# Local smoke / analysis scripts (not part of the app)
+# `scripts/*` (not `scripts/`) so the negations below can re-include the
+# release pipeline — git cannot un-ignore a file inside an ignored directory.
+scripts/*
+!scripts/generate-original-icons.mjs
+!scripts/public-overlay/
+!scripts/publish-snapshot.mjs
+!scripts/publish-snapshot.test.mjs
+!scripts/publish-website-release.mjs
+!scripts/release.mjs
+!scripts/release/
+!scripts/write-downloads-manifest.mjs
+
+# Local analysis dumps / scratch workspaces
+report/
+tmp/
+
+# Local icon backup dumps (keep only build/ + resources/)
+icon-backup-*/
+
+# Stray build artifact (electron-vite main bundle emitted at repo root)
+/index.js
+resources/relay-server/
+
+# Extracted Larry lldb-dap runtime (zip is the source of truth)
+/resources/lldb-dap/bin/
+/resources/lldb-dap/lib/
+/resources/lldb-dap/VERSION.json
+/resources/lldb-dap/LICENSE.txt
+
+# Extracted cwRsync runtime (zip is the source of truth)
+/resources/rsync/bin/
+/resources/rsync/etc/
+/resources/rsync/VERSION.json
+/resources/rsync/README.rsync.txt
+
+# Dev Mode task config (machine-local; do not commit)
+.larry/
+
+# C++ symbol index (local; do not commit)
+.jellybot/cpp-symbols.sqlite
+.jellybot/cpp-symbols.sqlite-wal
+.jellybot/cpp-symbols.sqlite-shm

@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Dev Mode · Build tab spinner 居中/抖动对照</title>
+<style>
+  :root{
+    --bg:#141414; --fg:#e8e8e8; --fg-muted:#9a9a9a; --accent:#00e5ff;
+    --line:rgba(255,255,255,.08); --spin-dur:.8s;
+    --font-ui:"Segoe UI","PingFang SC",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg); color:var(--fg); font:13px/1.5 var(--font-ui); padding:20px 24px 30px}
+  h1{font-size:14px;font-weight:650;margin:0 0 4px}
+  p.sub{color:var(--fg-muted);font-size:12px;margin:0 0 16px}
+  p.sub code{background:rgba(255,255,255,.07);padding:1px 5px;border-radius:4px;font-size:11px}
+
+  .bar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin:0 0 18px;padding:10px 12px;
+       border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.03)}
+  .bar label{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--fg-muted)}
+  .bar select{background:#1d1f22;color:var(--fg);border:1px solid var(--line);border-radius:5px;padding:3px 6px;font-size:11.5px}
+  .bar input[type=checkbox]{accent-color:var(--accent)}
+  .bar input[type=range]{width:150px;accent-color:var(--accent)}
+
+  /* ---- the strip mock: 34px row, 22px tab, 11.5px label ---- */
+  .strip{display:flex;align-items:center;gap:2px;height:34px;padding:0 6px;
+         background:#1a1c1f;border:1px solid var(--line);border-radius:8px;font-size:11.5px}
+  .tab{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:5px;
+       color:var(--fg-muted);background:none}
+  .tab.on{background:rgba(255,255,255,.06);color:var(--fg)}
+
+  .pip{width:7px;height:7px;border-radius:50%;flex:0 0 auto;
+       transform-box:border-box;transform-origin:50% 50%}
+  /* 现状：9px 盒 + 1.5px 环，22px 行里落在 6.5px 半像素上，也没有自己的合成层 */
+  .pip.old{width:9px;height:9px;border:1.5px solid var(--accent);border-top-color:transparent;
+           background:none;animation:spin var(--spin-dur) linear infinite}
+  /* 修后：10px 盒（居中 6px 整数）+ 合成层 */
+  .pip.new{width:10px;height:10px;border:1.5px solid var(--accent);border-top-color:transparent;
+           background:none;will-change:transform;animation:spin var(--spin-dur) linear infinite}
+  /* 备选：10px + 2px 环（环更实，边缘更脆） */
+  .pip.alt{width:10px;height:10px;border:2px solid var(--accent);border-top-color:transparent;
+           background:none;will-change:transform;animation:spin var(--spin-dur) linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* frozen inspection: 冻结在某个角度 */
+  body.is-frozen .pip{animation:none}
+  body.is-frozen .pip.old,
+  body.is-frozen .pip.new,
+  body.is-frozen .pip.alt{transform:rotate(var(--freeze,0deg))}
+
+  /* crosshair: 检查旋转中心是否与盒子中心一致 */
+  .probe{position:relative;display:inline-flex;align-items:center;justify-content:center}
+  .probe::before,.probe::after{content:"";position:absolute;background:rgba(255,90,90,.85);
+       opacity:0;pointer-events:none}
+  .probe::before{width:1px;height:100%;left:calc(50% - .5px)}
+  .probe::after{height:1px;width:100%;top:calc(50% - .5px)}
+  body.is-probe .probe::before,body.is-probe .probe::after{opacity:1}
+  body.is-probe .probe{outline:1px dashed rgba(255,90,90,.35)}
+
+  .cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 18px}
+  .col{border:1px solid var(--line);border-radius:8px;padding:12px;background:rgba(255,255,255,.02)}
+  .col h2{font-size:12px;font-weight:650;margin:0 0 2px}
+  .col .meta{color:var(--fg-muted);font-size:11px;margin:0 0 10px}
+  .zoom{zoom:5;display:inline-block;margin:0 0 6px 2px}
+  .rowline{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+  .rowline .cap{color:var(--fg-muted);font-size:10.5px;width:34px}
+
+  .hint{color:var(--fg-muted);font-size:11.5px;line-height:1.7;margin:0}
+  .hint b{color:var(--fg)}
+  .hint code{background:rgba(255,255,255,.07);padding:1px 5px;border-radius:4px;font-size:10.5px}
+</style>
+</head>
+<body>
+
+<h1>Build tab 的 spinner：居中 / 抖动对照</h1>
+<p class="sub">
+  三列都是 22px tab 里的同一个环，唯一差别是尺寸、描边和是否自带合成层。
+  真机 0.8s/圈太快，看不出来就切「慢放 8s/圈」；想量中心就开「十字准心」，想定格就拖角度。
+</p>
+
+<div class="bar">
+  <label>速度
+    <select id="speed">
+      <option value="0.8s">0.8s / 圈（真机）</option>
+      <option value="2s">2s / 圈</option>
+      <option value="4s">4s / 圈</option>
+      <option value="8s" selected>8s / 圈（慢放）</option>
+    </select>
+  </label>
+  <label><input type="checkbox" id="probe" /> 十字准心</label>
+  <label><input type="checkbox" id="freeze" /> 定格</label>
+  <label>角度 <input type="range" id="angle" min="0" max="360" value="30" /></label>
+  <label><input type="checkbox" id="zoomOn" checked /> 5× 放大行</label>
+</div>
+
+<div class="cols">
+  <div class="col">
+    <h2>现状 9px / 1.5px</h2>
+    <p class="meta">22px 行里居中在 6.5px（半像素），无合成层</p>
+    <div class="rowline"><span class="cap">实际</span>
+      <span class="strip" style="flex:1 1 auto">
+        <span class="tab on">Build
+          <span class="probe"><span class="pip old"></span></span>
+        </span>
+      </span>
+    </div>
+    <div class="zoomRow"><div class="rowline"><span class="cap">5×</span>
+      <span class="probe zoom"><span class="pip old"></span></span>
+    </div></div>
+  </div>
+
+  <div class="col">
+    <h2>修后 10px / 1.5px + 合成</h2>
+    <p class="meta">居中 6px 整数；GPU 只旋转一张缓存纹理</p>
+    <div class="rowline"><span class="cap">实际</span>
+      <span class="strip" style="flex:1 1 auto">
+        <span class="tab on">Build
+          <span class="probe"><span class="pip new"></span></span>
+        </span>
+      </span>
+    </div>
+    <div class="zoomRow"><div class="rowline"><span class="cap">5×</span>
+      <span class="probe zoom"><span class="pip new"></span></span>
+    </div></div>
+  </div>
+
+  <div class="col">
+    <h2>备选 10px / 2px + 合成</h2>
+    <p class="meta">环更实，小尺寸下边缘更脆，但视觉更重</p>
+    <div class="rowline"><span class="cap">实际</span>
+      <span class="strip" style="flex:1 1 auto">
+        <span class="tab on">Build
+          <span class="probe"><span class="pip alt"></span></span>
+        </span>
+      </span>
+    </div>
+    <div class="zoomRow"><div class="rowline"><span class="cap">5×</span>
+      <span class="probe zoom"><span class="pip alt"></span></span>
+    </div></div>
+  </div>
+</div>
+
+<p class="hint">
+  <b>为什么原来会晃</b>：<code>.devmode-panel-pip.is-running</code> 是 9px 的框，在 22px 的 tab 里
+  <code>align-items:center</code> 把它放到 6.5px —— 半个设备像素；1.5px 的描边本身也落在半像素边界上。
+  旋转时浏览器每一帧都要按当前角度重新栅格化这个环，半像素偏置让内/外缘的抗锯齿覆盖逐帧变化，
+  看上去就像环在轻微漂移。修法是把盒改成偶数 10px（居中落在 6px），并加 <code>will-change:transform</code>
+  让它成为独立合成层 —— 只旋转一张缓存好的纹理，不再逐帧重算抗锯齿。
+</p>
+
+<script>
+  const speed = document.getElementById("speed");
+  const probe = document.getElementById("probe");
+  const freeze = document.getElementById("freeze");
+  const angle = document.getElementById("angle");
+  const zoomOn = document.getElementById("zoomOn");
+
+  function syncSpeed() {
+    document.documentElement.style.setProperty("--spin-dur", speed.value);
+  }
+  function syncProbe() {
+    document.body.classList.toggle("is-probe", probe.checked);
+  }
+  function syncFreeze() {
+    const on = freeze.checked;
+    document.body.classList.toggle("is-frozen", on);
+    document.body.style.setProperty("--freeze", angle.value + "deg");
+  }
+  function syncZoom() {
+    document.querySelectorAll(".zoomRow").forEach((row) => {
+      row.style.display = zoomOn.checked ? "" : "none";
+    });
+  }
+
+  speed.addEventListener("change", syncSpeed);
+  probe.addEventListener("change", syncProbe);
+  freeze.addEventListener("change", syncFreeze);
+  angle.addEventListener("input", syncFreeze);
+  zoomOn.addEventListener("change", syncZoom);
+
+  syncSpeed(); syncProbe(); syncFreeze(); syncZoom();
+</script>
+</body>
+</html>

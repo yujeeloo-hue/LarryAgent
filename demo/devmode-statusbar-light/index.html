@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Dev Mode · Light 编辑器底栏按钮高亮</title>
+<style>
+  :root{
+    --bg:#f8fafc; --fg:#17202b; --fg-muted:#536171; --fg-dim:#5f6e7f;
+    --border:rgba(18,67,117,.13); --divider:rgba(18,67,117,.12);
+    --hover:rgba(0,122,255,.07); --active:rgba(0,122,255,.12);
+    --accent:#006bd6; --danger:#b91c1c; --surface-2:#eef4fa;
+    --header-bg:#edf0f4;
+    --font-ui:"Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    --font-mono:"JetBrains Mono","Cascadia Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--fg); font:13px/1.5 var(--font-ui);
+    padding:22px 26px 34px;
+  }
+  h1{font-size:15px;font-weight:650;margin:0 0 4px}
+  .sub{color:var(--fg-muted);font-size:12px;margin:0 0 18px}
+  .sub code{font:11px/1 var(--font-mono);background:var(--surface-2);padding:2px 5px;border-radius:4px}
+
+  /* ------------------------------------------------ editor window mock */
+  .window{
+    border:1px solid var(--border); border-radius:10px; overflow:hidden;
+    background:#fff; box-shadow:0 2px 10px rgba(18,52,86,.07);
+    max-width:900px;
+  }
+  .win-tabs{
+    display:flex; align-items:center; gap:2px; height:37px; padding:0 6px;
+    background:#f2f5f9; border-bottom:1px solid var(--border);
+  }
+  .win-tab{
+    display:inline-flex; align-items:center; gap:6px; height:26px; padding:0 10px;
+    border-radius:5px; font-size:11.5px; color:var(--fg-muted);
+  }
+  .win-tab.is-on{background:#fff; color:var(--fg); box-shadow:inset 0 0 0 1px var(--border)}
+  .win-fill{flex:1 1 auto}
+  .code{
+    font:12px/1.75 var(--font-mono); color:#25323f; padding:10px 0 14px;
+    background:#fff; min-height:150px;
+  }
+  .code .ln{display:flex; gap:14px; padding:0 14px}
+  .code .no{width:26px; text-align:right; color:#9aabbb; user-select:none}
+  .kw{color:#0550ae} .ty{color:#8250df} .fn{color:#0969da} .st{color:#0a7d3e} .cm{color:#8a9bab}
+
+  /* ------------------------------------------------------- status strip */
+  .strip{
+    display:flex; align-items:center; gap:2px; height:34px; padding:0 6px;
+    background:var(--header-bg); border-top:1px solid var(--border);
+    font-size:11.5px; user-select:none;
+  }
+  .pill,.ghost{
+    display:inline-flex; align-items:center; gap:6px; height:22px; padding:0 9px;
+    border:0; border-radius:5px; background:none; color:var(--fg-muted);
+    font:inherit; font-size:11.5px; cursor:pointer; appearance:none;
+    transition:background 110ms ease, color 110ms ease, box-shadow 110ms ease;
+  }
+  .ghost{height:22px; padding:0 8px; font-size:11px}
+  .ghost.is-icon{width:22px; padding:0; justify-content:center}
+  .pill svg,.ghost svg{opacity:.8}
+  .spacer{flex:1 1 auto; display:flex; align-items:center; gap:10px; min-width:0; padding:0 8px}
+  .spacer .path{color:var(--fg-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .spacer .state{color:var(--fg-muted); white-space:nowrap}
+  .spacer .idx{color:var(--accent); white-space:nowrap}
+
+  /* ---- variant: current production styles (light) ---- */
+  .strip[data-v="cur"]{
+    --hv-bg:var(--hover); --hv-fg:var(--fg); --hv-ring:none; --hv-shadow:none;
+    --on-bg:var(--active); --on-fg:var(--fg); --on-ring:none; --on-shadow:none;
+  }
+  /* ---- A: white pill + accent label (recommended) ---- */
+  .strip[data-v="a"]{
+    --hv-bg:rgba(255,255,255,.72); --hv-fg:var(--fg);
+    --hv-ring:inset 0 0 0 1px rgba(18,67,117,.10); --hv-shadow:none;
+    --on-bg:#fff; --on-fg:var(--accent);
+    --on-ring:inset 0 0 0 1px rgba(0,107,214,.24);
+    --on-shadow:0 1px 2px rgba(18,52,86,.10);
+  }
+  /* ---- B: layered accent tint ---- */
+  .strip[data-v="b"]{
+    --hv-bg:rgba(0,122,255,.10); --hv-fg:var(--fg); --hv-ring:none; --hv-shadow:none;
+    --on-bg:rgba(0,122,255,.16); --on-fg:var(--accent);
+    --on-ring:inset 0 0 0 1px rgba(0,107,214,.24); --on-shadow:none;
+  }
+  /* ---- C: neutral slate, no accent ---- */
+  .strip[data-v="c"]{
+    --hv-bg:rgba(18,67,117,.07); --hv-fg:var(--fg); --hv-ring:none; --hv-shadow:none;
+    --on-bg:#dbe4ef; --on-fg:var(--fg);
+    --on-ring:inset 0 0 0 1px rgba(18,67,117,.10); --on-shadow:none;
+  }
+
+  .strip .pill:hover:not(:disabled),.strip .ghost:hover:not(:disabled){
+    background:var(--hv-bg); color:var(--hv-fg); box-shadow:var(--hv-ring);
+  }
+  .strip .pill.is-on{
+    background:var(--on-bg); color:var(--on-fg); box-shadow:var(--on-ring),var(--on-shadow);
+  }
+  .strip .pill:focus-visible,.strip .ghost:focus-visible{
+    outline:2px solid rgba(0,107,214,.45); outline-offset:1px;
+  }
+  .strip .ghost:hover:not(:disabled){box-shadow:none}
+  .strip .ghost.is-danger:hover:not(:disabled){color:var(--danger)}
+
+  /* forced states for static comparison */
+  .pill.force-hover,.ghost.force-hover{background:var(--hv-bg); color:var(--hv-fg); box-shadow:var(--hv-ring)}
+  .pill.force-on{background:var(--on-bg); color:var(--on-fg); box-shadow:var(--on-ring),var(--on-shadow)}
+
+  /* ------------------------------------------------------ comparison */
+  .cmp{margin-top:22px; max-width:900px}
+  .cmp h2{font-size:12px;font-weight:650;margin:0 0 8px;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.04em}
+  .row{
+    display:flex; align-items:center; gap:10px; padding:6px 0;
+    border-bottom:1px dashed var(--border);
+  }
+  .row:last-child{border-bottom:0}
+  .rl{width:112px; flex:0 0 auto; font-size:11px; color:var(--fg-muted)}
+  .rl b{display:block; color:var(--fg); font-weight:600; font-size:11.5px}
+  .samples{
+    flex:1 1 auto; display:flex; align-items:center; gap:12px; min-width:0;
+    background:var(--header-bg); border-radius:6px; padding:4px 8px;
+  }
+  .s{display:inline-flex; align-items:center; gap:5px}
+  .s>i{font-style:normal; font-size:10px; color:#8a9bab; width:34px}
+  .row.is-picked .rl b{color:var(--accent)}
+  .note{color:var(--fg-muted);font-size:11.5px;margin:10px 0 0}
+  .note b{color:var(--fg)}
+</style>
+</head>
+<body>
+<h1>Dev Mode · Light 编辑器底栏按钮</h1>
+<p class="sub">
+  底栏按钮 = <code>.devmode-panel-tab</code> / <code>.devmode-panel-ghost</code>，底 <code>#edf0f4</code>。
+  现在 hover / 选中都用 <code>--hover</code> / <code>--active</code>（accent 7% / 12% 叠在浅灰上，几乎看不出层次）。<br/>
+  下面的窗口用的是卡里选中的方案，可直接用鼠标悬停试手感；四行对照写死了静止 / hover / 选中三种状态。
+</p>
+
+<div class="window">
+  <div class="win-tabs">
+    <span class="win-tab is-on">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h7l2 2h7v12H4z"/></svg>
+      NFCharacter.cpp
+    </span>
+    <span class="win-tab">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h7l2 2h7v12H4z"/></svg>
+      NFCharacter.h
+    </span>
+    <span class="win-fill"></span>
+  </div>
+  <div class="code">
+    <div class="ln"><span class="no">41</span><span><span class="kw">void</span> <span class="ty">UNFCharacter</span>::<span class="fn">BeginPlay</span>()</span></div>
+    <div class="ln"><span class="no">42</span><span>{</span></div>
+    <div class="ln"><span class="no">43</span><span>  <span class="ty">Super</span>::<span class="fn">BeginPlay</span>();</span></div>
+    <div class="ln"><span class="no">44</span><span>  <span class="cm">// footstep RTPC</span></span></div>
+    <div class="ln"><span class="no">45</span><span>  <span class="ty">FootStepMaker</span>-&gt;<span class="fn">Bind</span>(<span class="st">"sneaking"</span>);</span></div>
+    <div class="ln"><span class="no">46</span><span>}</span></div>
+  </div>
+  <div class="strip" data-v="a" id="liveStrip">
+    <button class="pill is-on">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7l6 5-6 5"/><path d="M12 19h8"/></svg>
+      Terminal
+    </button>
+    <button class="pill">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4l-3 5 3 3-4 8"/><path d="M5 9h9"/><path d="M14 15h6"/></svg>
+      Build
+    </button>
+    <button class="ghost">More tools
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <span class="spacer">
+      <span class="path">Source/NFCharacter/Private/NFCharacter.cpp</span>
+      <span class="state">Saved</span>
+      <span class="idx">index 87%</span>
+    </span>
+    <button class="ghost is-danger" title="Terminate process group">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <button class="ghost is-icon" title="Collapse panel">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="cmp">
+  <h2>四种状态对照（背景 #edf0f4）</h2>
+
+  <div class="row" data-v="cur">
+    <span class="rl"><b>现状</b>accent 7% / 12%</span>
+    <span class="samples">
+      <span class="s"><i>静止</i><button class="pill">Build</button></span>
+      <span class="s"><i>hover</i><button class="pill force-hover">Build</button></span>
+      <span class="s"><i>选中</i><button class="pill force-on">Terminal</button></span>
+      <span class="s"><i>ghost</i><button class="ghost force-hover">More tools</button></span>
+    </span>
+  </div>
+
+  <div class="row" data-v="a">
+    <span class="rl"><b>A 白药丸</b>hover 白 / 选中白+accent 字</span>
+    <span class="samples">
+      <span class="s"><i>静止</i><button class="pill">Build</button></span>
+      <span class="s"><i>hover</i><button class="pill force-hover">Build</button></span>
+      <span class="s"><i>选中</i><button class="pill force-on">Terminal</button></span>
+      <span class="s"><i>ghost</i><button class="ghost force-hover">More tools</button></span>
+    </span>
+  </div>
+
+  <div class="row" data-v="b">
+    <span class="rl"><b>B 淡蓝底</b>10% / 16%+accent 字</span>
+    <span class="samples">
+      <span class="s"><i>静止</i><button class="pill">Build</button></span>
+      <span class="s"><i>hover</i><button class="pill force-hover">Build</button></span>
+      <span class="s"><i>选中</i><button class="pill force-on">Terminal</button></span>
+      <span class="s"><i>ghost</i><button class="ghost force-hover">More tools</button></span>
+    </span>
+  </div>
+
+  <div class="row" data-v="c">
+    <span class="rl"><b>C 中性灰</b>灰 7% / #dbe4ef</span>
+    <span class="samples">
+      <span class="s"><i>静止</i><button class="pill">Build</button></span>
+      <span class="s"><i>hover</i><button class="pill force-hover">Build</button></span>
+      <span class="s"><i>选中</i><button class="pill force-on">Terminal</button></span>
+      <span class="s"><i>ghost</i><button class="ghost force-hover">More tools</button></span>
+    </span>
+  </div>
+
+  <p class="note">
+    <b>A</b>：与 Light 主题「白卡片 + 发丝边」的语言一致，选中态最明确（白底 + accent 字 + 1px accent 淡边 + 极轻投影），hover 只是白雾。<br/>
+    <b>B</b>：保留现在的 accent 色系，只把层级拉开（hover 10% / 选中 16% + accent 字 + 内描边）。<br/>
+    <b>C</b>：完全不用 accent，选中靠灰阶深浅，最安静但状态最弱。
+  </p>
+</div>
+
+<script>
+  const VARIANT_KEYS = {
+    "A 白药丸（推荐）": "a",
+    "B 淡蓝底（accent 分层）": "b",
+    "C 中性灰（不用 accent）": "c",
+    "现状（不改）": "cur",
+  };
+  const live = document.getElementById("liveStrip");
+
+  function apply(values) {
+    const key = VARIANT_KEYS[values.variant] ?? "a";
+    live.dataset.v = key;
+    document.querySelectorAll(".row").forEach((row) => {
+      row.classList.toggle("is-picked", row.dataset.v === key);
+    });
+  }
+
+  window.addEventListener("message", (e) => {
+    if (e.data?.type === "jellybot-demo-params") apply(e.data.values ?? {});
+  });
+</script>
+</body>
+</html>

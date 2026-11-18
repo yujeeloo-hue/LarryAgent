@@ -1,0 +1,52 @@
+.all-sessions-screen {
+  max-width: 720px;
+}
+
+.all-sessions-empty {
+  margin: 0;
+  color: var(--fg-muted);
+}
+
+.all-sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.all-session-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 12px 14px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.all-session-row:hover {
+  background: var(--hover);
+}
+
+.all-session-title {
+  color: var(--fg);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+}
+
+.all-session-meta {
+  color: var(--fg-muted);
+  font-size: 12px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 28px;
+}

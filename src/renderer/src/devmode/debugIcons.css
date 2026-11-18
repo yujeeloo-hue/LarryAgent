@@ -1,0 +1,236 @@
+.devmode-debug {
+  --debug-icon-size:12px;
+  --debug-icon-green-gradient:linear-gradient(
+      135deg,light-dark(#3df76e,#77f09b),light-dark(#00df8c,#35d9a1) 52%,light-dark(#00b8b2,#14b9be));
+  --debug-icon-red-gradient:linear-gradient(
+      135deg,light-dark(#ff7958,#ff947c),light-dark(#ff414f,#ff647c) 52%,light-dark(#e92358,#ec477e));
+  --debug-icon-blue-gradient:linear-gradient(
+      135deg,light-dark(#52ddff,#7edfff),light-dark(#289dff,#52b5ff) 50%,light-dark(#5264ed,#7f8df6));
+  --debug-icon-teal-gradient:linear-gradient(
+      135deg,light-dark(#57f1cf,#84ead8),light-dark(#00d5d4,#39d2d0) 55%,light-dark(#079bc9,#28aacb));
+  --debug-icon-purple-gradient:linear-gradient(
+      135deg,light-dark(#da9cff,#dab5ff),light-dark(#a56cff,#b38bf7) 55%,light-dark(#7254e8,#8c74df));
+  --debug-icon-orange-gradient:linear-gradient(
+      135deg,light-dark(#ffdd66,#f4d383),light-dark(#ffb238,#efb95d) 55%,light-dark(#ff843b,#e99555));
+  --debug-icon-var-gradient:linear-gradient(
+      135deg,light-dark(#ffb94e,#f5cf84),light-dark(#f58a3e,#ecb674) 48%,light-dark(#e35b58,#df986d));
+  --debug-icon-breakpoint-gradient:linear-gradient(
+      145deg,light-dark(#ff977e,#ffad94),light-dark(#ff536e,#ff758b) 46%,light-dark(#e52a64,#ec5082));
+}
+.devmode-debug .devmode-debug-icon {
+  display: inline-block;
+  width: var(--debug-icon-size);
+  height: var(--debug-icon-size);
+  flex: none;
+  position: relative;
+  filter: drop-shadow(0 .6px .6px #0003);
+}
+.devmode-debug .devmode-debug-icon:before,
+.devmode-debug .devmode-debug-icon:after,
+.devmode-debug .devmode-debug-icon i,
+.devmode-debug .devmode-debug-icon i:before,
+.devmode-debug .devmode-debug-icon i:after {
+  content: "";
+  position: absolute;
+  box-sizing: border-box;
+}
+.devmode-debug [data-debug-icon=continue]:before {
+  inset: 0;
+  background: var(--debug-icon-green-gradient);
+  mask: url("../assets/devmode-debug/continue.svg") center / contain no-repeat;
+}
+.devmode-debug [data-debug-icon=continue]:after {
+  inset: 0;
+  background: linear-gradient(150deg, #ffffff66, #ffffff10 78%);
+  mask: url("../assets/devmode-debug/continue-highlight.svg") center / contain no-repeat;
+}
+.devmode-debug [data-debug-icon=pause]:before,
+.devmode-debug [data-debug-icon=pause]:after {
+  top: 9%;
+  bottom: 9%;
+  width: 25%;
+  border-radius: 13%;
+  background: var(--debug-icon-orange-gradient);
+}
+.devmode-debug [data-debug-icon=pause]:before {
+  left: 15%;
+}
+.devmode-debug [data-debug-icon=pause]:after {
+  right: 15%;
+}
+.devmode-debug [data-debug-icon=stop]:before {
+  inset: 12%;
+  border-radius: 20%;
+  background: var(--debug-icon-red-gradient);
+  box-shadow: inset 0 .7px 0 #ffffff30;
+}
+.devmode-debug [data-debug-icon=step-over]:before {
+  inset: 0;
+  background: var(--debug-icon-blue-gradient);
+  mask: url("../assets/devmode-debug/step-over-arrow.svg") center / contain no-repeat;
+}
+.devmode-debug [data-debug-icon=step-over]:after {
+  left: 50%;
+  transform: translate(-50%, 2.5px);
+  bottom: 20%;
+  width: calc(var(--debug-icon-size)*.4 + 2px);
+  height: calc(var(--debug-icon-size)*.25 - 1px);
+  border-radius: 999px;
+  background: var(--debug-icon-blue-gradient);
+  box-shadow: inset 0 .5px 0 #ffffff5c;
+}
+.devmode-debug [data-debug-icon=step-over] i {
+  display: none;
+}
+.devmode-debug [data-debug-icon=step-in]:before,
+.devmode-debug [data-debug-icon=step-out]:before {
+  left: 14%;
+  right: 14%;
+  height: 17%;
+  border-radius: 20%;
+  background: var(--debug-icon-teal-gradient);
+  bottom: 1%;
+}
+.devmode-debug [data-debug-icon=step-in]:after {
+  inset: 0;
+  background: var(--debug-icon-teal-gradient);
+  mask: url("../assets/devmode-debug/step-in-arrow.svg") center / contain no-repeat;
+}
+.devmode-debug [data-debug-icon=step-out]:before {
+  background: var(--debug-icon-purple-gradient);
+}
+.devmode-debug [data-debug-icon=step-out]:after {
+  inset: 0;
+  background: var(--debug-icon-purple-gradient);
+  mask: url("../assets/devmode-debug/step-out-arrow.svg") center / contain no-repeat;
+}
+.devmode-debug [data-debug-icon=step-in] i,
+.devmode-debug [data-debug-icon=step-out] i {
+  display: none;
+}
+.devmode-debug [data-debug-icon=threads] {
+  width: calc(var(--debug-icon-size) + 1px);
+}
+.devmode-debug [data-debug-icon=threads]:before {
+  top: 0;
+  bottom: 0;
+  left: 44%;
+  width: 12%;
+  border-radius: 30%;
+  background: var(--debug-icon-blue-gradient);
+}
+.devmode-debug [data-debug-icon=threads]:after {
+  top: 19%;
+  bottom: 19%;
+  left: 23%;
+  right: 23%;
+  border-radius: 22%;
+  background: var(--debug-icon-blue-gradient);
+}
+.devmode-debug [data-debug-icon=threads] i {
+  top: 24%;
+  bottom: 24%;
+  left: 24%;
+  right: 24%;
+  z-index: 1;
+  border-radius: 20%;
+  background:
+    repeating-linear-gradient(
+      -15deg,
+      transparent 0 17%,
+      light-dark(#d3ffffa6, #d9faff70) 18% 24%,
+      transparent 25% 32%);
+}
+.devmode-debug [data-debug-icon=threads] i:before {
+  top: -20%;
+  left: -23%;
+  right: -23%;
+  height: 22%;
+  border-radius: 38%;
+  background: var(--debug-icon-teal-gradient);
+}
+.devmode-debug [data-debug-icon=threads] i:after {
+  bottom: -20%;
+  left: -23%;
+  right: -23%;
+  height: 22%;
+  border-radius: 38%;
+  background: var(--debug-icon-blue-gradient);
+}
+.devmode-debug [data-debug-icon=call-stack] {
+  --debug-icon-stack-bar:calc(var(--debug-icon-size) / 6);
+  --debug-icon-stack-gap:calc(var(--debug-icon-size) / 12);
+  --debug-icon-stack-inset:calc(var(--debug-icon-size) / 6);
+}
+.devmode-debug [data-debug-icon=call-stack]:before,
+.devmode-debug [data-debug-icon=call-stack]:after,
+.devmode-debug [data-debug-icon=call-stack] i {
+  width: 80%;
+  height: var(--debug-icon-stack-bar);
+  border-radius: calc(var(--debug-icon-size)*.06);
+  background: var(--debug-icon-purple-gradient);
+}
+.devmode-debug [data-debug-icon=call-stack]:before {
+  top: var(--debug-icon-stack-inset);
+  left: 0;
+}
+.devmode-debug [data-debug-icon=call-stack]:after {
+  top: calc(var(--debug-icon-stack-inset) + var(--debug-icon-stack-bar) + var(--debug-icon-stack-gap));
+  left: 10%;
+}
+.devmode-debug [data-debug-icon=call-stack] i {
+  top: calc(var(--debug-icon-stack-inset) + 2 * (var(--debug-icon-stack-bar) + var(--debug-icon-stack-gap)));
+  left: 20%;
+}
+.devmode-debug [data-debug-icon=variables] {
+  width: var(--debug-icon-size);
+  height: calc(var(--debug-icon-size) - 1px);
+}
+.devmode-debug [data-debug-icon=variables]:before {
+  inset: 0;
+  border-radius: calc(var(--debug-icon-size)*.2);
+  background: var(--debug-icon-var-gradient);
+  box-shadow: inset 0 .6px 0 #ffffff50;
+}
+.devmode-debug [data-debug-icon=variables]:after {
+  content: none;
+}
+.devmode-debug [data-debug-icon=variables] i {
+  inset: 0;
+  transform: translateY(1px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: light-dark(#fff, #462713);
+  font:
+    800 calc(var(--debug-icon-size)*.48)/1 SFMono-Regular,
+    Menlo,
+    Consolas,
+    ui-monospace,
+    monospace;
+  letter-spacing: -.055em;
+  font-style: normal;
+}
+.devmode-debug [data-debug-icon=breakpoints]:before {
+  inset: 4%;
+  border-radius: 50%;
+  border: calc(var(--debug-icon-size)*.115) solid light-dark(#ff7790, #ff8da3);
+}
+.devmode-debug [data-debug-icon=breakpoints]:after {
+  inset: 29%;
+  border-radius: 50%;
+  background: var(--debug-icon-breakpoint-gradient);
+  box-shadow: inset 0 .6px 0 #ffffff5c;
+}
+.devmode-debug-toolbar .devmode-debug-action:disabled {
+  opacity: .42;
+}
+.devmode-debug-toolbar .devmode-debug-action:disabled .devmode-debug-icon {
+  filter: grayscale(.45);
+}
+:root[data-theme=light] .devmode-debug-toolbar .devmode-debug-action:disabled {
+  opacity: .28;
+}
+:root[data-theme=light] .devmode-debug-toolbar .devmode-debug-action:disabled .devmode-debug-icon {
+  filter: drop-shadow(0 .6px .6px #0003);
+}

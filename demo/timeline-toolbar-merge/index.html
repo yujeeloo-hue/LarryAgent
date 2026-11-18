@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Detail · Timeline 标题栏合并为一行</title>
+<style>
+  :root[data-theme="dark"]{
+    --page:#0b0c0e; --drawer:#141517; --edge:rgba(255,255,255,.07);
+    --fg:#e8e8e8; --muted:#9a9a9a; --dim:#6a6a6a;
+    --border:rgba(255,255,255,.07);
+    --btn-line:rgba(255,255,255,.10); --btn-fill:rgba(255,255,255,.04);
+    --hover:rgba(255,255,255,.07); --active:rgba(255,255,255,.11);
+    --accent:#00e5ff;
+    --gutter:rgba(255,255,255,.035); --grid:rgba(255,255,255,.07);
+  }
+  :root[data-theme="light"]{
+    --page:#e9edf2; --drawer:#ffffff; --edge:rgba(15,30,50,.10);
+    --fg:#16191d; --muted:#5f6b76; --dim:#8695a3;
+    --border:rgba(15,30,50,.10);
+    --btn-line:rgba(0,0,0,.10); --btn-fill:#ffffff;
+    --hover:#eef4fa; --active:#e4eefa;
+    --accent:#0a6fd8;
+    --gutter:rgba(15,30,50,.035); --grid:rgba(15,30,50,.07);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--page); color:var(--fg);
+    font-family:"Segoe UI","SF Pro Text","Inter",system-ui,-apple-system,sans-serif;
+    font-size:13px; -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column; align-items:center;
+    padding:14px 14px 20px; gap:11px; transition:background .18s,color .18s;
+  }
+
+  /* ---------- demo controls ---------- */
+  .controls{display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:center; width:100%}
+  .ctl{display:flex; align-items:center; gap:7px}
+  .ctl>span{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:700}
+  .seg{display:inline-flex; padding:2px; gap:2px; border-radius:8px; background:var(--btn-fill); box-shadow:inset 0 0 0 1px var(--border)}
+  .seg button{
+    appearance:none; border:0; background:transparent; color:var(--muted);
+    font:600 11.5px/1 inherit; font-family:inherit; padding:5px 9px; border-radius:6px; cursor:pointer; white-space:nowrap;
+  }
+  .seg button:hover{color:var(--fg)}
+  .seg button.is-on{background:var(--active); color:var(--fg)}
+
+  /* ---------- mock Detail drawer ---------- */
+  .host{width:100%; display:flex; justify-content:center}
+  .drawer{
+    width:100%; max-width:1120px; height:392px;
+    display:flex; flex-direction:column;
+    background:var(--drawer); border-radius:10px;
+    box-shadow:0 0 0 1px var(--edge), 0 10px 30px rgba(0,0,0,.18);
+    overflow:hidden; transition:max-width .18s ease;
+  }
+  .host[data-w="mid"] .drawer{max-width:860px}
+  .host[data-w="narrow"] .drawer{max-width:620px}
+
+  .chrome{display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-bottom:1px solid var(--border); flex:0 0 auto}
+  .tabs{display:flex; gap:2px}
+  .tab{display:inline-flex; align-items:center; gap:6px; border:0; background:transparent; color:var(--muted);
+    font:550 12px/1 inherit; font-family:inherit; padding:5px 9px; border-radius:6px; cursor:default}
+  .tab.is-active{color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent)}
+  .xbtn{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border:0; border-radius:5px;
+    background:transparent; color:var(--muted); cursor:default}
+  .xbtn:hover{background:var(--hover); color:var(--fg)}
+
+  /* ---------- timeline pane : the container the folds measure ---------- */
+  .pane{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; container-type:inline-size; container-name:tl}
+
+  /* one header row: status · legend · actions — every control keeps its size */
+  .tl-tb{
+    display:flex; align-items:center; gap:8px;
+    min-height:34px; padding:4px 10px;
+    border-bottom:1px solid var(--border); flex:0 0 auto; min-width:0;
+  }
+  .tl-status{
+    font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    flex:0 1 auto; min-width:0;
+  }
+  .tl-legend{display:flex; align-items:center; gap:10px; flex:0 1 auto; min-width:0; overflow:hidden}
+  .leg{display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--muted); white-space:nowrap; flex:0 0 auto}
+  .leg i{width:8px; height:8px; border-radius:3px; display:block; flex:0 0 auto}
+  .leg.is-user i{background:#42e882}
+  .leg.is-wait i{background:#c9782a}
+  .leg.is-reasoning i{background:#ff9f1c}
+  .leg.is-content i{background:#ffd23f}
+  .leg.is-tools i{background:#4d9fff}
+  .leg.is-aux i{background:#9d6bff}
+  .leg.is-error i{background:#ff4d6d}
+  .leg.is-inflight i{background:#ffd23f; animation:pulse 1.2s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.35}}
+
+  .tl-actions{display:flex; align-items:center; gap:4px; margin-left:auto; flex:0 0 auto}
+  .tl-zoom{display:flex; align-items:center; gap:4px}
+  .tl-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-height:24px; border:1px solid var(--btn-line); border-radius:5px;
+    background:var(--btn-fill); color:var(--muted); cursor:pointer; padding:0 8px;
+    font:500 11px/1 inherit; font-family:inherit;
+  }
+  .tl-btn.icon{width:26px; padding:0}
+  .tl-zoom .tl-btn{padding:0 8px; font-size:12px}
+  .tl-zoom-label{font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; min-width:44px; text-align:center}
+  .tl-btn:hover{color:var(--fg); border-color:var(--btn-line-hover, rgba(255,255,255,.2)); background:var(--hover)}
+
+  /* ---------- "current" = the two-row header, same DOM moved by CSS ---------- */
+  [data-layout="cur"] .tl-tb{flex-wrap:wrap}
+  [data-layout="cur"] .tl-status{flex:1 1 auto}
+  [data-layout="cur"] .tl-legend{order:3; flex-basis:100%; padding:4px 0 0; margin-top:2px; border-top:1px solid var(--border); gap:12px}
+  [data-layout="cur"] .tl-legend .leg{font-size:11px}
+
+  /* ---------- narrow folds: shed, never shrink ---------- */
+  /* A · 点阵优先：先去掉文字标签，再按优先级丢点，最后整组收起 */
+  @container tl (max-width: 880px){
+    [data-layout="A"] .leg span{display:none}
+    [data-layout="A"] .tl-legend{gap:7px}
+  }
+  @container tl (max-width: 700px){
+    [data-layout="A"] .leg.is-aux, [data-layout="A"] .leg.is-content{display:none}
+  }
+  @container tl (max-width: 560px){
+    [data-layout="A"] .tl-legend{display:none}
+  }
+
+  /* B · 图例整组折叠：标签保持可读，装不下就把整组图例收起 */
+  @container tl (max-width: 880px){
+    [data-layout="B"] .tl-legend{display:none}
+  }
+
+  /* C · 状态可截断：图例文字一直保留，先压状态文字（省略号） */
+  @container tl (max-width: 880px){
+    [data-layout="C"] .tl-status{flex:0 1 auto}
+  }
+  @container tl (max-width: 640px){
+    [data-layout="C"] .leg.is-aux, [data-layout="C"] .leg.is-content, [data-layout="C"] .leg.is-inflight{display:none}
+  }
+
+  /* ---------- mock waterfall ---------- */
+  .tl-body{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; padding:6px 0 8px; overflow:hidden}
+  .tl-row{display:flex; align-items:center; gap:8px; padding:2px 10px; flex:0 0 auto}
+  .tl-row .lbl{width:66px; flex:0 0 66px; font-size:10.5px; font-weight:600; color:var(--muted); text-align:right; white-space:nowrap; overflow:hidden}
+  .tl-track{position:relative; flex:1 1 auto; height:14px; min-width:0}
+  .tl-track::before{content:""; position:absolute; inset:0; background:
+    repeating-linear-gradient(90deg, var(--grid) 0 1px, transparent 1px 25%)}
+  .bar{position:absolute; top:2px; height:10px; border-radius:3px; opacity:.95}
+  .bar.is-user{background:#42e882}
+  .bar.is-wait{background:#c9782a}
+  .bar.is-reasoning{background:#ff9f1c}
+  .bar.is-content{background:#ffd23f}
+  .bar.is-tools{background:#4d9fff}
+  .bar.is-aux{background:#9d6bff}
+  .bar.is-error{background:#ff4d6d}
+  .tl-ticks{display:flex; gap:8px; padding:0 10px; flex:0 0 auto; margin-top:4px}
+  .tl-ticks .lbl{width:66px; flex:0 0 66px}
+  .tl-ticks .scale{flex:1 1 auto; display:flex; justify-content:space-between; font-size:10px; color:var(--dim); font-variant-numeric:tabular-nums}
+
+  .note{font-size:11.5px; color:var(--muted); text-align:center; max-width:860px; line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <div class="ctl"><span>Theme</span>
+    <div class="seg" id="segTheme"><button data-v="dark" class="is-on">Dark</button><button data-v="light">Light</button></div>
+  </div>
+  <div class="ctl"><span>Layout</span>
+    <div class="seg" id="segLayout">
+      <button data-v="cur">当前两行</button>
+      <button data-v="A" class="is-on">A 点阵优先</button>
+      <button data-v="B">B 图例整组收起</button>
+      <button data-v="C">C 状态可截断</button>
+    </div>
+  </div>
+  <div class="ctl"><span>Pane 宽度</span>
+    <div class="seg" id="segW"><button data-v="full" class="is-on">1120</button><button data-v="mid">860</button><button data-v="narrow">620</button></div>
+  </div>
+</div>
+
+<div class="host" id="host" data-w="full">
+  <div class="drawer">
+    <div class="chrome">
+      <div class="tabs">
+        <button class="tab is-active">Timeline</button>
+        <button class="tab">FSM</button>
+        <button class="tab">Tool Stats</button>
+        <button class="tab">Log</button>
+      </div>
+      <button class="xbtn" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="pane" id="pane" data-layout="A">
+      <div class="tl-tb">
+        <span class="tl-status">12 records · 8.4s · 6 LLM 5.1s</span>
+        <div class="tl-legend">
+          <span class="leg is-user"><i></i><span>User</span></span>
+          <span class="leg is-wait"><i></i><span>Wait</span></span>
+          <span class="leg is-reasoning"><i></i><span>Reasoning</span></span>
+          <span class="leg is-content"><i></i><span>Content</span></span>
+          <span class="leg is-tools"><i></i><span>Tools</span></span>
+          <span class="leg is-aux"><i></i><span>Aux</span></span>
+          <span class="leg is-error"><i></i><span>Error</span></span>
+          <span class="leg is-inflight"><i></i><span>In flight</span></span>
+        </div>
+        <div class="tl-actions">
+          <div class="tl-zoom">
+            <button class="tl-btn">−</button>
+            <span class="tl-zoom-label">100%</span>
+            <button class="tl-btn">+</button>
+          </div>
+          <button class="tl-btn">Fit</button>
+          <button class="tl-btn icon" aria-label="Toggle panel height">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
+          </button>
+          <button class="tl-btn icon" aria-label="Export timeline as JSON">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+          </button>
+          <button class="tl-btn icon" aria-label="Import timeline JSON">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+          <button class="tl-btn icon" aria-label="Refresh">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="tl-body">
+        <div class="tl-row"><span class="lbl">User</span><div class="tl-track"><div class="bar is-user" style="left:0%;width:9%"></div></div></div>
+        <div class="tl-row"><span class="lbl">LLM</span><div class="tl-track"><div class="bar is-wait" style="left:9%;width:4%"></div><div class="bar is-reasoning" style="left:13%;width:16%"></div><div class="bar is-content" style="left:29%;width:12%"></div><div class="bar is-tools" style="left:41%;width:22%"></div><div class="bar is-aux" style="left:63%;width:5%"></div><div class="bar is-inflight" style="left:68%;width:6%"></div></div></div>
+        <div class="tl-row"><span class="lbl">LLM</span><div class="tl-track"><div class="bar is-wait" style="left:40%;width:3%"></div><div class="bar is-reasoning" style="left:43%;width:14%"></div><div class="bar is-content" style="left:57%;width:9%"></div><div class="bar is-error" style="left:66%;width:3%"></div><div class="bar is-content" style="left:69%;width:14%"></div></div></div>
+        <div class="tl-row"><span class="lbl">Tools</span><div class="tl-track"><div class="bar is-tools" style="left:41%;width:22%"></div></div></div>
+        <div class="tl-row"><span class="lbl">LLM</span><div class="tl-track"><div class="bar is-content" style="left:83%;width:17%"></div></div></div>
+        <div class="tl-ticks"><span class="lbl"></span><span class="scale"><span>0s</span><span>2s</span><span>4s</span><span>6s</span><span>8s</span></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note" id="note">A 点阵优先：≥940px 显示「点 + 文字」；窄于此只留色点（悬停仍可看名称）；≤700px 丢 Aux/Content 两点；≤560px 整组图例收起，状态与动作始终单行、尺寸不变。</div>
+
+<script>
+  const pane = document.getElementById("pane");
+  const host = document.getElementById("host");
+  const notes = {
+    cur: "当前两行：状态 + 动作一行，图例单独一行（占 2 行高度 ≈ 68px）。",
+    A: "A 点阵优先：≥940px 显示「点 + 文字」；窄于此只留色点；≤700px 丢 Aux/Content；≤560px 整组收起。单行、尺寸不变。",
+    B: "B 图例整组收起：只要图例整组装不下（<880px）就整组隐藏，绝不留半截标签。状态文字保留完整。",
+    C: "C 状态可截断：图例文字一直保留到 640px 才丢点，代价是状态文字先被省略号压缩。"
+  };
+  function wire(id, apply){
+    document.getElementById(id).addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if(!b) return;
+      [...b.parentElement.children].forEach(x => x.classList.toggle("is-on", x === b));
+      apply(b.dataset.v);
+    });
+  }
+  wire("segTheme", v => document.documentElement.dataset.theme = v);
+  wire("segLayout", v => { pane.dataset.layout = v; document.getElementById("note").textContent = notes[v]; });
+  wire("segW", v => host.dataset.w = v);
+
+  // demo params bridge
+  window.addEventListener("message", (e) => {
+    const d = e.data;
+    if (!d || d.type !== "jellybot-demo-params") return;
+    if (d.values.theme) {
+      document.documentElement.dataset.theme = d.values.theme;
+      [...document.querySelectorAll("#segTheme button")].forEach(b => b.classList.toggle("is-on", b.dataset.v === d.values.theme));
+    }
+    if (d.values.narrowLegend) {
+      switchNarrowLegend(d.values.narrowLegend);
+    }
+  });
+
+  function switchNarrowLegend(v){
+    const key = String(v).startsWith("A") ? "A" : String(v).startsWith("B") ? "B" : "C";
+    pane.dataset.layout = key;
+    document.getElementById("note").textContent = notes[key];
+    [...document.querySelectorAll("#segLayout button")].forEach(b => b.classList.toggle("is-on", b.dataset.v === key));
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+[Unit]
+Description=JellyBot agentd remote-update queue watcher
+Documentation=https://jellybot.cloud
+# Watches the request spool the (unprivileged) agentd service writes into;
+# a file appearing triggers the root updater oneshot below.
+After=local-fs.target
+
+[Path]
+PathExistsGlob=/var/lib/jellybot-agent/update-queue/request.json
+# Overwrite of an existing request (retry after a stuck file) must re-trigger.
+PathChanged=/var/lib/jellybot-agent/update-queue/request.json
+Unit=jellybot-agentd-update.service
+
+[Install]
+WantedBy=multi-user.target

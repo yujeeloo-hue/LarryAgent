@@ -1,0 +1,806 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Larry Agent · VCS 冲突 AI 处理交互 Demo</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --tint-rgb: 255, 255, 255;
+    --bg: #141414;
+    --bg-main: rgba(8, 8, 8, .8);
+    --surface: #141414;
+    --surface-2: #1b1b1b;
+    --surface-3: #202020;
+    --fg: #e8e8e8;
+    --fg-muted: #9a9a9a;
+    --fg-dim: #6a6a6a;
+    --border: rgba(255, 255, 255, .045);
+    --line: rgba(var(--tint-rgb), .1);
+    --line-hover: rgba(var(--tint-rgb), .2);
+    --hover: rgba(255, 255, 255, .06);
+    --active: rgba(255, 255, 255, .1);
+    --accent: #00e5ff;
+    --accent-rgb: 0, 229, 255;
+    --on-accent: #111;
+    --scrim: rgba(0, 0, 0, .55);
+    --shadow: 0 12px 32px rgba(0, 0, 0, .45);
+    --warn: #e0a33a;
+    --warn-bg: rgba(210, 153, 34, .12);
+    --warn-line: rgba(210, 153, 34, .28);
+    --success: #6dca8c;
+    --success-bg: rgba(63, 185, 80, .14);
+    --success-line: rgba(63, 185, 80, .28);
+    --danger: #ff8580;
+    --font-ui: "SF Pro Text", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, "Courier New", monospace;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --tint-rgb: 0, 0, 0;
+    --bg: #e9edf2;
+    --bg-main: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f7f8fa;
+    --surface-3: #eef1f5;
+    --fg: #16191d;
+    --fg-muted: #5f6b76;
+    --fg-dim: #8695a3;
+    --border: rgba(15, 30, 50, .07);
+    --hover: rgba(15, 30, 50, .05);
+    --active: rgba(15, 30, 50, .09);
+    --accent: #0a6fd8;
+    --accent-rgb: 10, 111, 216;
+    --on-accent: #ffffff;
+    --scrim: rgba(15, 30, 50, .34);
+    --shadow: 0 12px 32px rgba(15, 30, 50, .18);
+    --warn: #a2620a;
+    --warn-bg: rgba(210, 153, 34, .14);
+    --warn-line: rgba(180, 120, 20, .25);
+    --success: #177a3b;
+    --success-bg: rgba(63, 185, 80, .13);
+    --success-line: rgba(30, 140, 70, .25);
+    --danger: #c02626;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font: 13px/1.5 var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    padding: 14px 16px 26px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  button { font: inherit; color: inherit; }
+  svg.i { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  [hidden] { display: none !important; }
+
+  .page-head { width: 100%; max-width: 1040px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .brand { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 650; letter-spacing: .01em; }
+  .brand .logo { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; background: rgba(var(--accent-rgb), .14); color: var(--accent); border: 1px solid rgba(var(--accent-rgb), .32); }
+  .brand .logo svg { width: 13px; height: 13px; }
+  .tag { font-size: 10px; font-weight: 600; color: var(--fg-muted); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
+  .head-actions { display: flex; gap: 6px; }
+  .head-btn, .ghost-btn, .icon-btn, .row-ai, .text-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border: 1px solid var(--line); background: rgba(var(--tint-rgb), .04); color: var(--fg-muted);
+    border-radius: 7px; height: 26px; padding: 0 9px; font-size: 11.5px; cursor: pointer; white-space: nowrap;
+    transition: background .14s, color .14s, border-color .14s;
+  }
+  .head-btn:hover, .ghost-btn:hover:not(:disabled), .icon-btn:hover, .row-ai:hover:not(:disabled) { background: var(--hover); color: var(--fg); border-color: var(--line-hover); }
+  .head-btn .i, .ghost-btn .i, .icon-btn .i { width: 13px; height: 13px; }
+  .hint { width: 100%; max-width: 1040px; color: var(--fg-muted); font-size: 11.5px; display: flex; align-items: center; gap: 7px; }
+  .hint b { color: var(--fg); font-weight: 600; }
+
+  /* ---------- app shell mock ---------- */
+  .app-frame {
+    width: 100%; max-width: 1040px; height: 594px; min-height: 540px;
+    display: grid; grid-template-columns: 218px minmax(0, 1fr);
+    background: var(--bg-main); border: 1px solid var(--line); border-radius: 11px;
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .side { display: flex; flex-direction: column; min-width: 0; background: rgba(0, 0, 0, .12); border-right: 1px solid var(--border); }
+  :root[data-theme="light"] .side { background: rgba(15, 30, 50, .025); }
+  .side-head { height: 36px; display: flex; align-items: center; justify-content: space-between; padding: 0 11px; font-size: 11px; font-weight: 650; color: var(--fg-muted); border-bottom: 1px solid var(--border); }
+  .side-head button { border: 0; background: transparent; color: var(--fg-muted); width: 22px; height: 22px; border-radius: 5px; display: grid; place-items: center; cursor: pointer; }
+  .side-head button:hover { background: var(--hover); color: var(--fg); }
+  .side-list { padding: 6px; display: flex; flex-direction: column; gap: 3px; }
+  .side-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 9px; border-radius: 7px; cursor: default; color: var(--fg-muted); }
+  .side-item.is-active { background: var(--active); color: var(--fg); }
+  .side-item .side-title { font-size: 11.5px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .side-item .side-sub { display: block; font-size: 10px; color: var(--fg-dim); margin-top: 2px; }
+  .side-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--fg-dim); margin-top: 5px; flex: 0 0 auto; }
+  .side-item.is-active .side-dot { background: var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .14); }
+  .side-item.is-done .side-dot { background: var(--success); box-shadow: none; }
+  .side-foot { margin-top: auto; border-top: 1px solid var(--border); padding: 9px 12px; font-size: 10.5px; color: var(--fg-dim); font-family: var(--font-mono); }
+
+  .chat { min-width: 0; display: flex; flex-direction: column; position: relative; background: var(--surface); }
+  .chat-head { height: 40px; flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 14px; border-bottom: 1px solid var(--border); }
+  .chat-title { font-size: 12px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chat-head-right { display: flex; align-items: center; gap: 7px; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 10px; background: rgba(var(--tint-rgb), .04); border: 1px solid var(--line); font-size: 10px; color: var(--fg-muted); white-space: nowrap; }
+  .pill .i { width: 11px; height: 11px; }
+  .pill.is-active { color: var(--accent); border-color: rgba(var(--accent-rgb), .28); background: rgba(var(--accent-rgb), .1); }
+  .pill.is-done { color: var(--success); border-color: var(--success-line); background: var(--success-bg); }
+  .transcript { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 18px 20px 12px; display: flex; flex-direction: column; gap: 14px; }
+  .msg { display: flex; gap: 9px; max-width: 88%; }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .avatar { width: 25px; height: 25px; border-radius: 7px; flex: 0 0 auto; display: grid; place-items: center; background: rgba(var(--accent-rgb), .12); border: 1px solid rgba(var(--accent-rgb), .25); color: var(--accent); font-size: 9px; font-weight: 700; }
+  .msg.user .avatar { background: rgba(var(--tint-rgb), .07); border-color: var(--line); color: var(--fg-muted); }
+  .bubble { background: rgba(var(--tint-rgb), .035); border: 1px solid var(--border); border-radius: 9px; padding: 9px 11px; font-size: 12px; color: var(--fg); }
+  .msg.user .bubble { background: rgba(var(--accent-rgb), .075); border-color: rgba(var(--accent-rgb), .18); }
+  .bubble .sub { color: var(--fg-muted); font-size: 11px; margin-top: 5px; }
+  .code-line { font: 11px/1.6 var(--font-mono); color: var(--fg-muted); background: rgba(var(--tint-rgb), .035); border-radius: 5px; padding: 5px 7px; margin-top: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-foot { flex: 0 0 auto; padding: 8px 12px 11px; border-top: 1px solid var(--border); background: var(--surface); }
+  .git-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .git-spacer { flex: 1 1 auto; }
+  .vcs-btn {
+    display: inline-flex; align-items: center; gap: 6px; height: 27px; padding: 0 9px;
+    border: 1px solid var(--line); border-radius: 7px; background: rgba(var(--tint-rgb), .04);
+    color: var(--fg-muted); font-size: 11.5px; font-weight: 550; cursor: pointer;
+    transition: background .14s, color .14s, border-color .14s;
+  }
+  .vcs-btn:hover { background: var(--hover); color: var(--fg); border-color: var(--line-hover); }
+  .vcs-btn.primary { background: var(--button-primary-bg, var(--accent)); color: var(--on-accent); border-color: transparent; }
+  :root { --button-primary-bg: #00e5ff; }
+  :root[data-theme="light"] { --button-primary-bg: #0a6fd8; }
+  .vcs-btn.primary:hover { filter: brightness(1.07); }
+  .vcs-badge { display: inline-grid; place-items: center; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 8px; background: rgba(var(--accent-rgb), .16); color: var(--accent); font: 600 9.5px/1 var(--font-ui); }
+  .composer { height: 42px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); display: flex; align-items: center; gap: 8px; padding: 0 9px; color: var(--fg-dim); font-size: 11.5px; }
+  .composer .send { margin-left: auto; width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; background: rgba(var(--tint-rgb), .07); border: 1px solid var(--line); color: var(--fg-muted); }
+
+  /* ---------- merge session view ---------- */
+  .sys-chip { align-self: center; display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 10px; border-radius: 12px; background: rgba(var(--accent-rgb), .08); border: 1px solid rgba(var(--accent-rgb), .22); color: var(--accent); font-size: 10.5px; font-weight: 600; }
+  .tool-card { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: rgba(var(--tint-rgb), .025); font-size: 11.5px; color: var(--fg-muted); margin-left: 34px; }
+  .tool-card .i { color: var(--accent); }
+  .tool-card .tool-state { margin-left: auto; font-size: 10.5px; color: var(--fg-dim); display: inline-flex; align-items: center; gap: 6px; }
+  .tool-card.is-running .tool-state { color: var(--accent); }
+  .tool-card.is-done .tool-state { color: var(--success); }
+  .merge-progress { margin: 2px 34px 0; display: flex; align-items: center; gap: 10px; font-size: 10.5px; color: var(--fg-muted); }
+  .merge-progress .track { flex: 1; height: 4px; background: rgba(var(--tint-rgb), .08); border-radius: 3px; overflow: hidden; }
+  .merge-progress .track i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .42s cubic-bezier(.22,.61,.36,1); }
+  .result-card { margin-left: 34px; border: 1px solid var(--success-line); background: var(--success-bg); border-radius: 9px; padding: 11px 12px; color: var(--fg); }
+  .result-card .result-title { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 650; color: var(--success); }
+  .result-card p { margin: 6px 0 9px; font-size: 11.5px; color: var(--fg-muted); }
+  .result-actions { display: flex; gap: 6px; }
+
+  /* ---------- modal ---------- */
+  .overlay { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--scrim); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+  .dialog { width: min(760px, 100%); max-height: calc(100vh - 40px); display: flex; flex-direction: column; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 18px 48px rgba(0, 0, 0, .42); overflow: hidden; animation: pop .16s ease-out; }
+  @keyframes pop { from { opacity: 0; transform: translateY(7px) scale(.985); } to { opacity: 1; transform: none; } }
+  .dlg-head { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .dlg-icon { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: rgba(var(--accent-rgb), .1); border: 1px solid rgba(var(--accent-rgb), .25); color: var(--accent); }
+  .dlg-icon .i { width: 16px; height: 16px; }
+  .dlg-icon.is-warn { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn); }
+  .dlg-heading { min-width: 0; }
+  .dlg-heading h2 { margin: 0; font-size: 13.5px; font-weight: 650; letter-spacing: .01em; }
+  .dlg-heading p { margin: 2px 0 0; font-size: 10.5px; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dlg-close { margin-left: auto; width: 25px; height: 25px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--fg-muted); display: grid; place-items: center; cursor: pointer; }
+  .dlg-close:hover { background: var(--hover); color: var(--fg); }
+  .dlg-body { padding: 14px; overflow: auto; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+  .dlg-foot { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--border); }
+  .foot-note { font-size: 10.5px; color: var(--fg-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .foot-actions { margin-left: auto; display: flex; gap: 7px; flex: 0 0 auto; }
+  .primary-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 28px; padding: 0 11px; border: 1px solid transparent; border-radius: 7px; background: var(--button-primary-bg); color: var(--on-accent); font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .primary-btn:hover:not(:disabled) { filter: brightness(1.08); }
+  .primary-btn:disabled { background: var(--surface-3); color: var(--fg-dim); cursor: default; }
+  .primary-btn .i { width: 12px; height: 12px; stroke-width: 2; }
+  .primary-btn.compact { height: 26px; padding: 0 9px; }
+
+  .progress-card { border: 1px solid var(--line); border-radius: 9px; background: rgba(var(--tint-rgb), .025); padding: 11px 12px; }
+  .progress-top, .progress-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 11px; }
+  .progress-top span:first-child { font-weight: 550; }
+  .progress-top span:last-child { font-family: var(--font-mono); color: var(--accent); }
+  .progress-meta { margin-top: 7px; color: var(--fg-dim); font-size: 10.5px; }
+  .progress-track { margin-top: 9px; height: 5px; border-radius: 4px; background: rgba(var(--tint-rgb), .08); overflow: hidden; }
+  .progress-track i { display: block; height: 100%; width: 0; border-radius: 4px; background: var(--accent); transition: width .12s linear; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 600; }
+  .counter { font: 500 10.5px var(--font-mono); color: var(--fg-dim); }
+  .file-list { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; max-height: 246px; overflow-y: auto; }
+  .file-row { display: grid; grid-template-columns: 20px minmax(0, 1fr) 112px 88px; align-items: center; gap: 8px; min-height: 37px; padding: 5px 10px; border-bottom: 1px solid var(--border); }
+  .file-row:last-child { border-bottom: 0; }
+  .file-mark { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 4px; font: 700 10px/1 var(--font-mono); background: rgba(var(--tint-rgb), .06); color: var(--fg-muted); }
+  .file-mark.is-c { background: var(--warn-bg); color: var(--warn); }
+  .file-mark.is-a { background: var(--success-bg); color: var(--success); }
+  .file-mark.is-d { background: rgba(229, 83, 75, .14); color: var(--danger); }
+  .file-main { min-width: 0; }
+  .file-path { font: 11px/1.4 var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-sub { font-size: 10px; color: var(--fg-dim); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row-status { justify-self: end; font-size: 10.5px; color: var(--fg-dim); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .row-status[data-tone="ok"], .row-status[data-tone="done"] { color: var(--success); }
+  .row-status[data-tone="conflict"] { color: var(--warn); }
+  .row-status[data-tone="ai"] { color: var(--accent); }
+  .row-ai { height: 23px; padding: 0 7px; font-size: 10.5px; gap: 4px; justify-self: end; color: var(--accent); border-color: rgba(var(--accent-rgb), .22); background: rgba(var(--accent-rgb), .08); }
+  .row-ai .i { width: 11px; height: 11px; }
+  .row-ai-spacer { width: 0; }
+  .spinner { width: 10px; height: 10px; border: 1.5px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .diff-panel { padding: 9px 12px 11px 38px; border-bottom: 1px solid var(--border); background: rgba(var(--tint-rgb), .018); }
+  .diff-head { display: flex; align-items: center; justify-content: space-between; font-size: 10.5px; color: var(--fg-muted); margin-bottom: 7px; }
+  .diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .diff-col { min-width: 0; }
+  .diff-col b { display: block; font-size: 10px; font-weight: 600; color: var(--fg-muted); margin-bottom: 4px; }
+  .diff-col pre, .merge-code { font: 10px/1.55 var(--font-mono); margin: 0; padding: 7px 8px; border-radius: 5px; border: 1px solid var(--border); background: rgba(0, 0, 0, .16); color: var(--fg-muted); white-space: pre-wrap; word-break: break-word; }
+  :root[data-theme="light"] .diff-col pre, :root[data-theme="light"] .merge-code { background: rgba(15, 30, 50, .035); }
+  .merge-note { display: flex; gap: 6px; align-items: flex-start; margin: 9px 0 6px; color: var(--accent); font-size: 10.5px; }
+  .merge-note .i { width: 12px; height: 12px; margin-top: 2px; }
+  .merge-code { border-color: rgba(var(--accent-rgb), .2); color: var(--fg); }
+
+  .ai-banner { display: flex; align-items: center; gap: 10px; border: 1px solid var(--warn-line); background: var(--warn-bg); border-radius: 9px; padding: 10px 11px; }
+  .ai-banner.is-success { border-color: var(--success-line); background: var(--success-bg); }
+  .ai-mark { width: 28px; height: 28px; border-radius: 7px; flex: 0 0 auto; display: grid; place-items: center; background: rgba(var(--tint-rgb), .07); color: var(--warn); }
+  .ai-banner.is-success .ai-mark { color: var(--success); }
+  .ai-mark .i { width: 15px; height: 15px; }
+  .ai-copy { flex: 1 1 auto; min-width: 0; }
+  .ai-copy strong { display: block; font-size: 11.5px; font-weight: 650; }
+  .ai-copy span { display: block; font-size: 10.5px; color: var(--fg-muted); margin-top: 2px; }
+  .ai-banner .text-btn { border: 0; background: transparent; height: auto; padding: 0; color: var(--fg-muted); text-decoration: underline; text-underline-offset: 2px; }
+
+  .git-list { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .git-list-row { display: flex; align-items: center; gap: 8px; padding: 8px 11px; border-bottom: 1px solid var(--border); font-size: 11px; }
+  .git-list-row:last-child { border-bottom: 0; }
+  .git-list-row .i { color: var(--warn); }
+  .git-list-row code { font: 11px var(--font-mono); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .git-list-row em { margin-left: auto; font-style: normal; font-size: 10px; color: var(--fg-dim); white-space: nowrap; }
+  .question { font-size: 12px; line-height: 1.6; }
+  .question strong { font-weight: 600; }
+  .ai-option { display: flex; align-items: flex-start; gap: 10px; padding: 11px; border: 1px solid rgba(var(--accent-rgb), .25); border-radius: 9px; background: rgba(var(--accent-rgb), .06); }
+  .ai-option > .i { width: 16px; height: 16px; color: var(--accent); margin-top: 1px; }
+  .ai-option strong { display: block; font-size: 11.5px; font-weight: 650; }
+  .ai-option span { display: block; font-size: 10.5px; color: var(--fg-muted); margin-top: 3px; }
+
+  .toast { position: fixed; z-index: 10050; left: 50%; bottom: 24px; transform: translate(-50%, 8px); opacity: 0; pointer-events: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); box-shadow: var(--shadow); font-size: 11.5px; transition: opacity .18s, transform .18s; }
+  .toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+  .toast .i { color: var(--accent); }
+
+  @media (max-width: 760px) {
+    .app-frame { grid-template-columns: 1fr; }
+    .side { display: none; }
+    .dlg-body { padding: 11px; }
+    .file-row { grid-template-columns: 20px minmax(0, 1fr) 84px 82px; }
+    .diff-grid { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/><path d="M5 3v4M3 5h4M19 17v4M17 19h4"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 20h16"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 20h16"/></symbol>
+  <symbol id="i-compare" viewBox="0 0 24 24"><path d="M6 3v12"/><path d="m3 12 3 3 3-3"/><path d="M18 21V9"/><path d="m15 12 3-3 3 3"/></symbol>
+  <symbol id="i-commit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M1.05 12H8M16 12h6.95"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="m10.3 3.9-8.1 14A2 2 0 0 0 3.9 21h16.2a2 2 0 0 0 1.7-3.1l-8.1-14a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></symbol>
+  <symbol id="i-merge" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="12" r="2"/><path d="M6 7v10"/><path d="M8 6c4 0 4 6 8 6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+</svg>
+
+<div class="page-head">
+  <div class="brand">
+    <span class="logo"><svg class="i"><use href="#i-spark"></use></svg></span>
+    <span>Larry Agent</span><span class="tag">交互 Demo · 仅演示，不改产品代码</span>
+  </div>
+  <div class="head-actions">
+    <button class="head-btn" id="themeBtn" type="button"><svg class="i"><use href="#i-sun"></use></svg><span>浅色</span></button>
+    <button class="head-btn" id="resetBtn" type="button"><svg class="i"><use href="#i-reset"></use></svg>重置</button>
+  </div>
+</div>
+<div class="hint"><svg class="i" style="color:var(--accent)"><use href="#i-spark"></use></svg> 点击会话底部 VCS 条的 <b>Update</b> 或 <b>Pull</b>，分别体验「SVN 冲突 AI 处理」与「Git 冲突 AI 合并 Session」。右侧表单可切换落地策略。</div>
+
+<div class="app-frame">
+  <aside class="side">
+    <div class="side-head">会话 <button type="button" aria-label="新建会话"><svg class="i"><use href="#i-plus"></use></svg></button></div>
+    <div class="side-list">
+      <div class="side-item is-active" id="sideMain"><span class="side-dot"></span><div><span class="side-title">NF · 引擎同步</span><span class="side-sub">刚刚 · 4 条消息</span></div></div>
+      <div class="side-item" id="sideMerge" hidden><span class="side-dot"></span><div><span class="side-title">AI 合并 · origin/main</span><span class="side-sub" id="sideMergeSub">运行中 · 3 个冲突</span></div></div>
+    </div>
+    <div class="side-foot" id="sideFoot">NF / trunk · r1841</div>
+  </aside>
+
+  <main class="chat">
+    <header class="chat-head">
+      <div class="chat-title" id="chatTitle">NF · 引擎同步</div>
+      <div class="chat-head-right">
+        <span class="pill" id="chatPill"><svg class="i"><use href="#i-compare"></use></svg> SVN + Git</span>
+        <button class="icon-btn" id="backBtn" type="button" hidden><svg class="i"><use href="#i-chev"></use></svg>返回原会话</button>
+      </div>
+    </header>
+
+    <section class="transcript" id="transcript">
+      <div id="initialTranscript">
+        <div class="msg user"><div class="avatar">我</div><div class="bubble">看看 NF 的 SVN 和 Git 有没有落后，顺便帮我同步一下。</div></div>
+        <div class="msg"><div class="avatar">AI</div><div class="bubble">检查完成：SVN 落后 5 个修订，Git 落后 3 个提交。<div class="sub">SVN 在会话底部的 <b>Update</b> 处理；Git 用 <b>Pull</b>。两者都会在你确认后执行。</div><div class="code-line">svn://svn.intra/NF/trunk   r1841 → r1846</div><div class="code-line">origin/main..HEAD          3 commits</div></div></div>
+        <div class="msg"><div class="avatar">AI</div><div class="bubble">点下面的按钮试试：遇到冲突时，我会把处理入口直接放在弹出的窗口里。☝</div></div>
+      </div>
+
+      <div id="mergeTranscript" hidden>
+        <div class="sys-chip" id="mergeChip"><svg class="i"><use href="#i-merge"></use></svg><span id="mergeChipText">Session s-261127-017 · Git 冲突语义合并</span></div>
+        <div class="msg"><div class="avatar">AI</div><div class="bubble">我会先读取 3 个冲突文件的三方基线，再按双方改动意图做语义级合并；不会简单丢弃其中一边。<div class="sub" id="mergeIntroNote">目标分支：main ← origin/main · 本地有未提交重构</div></div></div>
+        <div class="tool-card" id="mc1"><svg class="i"><use href="#i-file"></use></svg>读取冲突文件（3）<span class="tool-state" id="ms1">等待</span></div>
+        <div class="tool-card" id="mc2"><svg class="i"><use href="#i-compare"></use></svg>分析双方改动意图<span class="tool-state" id="ms2">等待</span></div>
+        <div class="tool-card" id="mc3"><svg class="i"><use href="#i-merge"></use></svg>生成语义合并结果<span class="tool-state" id="ms3">等待</span></div>
+        <div class="tool-card" id="mc4"><svg class="i"><use href="#i-check"></use></svg>写入工作副本并校验<span class="tool-state" id="ms4">等待</span></div>
+        <div class="merge-progress"><div class="track"><i id="mergeBar"></i></div><span id="mergeLabel">准备中</span></div>
+        <div class="result-card" id="mergeResult" hidden>
+          <div class="result-title"><svg class="i"><use href="#i-check"></use></svg>语义合并完成 · 3 / 3 个冲突已解决</div>
+          <p>保留了本地的函数重命名与结构重构，同时合入上游新增的空值校验与日志上下文；改动已写入工作副本并暂存，等待你审阅。</p>
+          <div class="result-actions"><button class="ghost-btn" id="reviewBtn" type="button"><svg class="i"><use href="#i-file"></use></svg>查看变更</button><button class="ghost-btn" id="backBtn2" type="button">返回原会话</button></div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="chat-foot" id="chatFoot">
+      <div class="git-bar">
+        <button class="vcs-btn" id="changesBtn" type="button"><svg class="i"><use href="#i-compare"></use></svg>变更 <span class="vcs-badge">3</span></button>
+        <button class="vcs-btn" id="commitBtn" type="button"><svg class="i"><use href="#i-commit"></use></svg>Commit</button>
+        <span class="git-spacer"></span>
+        <button class="vcs-btn primary" id="updateBtn" type="button"><svg class="i"><use href="#i-refresh"></use></svg>Update <span class="vcs-badge">5</span></button>
+        <button class="vcs-btn" id="pullBtn" type="button"><svg class="i"><use href="#i-down"></use></svg>Pull <span class="vcs-badge">3</span></button>
+        <button class="vcs-btn" id="pushBtn" type="button"><svg class="i"><use href="#i-up"></use></svg>Push</button>
+      </div>
+      <div class="composer"><svg class="i"><use href="#i-plus"></use></svg><span>给 Larry 发消息…</span><span class="send"><svg class="i"><use href="#i-send"></use></svg></span></div>
+    </footer>
+  </main>
+</div>
+
+<div class="toast" id="toast"><svg class="i"><use href="#i-check"></use></svg><span id="toastText"></span></div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+
+    <div id="svnPage" hidden>
+      <div class="dlg-head">
+        <span class="dlg-icon"><svg class="i"><use href="#i-refresh"></use></svg></span>
+        <div class="dlg-heading"><h2 id="dlgTitle">SVN Update</h2><p>svn://svn.intra/NF/trunk · r1841 → r1846 · 5 个修订</p></div>
+        <button class="dlg-close" id="svnClose" type="button" aria-label="关闭"><svg class="i"><use href="#i-x"></use></svg></button>
+      </div>
+      <div class="dlg-body">
+        <div class="progress-card">
+          <div class="progress-top"><span id="svnStage">准备连接版本库…</span><span id="svnPct">0%</span></div>
+          <div class="progress-track"><i id="svnBar"></i></div>
+          <div class="progress-meta"><span id="svnMeta">0 / 6 个文件</span><span id="svnSpeed">等待服务器响应</span></div>
+        </div>
+        <div class="section-head"><span>更新文件</span><span class="counter" id="svnCount">6 项 · 2 个冲突</span></div>
+        <div class="file-list" id="svnFiles"></div>
+        <div class="ai-banner" id="svnBanner" hidden>
+          <span class="ai-mark"><svg class="i"><use href="#i-spark"></use></svg></span>
+          <div class="ai-copy"><strong id="svnBannerTitle">检测到 2 个冲突文件</strong><span id="svnBannerDesc">AI 会读取三方基线，理解双方改动意图后生成语义级合并结果。</span></div>
+          <button class="text-btn" id="svnInspect" type="button">逐个查看</button>
+          <button class="primary-btn compact" id="svnAiAll" type="button"><svg class="i"><use href="#i-spark"></use></svg><span id="svnAiAllLabel">让 AI 全部处理</span></button>
+        </div>
+      </div>
+      <div class="dlg-foot">
+        <span class="foot-note" id="svnFootNote">Update 进行中，可随时关闭窗口。</span>
+        <div class="foot-actions"><button class="ghost-btn" id="svnCancel" type="button">关闭</button><button class="primary-btn" id="svnDone" type="button" disabled>完成</button></div>
+      </div>
+    </div>
+
+    <div id="gitPage" hidden>
+      <div class="dlg-head">
+        <span class="dlg-icon is-warn"><svg class="i"><use href="#i-warn"></use></svg></span>
+        <div class="dlg-heading"><h2 id="dlgTitleGit">Pull 遇到冲突</h2><p>origin/main → main · 3 个提交 · 3 个文件需要合并</p></div>
+        <button class="dlg-close" id="gitClose" type="button" aria-label="关闭"><svg class="i"><use href="#i-x"></use></svg></button>
+      </div>
+      <div class="dlg-body">
+        <div class="question">本地有未提交的重构，Git 无法自动合并以下文件。<strong>是否让 AI 发起一个 Git 冲突处理 Session，按语义做合并？</strong></div>
+        <div class="git-list">
+          <div class="git-list-row"><svg class="i"><use href="#i-warn"></use></svg><code>Source/NF/Private/AI/NFBehaviorTree.cpp</code><em>双方修改</em></div>
+          <div class="git-list-row"><svg class="i"><use href="#i-warn"></use></svg><code>Source/NF/Public/Gameplay/NFCharacter.h</code><em>本地重构 / 上游新增</em></div>
+          <div class="git-list-row"><svg class="i"><use href="#i-warn"></use></svg><code>Config/DefaultGame.ini</code><em>配置重叠</em></div>
+        </div>
+        <div class="ai-option">
+          <svg class="i"><use href="#i-spark"></use></svg>
+          <div><strong>AI 语义合并 · 自动开启 Session</strong><span id="gitOptionDesc">读取三方基线 → 识别双方意图 → 生成合并 → 写入并校验，完成后停在结果卡片等你审阅。</span></div>
+        </div>
+      </div>
+      <div class="dlg-foot">
+        <span class="foot-note" id="gitFootNote">选择“让 AI 处理”后会自动创建会话并开始执行。</span>
+        <div class="foot-actions"><button class="ghost-btn" id="gitLater" type="button">稍后</button><button class="ghost-btn" id="gitManual" type="button">我自己处理</button><button class="primary-btn" id="gitYes" type="button"><svg class="i"><use href="#i-spark"></use></svg>让 AI 处理</button></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const svg = (name, cls) => '<svg class="i ' + (cls || '') + '"><use href="#i-' + name + '"></use></svg>';
+
+  const cfg = { svn: "all", git: "new" };
+  const timers = new Set();
+  const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); return t; };
+  let svnTimer = null;
+  let aiBusy = false;
+  let progressDone = false;
+  let mergeRunning = false;
+  let toastTimer = null;
+
+  const files = [
+    { id: "f1", mark: "U", path: "Source/NF/Private/Gameplay/NFCharacter.cpp", rev: "r1846 · 上游更新" },
+    { id: "f2", mark: "U", path: "Content/Blueprints/BP_PlayerController.uasset", rev: "r1844 · 上游更新" },
+    { id: "f3", mark: "A", path: "Source/NF/Public/AI/NFBlackboardKeys.h", rev: "r1846 · 新增文件" },
+    { id: "f4", mark: "C", kind: "conflict", path: "Source/NF/Private/AI/NFBehaviorTree.cpp", rev: "冲突 · 本地重构 + 上游新增校验",
+      ours: "void UNFBehaviorTree::Tick(float Delta)\n{\n  EvaluateNodes(Delta);\n}",
+      theirs: "void UNFBehaviorTree::Tick(float Delta)\n{\n  if (!Blackboard) return;\n  EvaluateNodes(Delta);\n}",
+      strategy: "保留本地的 EvaluateNodes 重构，并把上游的空值保护插入到重构后的调用点之前。",
+      merged: "void UNFBehaviorTree::Tick(float Delta)\n{\n  if (!Blackboard) return;\n  EvaluateNodes(Delta);\n}" },
+    { id: "f5", mark: "C", kind: "conflict", path: "Config/DefaultGame.ini", rev: "冲突 · 配置键重叠",
+      ours: "[/Script/NF.NFSettings]\nMaxPlayers=4\nbEnableVoiceChat=True",
+      theirs: "[/Script/NF.NFSettings]\nMaxPlayers=8\nbEnableVoiceChat=True\nbEnableCrossplay=True",
+      strategy: "采用上游的 MaxPlayers=8 与 bEnableCrossplay=True，保留本地的语音开关；冲突仅来自同一配置段的不同键。",
+      merged: "[/Script/NF.NFSettings]\nMaxPlayers=8\nbEnableVoiceChat=True\nbEnableCrossplay=True" },
+    { id: "f6", mark: "D", path: "Docs/Legacy/old_spawn_notes.md", rev: "r1845 · 上游删除" }
+  ];
+  const conflictIds = files.filter((f) => f.kind === "conflict").map((f) => f.id);
+  const resolved = new Set();
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  }
+
+  function renderFiles() {
+    $("svnFiles").innerHTML = files.map((f) => {
+      const conflict = f.kind === "conflict";
+      const markClass = conflict ? "is-c" : f.mark === "A" ? "is-a" : f.mark === "D" ? "is-d" : "";
+      const action = conflict
+        ? '<button class="row-ai" id="ai-' + f.id + '" type="button">' + svg("spark") + 'AI 处理</button>'
+        : '<span class="row-ai-spacer"></span>';
+      const detail = conflict ? [
+        '<div class="diff-panel" id="diff-' + f.id + '" hidden>',
+        '  <div class="diff-head"><span>三方对比 · AI 合并建议</span><span>' + escapeHtml(f.path.split("/").pop()) + '</span></div>',
+        '  <div class="diff-grid">',
+        '    <div class="diff-col"><b>本地（ours）</b><pre>' + escapeHtml(f.ours) + '</pre></div>',
+        '    <div class="diff-col"><b>上游（theirs）</b><pre>' + escapeHtml(f.theirs) + '</pre></div>',
+        '  </div>',
+        '  <div class="merge-note" id="note-' + f.id + '" hidden>' + svg("spark") + '<span>' + escapeHtml(f.strategy) + '</span></div>',
+        '  <pre class="merge-code" id="merged-' + f.id + '" hidden>' + escapeHtml(f.merged) + '</pre>',
+        '</div>'
+      ].join("") : "";
+      return [
+        '<div class="file-row" data-file="' + f.id + '">',
+        '  <span class="file-mark ' + markClass + '">' + f.mark + '</span>',
+        '  <div class="file-main"><div class="file-path">' + escapeHtml(f.path) + '</div><div class="file-sub">' + escapeHtml(f.rev) + '</div></div>',
+        '  <span class="row-status" id="status-' + f.id + '">等待</span>',
+        '  ' + action,
+        '</div>', detail
+      ].join("");
+    }).join("");
+    conflictIds.forEach((id) => {
+      $("ai-" + id).addEventListener("click", () => {
+        const f = files.find((x) => x.id === id);
+        if ($("ai-" + id).dataset.mode === "view") {
+          const panel = $("diff-" + id);
+          panel.hidden = !panel.hidden;
+          return;
+        }
+        runAi(f);
+      });
+    });
+  }
+
+  function setStatus(id, text, tone) {
+    const el = $("status-" + id);
+    el.textContent = text;
+    el.dataset.tone = tone || "";
+  }
+
+  function showDialog(which) {
+    $("svnPage").hidden = which !== "svn";
+    $("gitPage").hidden = which !== "git";
+    $("overlay").hidden = false;
+  }
+  function closeDialog() { $("overlay").hidden = true; }
+
+  function toast(text) {
+    $("toastText").textContent = text;
+    $("toast").classList.add("is-on");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $("toast").classList.remove("is-on"), 2600);
+  }
+
+  function startSvn() {
+    clearTimers();
+    progressDone = false;
+    aiBusy = false;
+    resolved.clear();
+    renderFiles();
+    $("svnPct").textContent = "0%";
+    $("svnBar").style.width = "0%";
+    $("svnStage").textContent = "准备连接版本库…";
+    $("svnMeta").textContent = "0 / 6 个文件";
+    $("svnSpeed").textContent = "等待服务器响应";
+    $("svnDone").disabled = true;
+    $("svnCancel").textContent = "关闭";
+    $("svnFootNote").textContent = "Update 进行中，可随时关闭窗口。";
+    $("svnBanner").hidden = true;
+    $("svnBanner").classList.remove("is-success");
+    $("svnInspect").hidden = false;
+    $("svnAiAll").hidden = false;
+    $("svnAiAll").disabled = false;
+    $("svnAiAllLabel").textContent = cfg.svn === "all" ? "让 AI 全部处理" : "逐个处理冲突";
+    $("svnBannerDesc").textContent = cfg.svn === "all"
+      ? "AI 会读取三方基线，理解双方改动意图后生成语义级合并结果。"
+      : "将按文件逐个确认：你可以先看三方对比，再决定是否交给 AI。";
+    showDialog("svn");
+
+    let pct = 0;
+    const schedule = [
+      { at: 8, id: "f1", status: "已更新", tone: "ok" },
+      { at: 22, id: "f2", status: "已更新", tone: "ok" },
+      { at: 36, id: "f3", status: "已新增", tone: "ok" },
+      { at: 52, id: "f4", status: "冲突", tone: "conflict" },
+      { at: 68, id: "f5", status: "冲突", tone: "conflict" },
+      { at: 86, id: "f6", status: "已删除", tone: "ok" }
+    ];
+    svnTimer = setInterval(() => {
+      pct = Math.min(100, pct + 2);
+      $("svnPct").textContent = pct + "%";
+      $("svnBar").style.width = pct + "%";
+      $("svnStage").textContent = pct < 18 ? "连接版本库 svn://svn.intra/NF/trunk…"
+        : pct < 55 ? "接收 r1842 – r1846 的文件变更…"
+        : pct < 100 ? "应用更新到本地工作副本…"
+        : "Update 完成 · 工作副本位于 r1846";
+      $("svnSpeed").textContent = pct >= 100 ? "共 6 个文件 · 2.4 MB" : pct < 18 ? "握手 / 认证" : (1.1 + (pct % 7) / 10).toFixed(1) + " MB/s";
+      let done = 0;
+      schedule.forEach((item) => {
+        if (pct >= item.at && $("status-" + item.id).textContent === "等待") {
+          setStatus(item.id, item.status, item.tone);
+          if (item.tone === "conflict") updateBanner();
+        }
+        if ($("status-" + item.id).dataset.tone === "ok" || $("status-" + item.id).dataset.tone === "conflict" ||
+            ($("status-" + item.id).dataset.tone === "ai") || ($("status-" + item.id).dataset.tone === "done")) done++;
+      });
+      $("svnMeta").textContent = done + " / 6 个文件";
+      if (pct >= 100) {
+        clearInterval(svnTimer);
+        svnTimer = null;
+        progressDone = true;
+        $("svnCancel").textContent = "关闭";
+        $("svnFootNote").textContent = resolved.size === conflictIds.length ? "所有冲突已解决，可以完成并关闭。" : "Update 已结束，但仍有冲突待处理。";
+        updateBanner();
+      }
+    }, 80);
+    timers.add(svnTimer);
+  }
+
+  function updateBanner() {
+    const found = conflictIds.filter((id) => $("status-" + id) && $("status-" + id).dataset.tone === "conflict").length;
+    const unresolved = conflictIds.filter((id) => !resolved.has(id));
+    if (unresolved.length === 0 && found === 0 && resolved.size > 0) {
+      $("svnBanner").hidden = false;
+      $("svnBanner").classList.add("is-success");
+      $("svnBannerTitle").textContent = "2 个冲突已由 AI 语义合并";
+      $("svnBannerDesc").textContent = "保留本地重构与上游新增逻辑，结果已写入工作副本；逐项合并决策可在文件行里展开查看。";
+      $("svnInspect").hidden = true;
+      $("svnAiAll").hidden = true;
+      $("svnFootNote").textContent = "所有冲突已解决，可以完成并关闭。";
+    } else if (unresolved.length > 0 && resolved.size >= 0) {
+      const pending = unresolved.filter((id) => $("status-" + id) && $("status-" + id).dataset.tone === "conflict").length;
+      if ($("status-f4") && $("status-f4").dataset.tone === "conflict") {
+        $("svnBanner").hidden = false;
+        $("svnBanner").classList.remove("is-success");
+        $("svnBannerTitle").textContent = "检测到 " + (pending + resolved.size) + " 个冲突文件";
+      }
+    }
+    $("svnDone").disabled = !(progressDone && resolved.size === conflictIds.length);
+  }
+
+  function runAi(f) {
+    if (aiBusy || resolved.has(f.id)) return;
+    aiBusy = true;
+    $("svnAiAll").disabled = true;
+    const btn = $("ai-" + f.id);
+    btn.disabled = true;
+    btn.innerHTML = svg("spark") + "AI 处理中";
+    const steps = ["读取三方基线", "识别双方意图", "生成语义合并", "写入并校验"];
+    let i = 0;
+    const t = setInterval(() => {
+      setStatus(f.id, "AI · " + steps[Math.min(i, steps.length - 1)], "ai");
+      i++;
+      if (i >= steps.length) {
+        clearInterval(t);
+        timers.delete(t);
+        resolved.add(f.id);
+        setStatus(f.id, "AI 已解决", "done");
+        btn.disabled = false;
+        btn.dataset.mode = "view";
+        btn.innerHTML = svg("chev") + "查看结果";
+        $("note-" + f.id).hidden = false;
+        $("merged-" + f.id).hidden = false;
+        aiBusy = false;
+        $("svnAiAll").disabled = false;
+        updateBanner();
+        if (cfg.svn === "all") {
+          const next = conflictIds.find((id) => !resolved.has(id));
+          if (next) { later(() => runAi(files.find((x) => x.id === next)), 280); return; }
+        }
+        toast(f.path.split("/").pop() + " · AI 语义合并完成");
+      }
+    }, 430);
+    timers.add(t);
+  }
+
+  function startGit() {
+    clearTimers();
+    showDialog("git");
+  }
+
+  function setState(id, state, text) {
+    const card = $(id);
+    card.classList.toggle("is-running", state === "running");
+    card.classList.toggle("is-done", state === "done");
+    $(id.replace("mc", "ms")).textContent = text;
+  }
+
+  function startMergeSession() {
+    closeDialog();
+    mergeRunning = true;
+    $("initialTranscript").hidden = true;
+    $("mergeTranscript").hidden = false;
+    $("chatFoot").hidden = true;
+    $("backBtn").hidden = false;
+    $("mergeResult").hidden = true;
+    $("mergeBar").style.width = "0%";
+    $("mergeLabel").textContent = "准备中";
+    $("mergeChip").classList.remove("is-done");
+    $("chatPill").className = "pill is-active";
+    $("chatPill").innerHTML = svg("spark") + "AI 合并中";
+
+    if (cfg.git === "new") {
+      $("sideMain").classList.remove("is-active");
+      $("sideMerge").hidden = false;
+      $("sideMerge").classList.add("is-active");
+      $("sideMerge").classList.remove("is-done");
+      $("sideMergeSub").textContent = "运行中 · 3 个冲突";
+      $("chatTitle").textContent = "AI 合并 · origin/main → main";
+      $("mergeIntroNote").textContent = "目标分支：main ← origin/main · 已自动新建冲突处理 Session。";
+      toast("已创建 Session s-261127-017 并开始合并");
+    } else {
+      $("sideMain").classList.add("is-active");
+      $("sideMerge").hidden = true;
+      $("chatTitle").textContent = "NF · 引擎同步（AI 合并中）";
+      $("mergeIntroNote").textContent = "目标分支：main ← origin/main · 在当前会话中继续处理。";
+      toast("已在本会话发起 AI 语义合并");
+    }
+
+    ["mc1", "mc2", "mc3", "mc4"].forEach((id) => setState(id, "idle", "等待"));
+    later(() => {
+      setState("mc1", "running", "运行中");
+      $("mergeLabel").textContent = "读取 1 / 3";
+      $("mergeBar").style.width = "18%";
+    }, 280);
+    later(() => {
+      setState("mc1", "done", "完成");
+      setState("mc2", "running", "运行中");
+      $("mergeLabel").textContent = "分析改动意图";
+      $("mergeBar").style.width = "42%";
+    }, 1250);
+    later(() => {
+      setState("mc2", "done", "完成");
+      setState("mc3", "running", "运行中");
+      $("mergeLabel").textContent = "合并 2 / 3";
+      $("mergeBar").style.width = "66%";
+    }, 2450);
+    later(() => {
+      setState("mc3", "done", "完成");
+      setState("mc4", "running", "运行中");
+      $("mergeLabel").textContent = "写入并校验";
+      $("mergeBar").style.width = "88%";
+    }, 3650);
+    later(() => {
+      setState("mc4", "done", "完成");
+      $("mergeBar").style.width = "100%";
+      $("mergeLabel").textContent = "3 / 3 已解决";
+      $("mergeResult").hidden = false;
+      $("mergeChip").classList.add("is-done");
+      $("mergeChipText").textContent = "Session s-261127-017 · 已完成";
+      $("chatPill").className = "pill is-done";
+      $("chatPill").innerHTML = svg("check") + "合并完成";
+      $("sideMergeSub").textContent = "已完成 · 3 个冲突已解决";
+      $("sideMerge").classList.add("is-done");
+      $("sideMerge").classList.remove("is-active");
+      mergeRunning = false;
+      toast("语义合并完成，等待你审阅");
+    }, 4850);
+  }
+
+  function backToMain() {
+    $("initialTranscript").hidden = false;
+    $("mergeTranscript").hidden = true;
+    $("chatFoot").hidden = false;
+    $("backBtn").hidden = true;
+    $("chatTitle").textContent = "NF · 引擎同步";
+    $("chatPill").className = "pill";
+    $("chatPill").innerHTML = svg("compare") + " SVN + Git";
+    $("sideMain").classList.add("is-active");
+    $("sideMerge").classList.remove("is-active");
+    $("sideFoot").textContent = "NF / trunk · r1841";
+  }
+
+  function clearTimers() {
+    if (svnTimer) { clearInterval(svnTimer); svnTimer = null; }
+    timers.forEach((t) => { clearTimeout(t); timers.delete(t); });
+  }
+
+  function resetDemo() {
+    clearTimers();
+    closeDialog();
+    progressDone = false;
+    aiBusy = false;
+    mergeRunning = false;
+    resolved.clear();
+    $("svnBanner").hidden = true;
+    $("svnFiles").innerHTML = "";
+    $("toast").classList.remove("is-on");
+    $("sideMerge").hidden = true;
+    $("sideMerge").classList.remove("is-active", "is-done");
+    $("sideMain").classList.add("is-active");
+    $("sideFoot").textContent = "NF / trunk · r1841";
+    backToMain();
+    toast("演示已重置");
+  }
+
+  function apply(values) {
+    if (!values) return;
+    const svn = String(values.svnMode || "");
+    const git = String(values.gitSession || "");
+    if (svn) cfg.svn = /perfile|逐条|file.by.file/i.test(svn) ? "perfile" : "all";
+    if (git) cfg.git = /current|当前会话/i.test(git) ? "current" : "new";
+  }
+  window.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "jellybot-demo-params") apply(event.data.values);
+  });
+
+  $("themeBtn").addEventListener("click", () => {
+    const light = document.documentElement.dataset.theme === "light";
+    document.documentElement.dataset.theme = light ? "dark" : "light";
+    $("themeBtn").querySelector("span").textContent = light ? "浅色" : "深色";
+  });
+  $("resetBtn").addEventListener("click", resetDemo);
+  $("updateBtn").addEventListener("click", startSvn);
+  $("pullBtn").addEventListener("click", startGit);
+  $("svnClose").addEventListener("click", closeDialog);
+  $("svnCancel").addEventListener("click", () => { closeDialog(); if (!progressDone) toast("已关闭窗口（演示中 Update 不再继续）"); });
+  $("svnDone").addEventListener("click", () => { closeDialog(); toast("SVN Update 完成 · r1846 · 2 个冲突已由 AI 解决"); $("sideFoot").textContent = "NF / trunk · r1846"; });
+  $("svnInspect").addEventListener("click", () => {
+    conflictIds.forEach((id) => { const d = $("diff-" + id); if (d) d.hidden = false; });
+    $("svnFiles").scrollTop = $("svnFiles").scrollHeight;
+  });
+  $("svnAiAll").addEventListener("click", () => {
+    if (cfg.svn === "perfile") {
+      const next = conflictIds.find((id) => !resolved.has(id));
+      if (next && $("ai-" + next)) $("ai-" + next).click();
+      return;
+    }
+    const first = conflictIds.find((id) => !resolved.has(id));
+    if (first) runAi(files.find((x) => x.id === first));
+  });
+  $("gitClose").addEventListener("click", closeDialog);
+  $("gitLater").addEventListener("click", closeDialog);
+  $("gitManual").addEventListener("click", () => { closeDialog(); toast("冲突标记已保留，可在编辑器中手动处理"); });
+  $("gitYes").addEventListener("click", startMergeSession);
+  $("backBtn").addEventListener("click", backToMain);
+  $("backBtn2").addEventListener("click", backToMain);
+  $("reviewBtn").addEventListener("click", () => toast("演示：这里会打开 AI 合并后的文件变更列表"));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !$("overlay").hidden) closeDialog();
+  });
+  ["changesBtn", "commitBtn", "pushBtn"].forEach((id) => $(id).addEventListener("click", () => toast("演示入口：仅 Update / Pull 接入了本次交互")));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dev Mode 状态栏 · 轮播方案对比</title>
+<style>
+  :root{
+    --font-ui:"Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    --font-mono:"JetBrains Mono","Cascadia Mono","Consolas",ui-monospace,monospace;
+    --radius:10px;
+  }
+  :root[data-theme="dark"]{
+    --tint-rgb:255,255,255;
+    --bg-app:#0e1013; --bg-main:#16181c; --bg-elevated:#1b1d22;
+    --border:rgba(var(--tint-rgb),.10); --fg:#e7e9ec; --fg-muted:#98a1ab; --fg-dim:#6d7681;
+    --hover:rgba(var(--tint-rgb),.07); --active:rgba(var(--tint-rgb),.10);
+    --accent:#00e5ff; --code-fg:#cfd6dd; --code-kw:#7ca6f7; --code-ty:#b392f0;
+    --code-fn:#79c0ff; --code-st:#a5d6a7; --code-cm:#6b7681;
+    --bar-bg:rgba(var(--tint-rgb),.02); --track:rgba(var(--tint-rgb),.16);
+  }
+  :root[data-theme="light"]{
+    --tint-rgb:18,67,117;
+    --bg-app:#eef1f5; --bg-main:#ffffff; --bg-elevated:#f7f8fa;
+    --border:rgba(var(--tint-rgb),.13); --fg:#17202b; --fg-muted:#536171; --fg-dim:#7a8798;
+    --hover:rgba(var(--tint-rgb),.06); --active:rgba(var(--tint-rgb),.10);
+    --accent:#006bd6; --code-fg:#25323f; --code-kw:#0550ae; --code-ty:#8250df;
+    --code-fn:#0969da; --code-st:#0a7d3e; --code-cm:#8a9bab;
+    --bar-bg:rgba(var(--tint-rgb),.025); --track:rgba(var(--tint-rgb),.20);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg-app); color:var(--fg); padding:20px 24px 40px;
+    font:13px/1.5 var(--font-ui); -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1000px;margin:0 auto}
+  .head{display:flex;align-items:flex-start;gap:14px;margin-bottom:12px}
+  .head h1{font-size:15px;font-weight:650;margin:0 0 4px}
+  .head p{margin:0;color:var(--fg-muted);font-size:12px;max-width:760px}
+  .head-actions{margin-left:auto;display:flex;gap:6px;flex:0 0 auto}
+  .mini-btn{
+    height:26px;padding:0 10px;border:1px solid var(--border);border-radius:6px;
+    background:var(--bg-main);color:var(--fg-muted);font:11.5px var(--font-ui);cursor:pointer;
+    transition:background 110ms ease,color 110ms ease;
+  }
+  .mini-btn:hover{background:var(--hover);color:var(--fg)}
+
+  .notice{
+    display:flex;align-items:center;gap:10px;padding:9px 12px;margin:0 0 18px;
+    border:1px solid var(--border);border-radius:8px;background:var(--bg-main);
+    color:var(--fg-muted);font-size:11.5px;
+  }
+  .notice b{color:var(--fg);font-weight:600}
+  .notice code{font:11px var(--font-mono);color:var(--fg-dim)}
+
+  .variant{
+    border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-main);
+    margin-bottom:16px;overflow:hidden;
+  }
+  .variant-head{display:flex;align-items:center;gap:12px;padding:12px 14px 10px;border-bottom:1px solid var(--border)}
+  .variant-num{font:600 10px/1 var(--font-mono);color:var(--fg-dim);border:1px solid var(--border);border-radius:5px;padding:4px 5px}
+  .variant-head h2{margin:0;font-size:13px;font-weight:600}
+  .variant-head p{margin:2px 0 0;font-size:11px;color:var(--fg-muted)}
+  .tag{margin-left:auto;flex:0 0 auto;font-size:10px;color:var(--fg-muted);background:var(--hover);border-radius:999px;padding:3px 8px}
+
+  .mock{padding:12px 14px 14px;background:var(--bg-app)}
+  .pane{border:1px solid var(--border);border-radius:8px;background:var(--bg-main);overflow:hidden}
+  .tabbar{height:30px;display:flex;align-items:stretch;border-bottom:1px solid var(--border);background:var(--bg-elevated)}
+  .tab{display:flex;align-items:center;gap:7px;padding:0 12px;border-right:1px solid var(--border);font-size:11px;color:var(--fg);background:var(--bg-main)}
+  .tab .dot{width:7px;height:7px;border-radius:2px;background:#7fb4ff;opacity:.85}
+  .tab-sub{margin-left:auto;display:flex;align-items:center;padding:0 12px;color:var(--fg-dim);font-size:10.5px}
+  .code{padding:9px 14px 10px;font:11.5px/1.65 var(--font-mono);color:var(--code-fg);white-space:pre;overflow:hidden}
+  .kw{color:var(--code-kw)} .ty{color:var(--code-ty)} .fn{color:var(--code-fn)} .st{color:var(--code-st)} .cm{color:var(--code-cm)}
+
+  /* the real status bar: .devmode-editor-status.is-panel-inline, 11px / muted */
+  .statusbar{
+    position:relative;display:flex;align-items:center;gap:10px;min-height:25px;padding:0 10px;
+    border-top:1px solid var(--border);background:var(--bar-bg);
+    color:var(--fg-muted);font-size:11px;line-height:16px;
+  }
+  .status-notice{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .status-right{flex:0 1 auto;min-width:0;max-width:76%;display:flex;align-items:center;gap:8px}
+  .viewport{position:relative;display:inline-block;min-width:0;max-width:100%;height:16px;vertical-align:middle;overflow:hidden;white-space:pre}
+  .viewport.glyph{overflow:visible;clip-path:inset(0)}
+  .text{position:relative;display:inline-block;white-space:pre}
+  .glyph-host{position:relative;display:inline-block;white-space:pre;clip-path:inset(0)}
+  .glyph-host .g{position:absolute;top:0;white-space:pre}
+  .glyph-host .anchor{visibility:hidden;white-space:pre}
+  .line{position:absolute;inset:0;display:block;white-space:pre;will-change:transform,opacity}
+  .line.prev{color:var(--fg-dim)}
+  .speed{
+    flex:0 0 auto;width:20px;height:20px;padding:0;display:inline-flex;align-items:center;justify-content:center;
+    border:1px solid var(--border);border-radius:5px;background:none;color:var(--fg-muted);cursor:default;
+  }
+  .speed svg{width:12px;height:12px}
+  .segments{display:inline-flex;gap:3px;flex:0 0 auto;align-items:center}
+  .segments i{display:block;width:10px;height:2px;border-radius:1px;background:var(--track)}
+  .segments i.on{background:var(--fg-muted)}
+  .counter{flex:0 0 auto;font:10px/1 var(--font-mono);color:var(--fg-dim)}
+  .dwell-line{position:absolute;left:0;bottom:0;height:1px;width:100%;transform:scaleX(0);transform-origin:left center;background:var(--fg-dim);opacity:.6;pointer-events:none}
+  .hint{position:absolute;inset:0;cursor:pointer}
+  .statusbar[data-paused="true"] .dwell-line{animation-play-state:paused}
+  footer{margin-top:20px;color:var(--fg-dim);font-size:11px;line-height:1.7}
+  @media (prefers-reduced-motion:reduce){ .dwell-line{display:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>Dev Mode 状态栏 · 底部信息轮播</h1>
+      <p>把 <code>clangd: … · clangd index … · Full speed</code> 这类多点信息改成一次只显示一条、自动轮播。四个方案共用同一组真实文案与状态栏样式，可直接对比切换手感。</p>
+    </div>
+    <div class="head-actions">
+      <button class="mini-btn" id="theme" type="button">切换 Light</button>
+      <button class="mini-btn" id="toggle" type="button">暂停全部</button>
+    </div>
+  </div>
+
+  <div class="notice">
+    <b>现状：</b>
+    <code>clangd: building preamble NFCharacter.cpp 11s (+1) · clangd index 34% 1200/3500 · Full speed</code>
+    <span>· 点任意一条状态文字可立即切到下一条；鼠标悬停规则由右侧参数控制。</span>
+  </div>
+
+  <section class="variant" data-variant="glyph">
+    <div class="variant-head">
+      <span class="variant-num">01</span>
+      <div><h2>逐字翻转 · Thinking 同款</h2><p>旧字上移淡出、新字从下方错峰浮入，容器宽度同步过渡；不加任何额外指示器。</p></div>
+      <span class="tag">最贴近现有 Thinking</span>
+    </div>
+    <div class="mock">
+      <div class="pane">
+        <div class="tabbar"><div class="tab"><span class="dot"></span>NFCharacter.cpp</div><div class="tab-sub">Dev Mode · Editor</div></div>
+        <div class="code"><span class="cm">// 逐字过渡：reasoningTitle 的节奏与曲线</span>
+<span class="kw">void</span> <span class="fn">BeginPlay</span>() {
+  <span class="ty">Super</span>::<span class="fn">BeginPlay</span>();
+  <span class="ty">Health</span> = <span class="st">100</span>;
+}</div>
+        <div class="statusbar">
+          <span class="status-notice"></span>
+          <span class="status-right"><span class="viewport glyph"><span class="text glyph-host"></span></span><span class="speed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-9 11h7l-1 9 9-11h-7l1-9Z"/></svg></span></span>
+          <span class="hint"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="variant" data-variant="glyph-slow">
+    <div class="variant-head">
+      <span class="variant-num">02</span>
+      <div><h2>逐字翻转 · 慢节奏 + 分段计数</h2><p>沿用逐字动画但放慢到 820ms，右侧用三段短线标出当前第几条（不是圆点）。</p></div>
+      <span class="tag">需要知道总共几条</span>
+    </div>
+    <div class="mock">
+      <div class="pane">
+        <div class="tabbar"><div class="tab"><span class="dot"></span>NFCharacter.cpp</div><div class="tab-sub">Dev Mode · Editor</div></div>
+        <div class="code"><span class="cm">// 同样的字级动画，停留更久，带位置提示</span>
+<span class="kw">void</span> <span class="fn">BeginPlay</span>() {
+  <span class="ty">Super</span>::<span class="fn">BeginPlay</span>();
+  <span class="ty">Health</span> = <span class="st">100</span>;
+}</div>
+        <div class="statusbar">
+          <span class="status-notice"></span>
+          <span class="status-right"><span class="segments"></span><span class="viewport glyph"><span class="text glyph-host"></span></span><span class="speed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-9 11h7l-1 9 9-11h-7l1-9Z"/></svg></span></span>
+          <span class="hint"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="variant" data-variant="line-up">
+    <div class="variant-head">
+      <span class="variant-num">03</span>
+      <div><h2>整行滚轮</h2><p>整条文字作为一个整体向上滚出、下一条从下方滚入；字不拆开，读起来最稳。</p></div>
+      <span class="tag">最轻量</span>
+    </div>
+    <div class="mock">
+      <div class="pane">
+        <div class="tabbar"><div class="tab"><span class="dot"></span>NFCharacter.cpp</div><div class="tab-sub">Dev Mode · Editor</div></div>
+        <div class="code"><span class="cm">// 单行遮罩滚动：旧行上移，新行下方进入</span>
+<span class="kw">void</span> <span class="fn">BeginPlay</span>() {
+  <span class="ty">Super</span>::<span class="fn">BeginPlay</span>();
+  <span class="ty">Health</span> = <span class="st">100</span>;
+}</div>
+        <div class="statusbar">
+          <span class="status-notice"></span>
+          <span class="status-right"><span class="viewport"><span class="text"></span></span><span class="counter"></span><span class="speed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-9 11h7l-1 9 9-11h-7l1-9Z"/></svg></span></span>
+          <span class="hint"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="variant" data-variant="slide">
+    <div class="variant-head">
+      <span class="variant-num">04</span>
+      <div><h2>横向滑入 + 停留进度线</h2><p>旧文字向左淡出、新文字从右侧带轻微模糊滑入；底部细线表示当前这条还剩多久。</p></div>
+      <span class="tag">轮播感最强</span>
+    </div>
+    <div class="mock">
+      <div class="pane">
+        <div class="tabbar"><div class="tab"><span class="dot"></span>NFCharacter.cpp</div><div class="tab-sub">Dev Mode · Editor</div></div>
+        <div class="code"><span class="cm">// 横向进场：位移 + 淡入 + 去模糊</span>
+<span class="kw">void</span> <span class="fn">BeginPlay</span>() {
+  <span class="ty">Super</span>::<span class="fn">BeginPlay</span>();
+  <span class="ty">Health</span> = <span class="st">100</span>;
+}</div>
+        <div class="statusbar">
+          <span class="status-notice"></span>
+          <span class="status-right"><span class="viewport"><span class="text"></span></span><span class="speed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-9 11h7l-1 9 9-11h-7l1-9Z"/></svg></span></span>
+          <span class="dwell-line"></span><span class="hint"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    实测文案取自 <code>formatClangdProgress()</code>。切换间隔与悬停行为可在右侧参数调整；页面自绘，无外部资源。
+  </footer>
+</div>
+
+<script>
+const MESSAGES = [
+  "clangd: loading index… 12s",
+  "clangd: building preamble NFCharacter.cpp 11s (+1)",
+  "clangd index 34% 1200/3500",
+  "Full speed",
+];
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let dwellMs = 3000;
+let hoverPause = true;
+let pausedAll = false;
+let token = 0;
+
+const runs = [...document.querySelectorAll(".variant")].map((section, order) => {
+  const bar = section.querySelector(".statusbar");
+  const host = section.querySelector(".glyph-host, .viewport:not(:has(.glyph-host)) .text") || section.querySelector(".text");
+  const segments = section.querySelector(".segments");
+  const counter = section.querySelector(".counter");
+  const dwellLine = section.querySelector(".dwell-line");
+  const kind = section.dataset.variant;
+  return { section, bar, host, segments, counter, dwellLine, kind, order, index: 0, timer: null, hovered: false, run: null };
+});
+
+function graphemes(text) {
+  if (typeof Intl.Segmenter === "function") return Array.from(new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text), x => x.segment);
+  return Array.from(text);
+}
+
+function measure(host, chars) {
+  const probe = host.ownerDocument.createElement("span");
+  probe.style.cssText = "position:absolute;visibility:hidden;white-space:pre;left:0;top:0;";
+  probe.setAttribute("aria-hidden", "true");
+  const letters = chars.map(ch => { const s = host.ownerDocument.createElement("span"); s.textContent = ch; probe.append(s); return s; });
+  host.append(probe);
+  const rect = probe.getBoundingClientRect();
+  const positions = letters.map(s => s.getBoundingClientRect().left - rect.left);
+  probe.remove();
+  return { width: rect.width, height: rect.height, positions };
+}
+
+function clearRun(run) {
+  if (!run.run) return;
+  const r = run.run;
+  run.run = null;
+  clearTimeout(r.timer);
+  for (const a of r.animations) a.cancel();
+}
+
+function settleGlyphs(run, id, text) {
+  if (run.run !== id) return;
+  clearRun(run);
+  run.host.textContent = text;
+  run.host.style.removeProperty("width");
+  run.host.style.removeProperty("height");
+}
+
+function rollGlyphs(run, text, duration) {
+  const previous = run.host.textContent ?? "";
+  if (previous === text) return;
+  clearRun(run);
+  if (reduceMotion || typeof run.host.animate !== "function" || !previous) {
+    run.host.textContent = text;
+    return;
+  }
+  const before = graphemes(previous);
+  const after = graphemes(text);
+  const oldLayout = measure(run.host, before);
+  const newLayout = measure(run.host, after);
+  if (!oldLayout.width || !newLayout.width || !oldLayout.height) { run.host.textContent = text; return; }
+  const id = { animations: [], timer: null };
+  run.run = id;
+  run.host.textContent = "";
+  run.host.style.width = oldLayout.width + "px";
+  run.host.style.height = oldLayout.height + "px";
+  const anchor = run.host.ownerDocument.createElement("span");
+  anchor.className = "anchor";
+  anchor.textContent = "\u200b";
+  run.host.append(anchor);
+  const count = Math.max(before.length, after.length);
+  const charDuration = duration * .66;
+  for (let i = 0; i < count; i++) {
+    const delay = count > 1 ? (i / (count - 1)) * duration * .34 : 0;
+    if (before[i]) {
+      const el = run.host.ownerDocument.createElement("span");
+      el.className = "g";
+      el.textContent = before[i];
+      el.style.left = oldLayout.positions[i] + "px";
+      run.host.append(el);
+      id.animations.push(el.animate([
+        { transform: "translateY(0)", opacity: 1, filter: "blur(0px)" },
+        { transform: "translateY(-13px)", opacity: 0, filter: "blur(1px)" },
+      ], { duration: charDuration, delay, easing: "cubic-bezier(.3,0,.3,1)", fill: "both" }));
+    }
+    if (after[i]) {
+      const el = run.host.ownerDocument.createElement("span");
+      el.className = "g";
+      el.textContent = after[i];
+      el.style.left = newLayout.positions[i] + "px";
+      run.host.append(el);
+      id.animations.push(el.animate([
+        { transform: "translateY(13px)", opacity: 0, filter: "blur(1px)" },
+        { transform: "translateY(0)", opacity: 1, filter: "blur(0px)" },
+      ], { duration: charDuration, delay, easing: "cubic-bezier(.22,.8,.25,1)", fill: "both" }));
+    }
+  }
+  id.animations.push(run.host.animate([
+    { width: oldLayout.width + "px" }, { width: newLayout.width + "px" },
+  ], { duration, easing: "cubic-bezier(.22,.8,.25,1)", fill: "both" }));
+  id.timer = setTimeout(() => settleGlyphs(run, id, text), duration + 80);
+  Promise.allSettled(id.animations.map(a => a.finished)).then(() => settleGlyphs(run, id, text));
+}
+
+function rollOneLine(run, text, horizontal) {
+  clearRun(run);
+  if (reduceMotion || typeof run.host.animate !== "function") { run.host.textContent = text; return; }
+  const previous = run.host.textContent ?? "";
+  const out = run.host.ownerDocument.createElement("span");
+  out.className = "line prev";
+  out.textContent = previous;
+  const incoming = run.host.ownerDocument.createElement("span");
+  incoming.className = "line";
+  incoming.textContent = text;
+  run.host.replaceChildren(out, incoming);
+  const duration = horizontal ? 620 : 520;
+  const id = { animations: [], timer: null };
+  run.run = id;
+  const easing = "cubic-bezier(.22,.8,.25,1)";
+  id.animations.push(out.animate(
+    horizontal
+      ? [{ transform: "translateX(0)", opacity: 1, filter: "blur(0px)" }, { transform: "translateX(-16px)", opacity: 0, filter: "blur(2px)" }]
+      : [{ transform: "translateY(0)", opacity: 1 }, { transform: "translateY(-100%)", opacity: 0 }],
+    { duration, easing, fill: "both" }
+  ));
+  id.animations.push(incoming.animate(
+    horizontal
+      ? [{ transform: "translateX(16px)", opacity: 0, filter: "blur(2px)" }, { transform: "translateX(0)", opacity: 1, filter: "blur(0px)" }]
+      : [{ transform: "translateY(100%)", opacity: 0 }, { transform: "translateY(0)", opacity: 1 }],
+    { duration, easing, fill: "both" }
+  ));
+  id.timer = setTimeout(() => settleGlyphs(run, id, text), duration + 60);
+  Promise.allSettled(id.animations.map(a => a.finished)).then(() => settleGlyphs(run, id, text));
+}
+
+function showProgress(run) {
+  run.host.dataset.current = MESSAGES[run.index];
+  if (run.segments) {
+    [...run.segments.children].forEach((el, i) => el.classList.toggle("on", i === run.index));
+  }
+  if (run.counter) run.counter.textContent = `${run.index + 1}/${MESSAGES.length}`;
+  if (run.dwellLine && !reduceMotion) {
+    run.dwellAnim?.cancel();
+    run.dwellAnim = run.dwellLine.animate(
+      [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }],
+      { duration: dwellMs, easing: "linear", fill: "none" }
+    );
+    if (pausedAll || run.hovered) run.dwellAnim.pause();
+  }
+}
+
+function advance(run) {
+  run.index = (run.index + 1) % MESSAGES.length;
+  const text = MESSAGES[run.index];
+  if (run.kind === "glyph") rollGlyphs(run, text, 620);
+  else if (run.kind === "glyph-slow") rollGlyphs(run, text, 820);
+  else if (run.kind === "line-up") rollOneLine(run, text, false);
+  else rollOneLine(run, text, true);
+  showProgress(run);
+  schedule(run);
+}
+
+function schedule(run) {
+  clearTimeout(run.timer);
+  if (pausedAll || run.hovered) {
+    run.bar.dataset.paused = "true";
+    run.dwellAnim?.pause();
+    return;
+  }
+  delete run.bar.dataset.paused;
+  run.dwellAnim?.play();
+  run.timer = setTimeout(() => advance(run, false), dwellMs);
+}
+
+function render(run, text) {
+  clearRun(run);
+  run.host.textContent = text;
+  showProgress(run);
+}
+
+function restart() {
+  token++;
+  for (const run of runs) {
+    clearTimeout(run.timer);
+    run.index = 0;
+    render(run, MESSAGES[0]);
+    run.hovered = false;
+    delete run.bar.dataset.paused;
+    run.timer = setTimeout(() => advance(run), dwellMs + run.order * 160);
+  }
+}
+
+for (const run of runs) {
+  if (run.segments) {
+    for (let i = 0; i < MESSAGES.length; i++) run.segments.append(document.createElement("i"));
+  }
+  run.bar.addEventListener("mouseenter", () => {
+    run.hovered = true;
+    if (hoverPause) { clearTimeout(run.timer); run.bar.dataset.paused = "true"; run.dwellAnim?.pause(); }
+  });
+  run.bar.addEventListener("mouseleave", () => {
+    run.hovered = false;
+    if (!hoverPause) return;
+    delete run.bar.dataset.paused;
+    run.dwellAnim?.play();
+    run.timer = setTimeout(() => advance(run), dwellMs);
+  });
+  run.section.querySelector(".hint").addEventListener("click", () => advance(run));
+}
+
+document.getElementById("theme").addEventListener("click", event => {
+  const root = document.documentElement;
+  const next = root.dataset.theme === "dark" ? "light" : "dark";
+  root.dataset.theme = next;
+  event.currentTarget.textContent = next === "dark" ? "切换 Light" : "切换 Dark";
+});
+document.getElementById("toggle").addEventListener("click", event => {
+  pausedAll = !pausedAll;
+  event.currentTarget.textContent = pausedAll ? "继续全部" : "暂停全部";
+  if (pausedAll) for (const run of runs) { clearTimeout(run.timer); run.bar.dataset.paused = "true"; run.dwellAnim?.pause(); }
+  else for (const run of runs) { delete run.bar.dataset.paused; run.dwellAnim?.play(); run.timer = setTimeout(() => advance(run), dwellMs); }
+});
+
+window.addEventListener("message", event => {
+  if (event.data?.type !== "jellybot-demo-params") return;
+  const values = event.data.values || {};
+  if (typeof values.dwellSeconds === "number") dwellMs = values.dwellSeconds * 1000;
+  if (typeof values.hoverBehavior === "string") hoverPause = values.hoverBehavior !== "继续轮播";
+  restart();
+});
+
+restart();
+document.documentElement.dataset.demoProbe = `variants=${runs.length};messages=${MESSAGES.length};ready`;
+</script>
+</body>
+</html>

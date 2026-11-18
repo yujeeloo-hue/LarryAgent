@@ -1,0 +1,20 @@
+# Normalize to LF in the repo and in the working tree on every platform, so
+# Windows checkouts do not rewrite build output (relay/public) as CRLF.
+* text=auto eol=lf
+
+# Binaries git should never touch.
+*.png binary
+*.ico binary
+*.icns binary
+*.bmp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.node binary
+*.exe binary
+*.dll binary
+*.dmg binary

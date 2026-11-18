@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-off="dim">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Detail · Log 单行工具栏（尺寸不变 + 自绘下拉）</title>
+<style>
+  :root[data-theme="dark"]{
+    --page:#0b0c0e; --drawer:#141517; --menu-bg:#1b1c1e; --drawer-edge:rgba(255,255,255,.07);
+    --fg:#e8e8e8; --muted:#9a9a9a; --dim:#6a6a6a;
+    --border:rgba(255,255,255,.07); --field:rgba(255,255,255,.05);
+    /* 控件描边专用：--border 在 Dark 下只有 4.5~7% 白，1px 几乎看不见 */
+    --btn-line:rgba(255,255,255,.10); --btn-line-hover:rgba(255,255,255,.20);
+    --btn-fill:rgba(255,255,255,.04);
+    --hover:rgba(255,255,255,.07); --active:rgba(255,255,255,.11);
+    --accent:#00e5ff;
+    --danger-wash:rgba(248,81,73,.16); --danger-ink:#ff8580;
+    --row-line:rgba(255,255,255,.035);
+    --lv-debug:#4b515b; --lv-debug-ink:#e8ecf2; --lv-debug-tint:#aab2bd;
+    --lv-info:#0e7490;  --lv-info-ink:#eafcff;  --lv-info-tint:#67d3e8;
+    --lv-warn:#a16207;  --lv-warn-ink:#fff8e6;  --lv-warn-tint:#e8b23c;
+    --lv-error:#b91c1c; --lv-error-ink:#fff0f0; --lv-error-tint:#f08a8a;
+    --on-edge:inset 0 0 0 1px rgba(255,255,255,.10);
+    --chip-shadow:none; --menu-shadow:0 12px 32px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.30);
+  }
+  :root[data-theme="light"]{
+    --page:#e9edf2; --drawer:#ffffff; --menu-bg:#ffffff; --drawer-edge:rgba(15,30,50,.10);
+    --fg:#16191d; --muted:#5f6b76; --dim:#8695a3;
+    --border:rgba(15,30,50,.10); --field:#ffffff;
+    --btn-line:rgba(0,0,0,.10); --btn-line-hover:rgba(0,0,0,.20);
+    --btn-fill:#ffffff;
+    --hover:#eef4fa; --active:#e4eefa;
+    --accent:#0a6fd8;
+    --danger-wash:#fdeaea; --danger-ink:#c02626;
+    --row-line:rgba(15,30,50,.05);
+    --lv-debug:#64748b; --lv-debug-ink:#ffffff; --lv-debug-tint:#475569;
+    --lv-info:#0e7490;  --lv-info-ink:#ffffff;  --lv-info-tint:#0e7490;
+    --lv-warn:#f59e0b;  --lv-warn-ink:#3b2300;  --lv-warn-tint:#b45309;
+    --lv-error:#dc2626; --lv-error-ink:#ffffff; --lv-error-tint:#b91c1c;
+    --on-edge:inset 0 0 0 1px rgba(0,0,0,.07);
+    --chip-shadow:0 1px 2px rgba(15,30,50,.10);
+    --menu-shadow:0 12px 32px rgba(15,30,50,.18), 0 2px 8px rgba(15,30,50,.10);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--page); color:var(--fg);
+    font-family:"Segoe UI","SF Pro Text","Inter",system-ui,-apple-system,sans-serif;
+    font-size:13px; -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column; align-items:center;
+    padding:16px 14px 22px; gap:12px;
+    transition:background .18s,color .18s;
+  }
+
+  /* ---------- demo controls ---------- */
+  .controls{display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:center; width:100%}
+  .ctl{display:flex; align-items:center; gap:7px}
+  .ctl>span{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:700}
+  .seg{display:inline-flex; padding:2px; gap:2px; border-radius:8px; background:var(--field); box-shadow:inset 0 0 0 1px var(--border)}
+  .seg button{
+    appearance:none; border:0; background:transparent; color:var(--muted);
+    font:600 11.5px/1 inherit; font-family:inherit; padding:5px 9px; border-radius:6px; cursor:pointer;
+    white-space:nowrap;
+  }
+  .seg button:hover{color:var(--fg)}
+  .seg button.is-on{background:var(--active); color:var(--fg); box-shadow:var(--chip-shadow)}
+
+  /* ---------- mock drawer ---------- */
+  .host{width:100%; display:flex; justify-content:center}
+  .drawer{
+    width:100%; max-width:1120px; height:420px;
+    display:flex; flex-direction:column;
+    background:var(--drawer); border-radius:10px;
+    box-shadow:0 0 0 1px var(--drawer-edge), 0 10px 30px rgba(0,0,0,.18);
+    overflow:hidden; container-type:inline-size;
+    transition:max-width .18s ease;
+  }
+  .host[data-w="mid"] .drawer{max-width:860px}
+  .host[data-w="narrow"] .drawer{max-width:620px}
+
+  .chrome{display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-bottom:1px solid var(--border); flex:0 0 auto}
+  .tabs{display:flex; gap:2px}
+  .tab{display:inline-flex; align-items:center; gap:6px; border:0; background:transparent; color:var(--muted); font:550 12px/1 inherit; font-family:inherit; padding:5px 9px; border-radius:6px; cursor:default}
+  .tab .dot{width:7px; height:7px; border-radius:2px; background:currentColor; opacity:.55}
+  .tab.is-active{color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent)}
+  .tab.is-active .dot{opacity:1; background:var(--accent)}
+  .xbtn{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border:0; border-radius:5px; background:transparent; color:var(--muted); cursor:default}
+  .xbtn:hover{background:var(--hover); color:var(--fg)}
+
+  /* ---------- toolbar: single row, app-native control sizes ---------- */
+  .tb{display:flex; align-items:center; gap:8px; padding:6px 12px; border-bottom:1px solid var(--border); flex:0 0 auto; min-width:0}
+  .tb-left{display:flex; align-items:center; gap:8px; min-width:0; flex:1 1 auto}
+  .tb-right{display:flex; align-items:center; gap:6px; flex:0 0 auto}
+  .rule{width:1px; height:16px; background:var(--border); flex:0 0 auto; margin:0 2px}
+
+  /* level chips — solid fills, sizes = log-drawer.css (3px 7px / 10px) */
+  .levels{display:flex; align-items:center; gap:4px; flex:0 0 auto}
+  .chip{
+    --fill:var(--lv-debug); --ink:var(--lv-debug-ink); --tint:var(--lv-debug-tint);
+    appearance:none; border:1px solid transparent; border-radius:5px;
+    display:inline-flex; align-items:center; height:24px; padding:0 7px; font-family:inherit;
+    font-size:10px; font-weight:600; letter-spacing:.03em; text-transform:uppercase;
+    line-height:1; cursor:pointer; white-space:nowrap;
+    background:var(--fill); color:var(--ink); box-shadow:var(--chip-shadow);
+    transition:background .12s, color .12s, opacity .12s, box-shadow .12s, filter .12s;
+  }
+  .chip.lv-debug{--fill:var(--lv-debug); --ink:var(--lv-debug-ink); --tint:var(--lv-debug-tint)}
+  .chip.lv-info {--fill:var(--lv-info);  --ink:var(--lv-info-ink);  --tint:var(--lv-info-tint)}
+  .chip.lv-warn {--fill:var(--lv-warn);  --ink:var(--lv-warn-ink);  --tint:var(--lv-warn-tint)}
+  .chip.lv-error{--fill:var(--lv-error); --ink:var(--lv-error-ink); --tint:var(--lv-error-tint)}
+  .chip.is-on{box-shadow:var(--on-edge), var(--chip-shadow)}
+  .chip.is-on:hover{filter:brightness(1.08)}
+  .chip.is-on:active{filter:brightness(.94)}
+
+  :root[data-off="dim"] .chip:not(.is-on){opacity:.30; box-shadow:none}
+  :root[data-off="dim"] .chip:not(.is-on):hover{opacity:.55}
+  :root[data-off="wash"] .chip:not(.is-on){
+    background:color-mix(in srgb, var(--fill) 16%, transparent);
+    color:var(--tint);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--fill) 38%, transparent);
+  }
+  :root[data-off="wash"] .chip:not(.is-on):hover{background:color-mix(in srgb, var(--fill) 26%, transparent)}
+  :root[data-off="ghost"] .chip:not(.is-on){
+    background:transparent; color:var(--dim);
+    box-shadow:inset 0 0 0 1px var(--border);
+  }
+  :root[data-off="ghost"] .chip:not(.is-on):hover{background:var(--hover); color:var(--fg)}
+
+  /* ---------- app-styled dropdown (same metrics as .log-drawer-filter-select) ---------- */
+  .dd{position:relative; flex:0 0 auto}
+  .dd-btn{
+    display:inline-flex; align-items:center; gap:5px;
+    padding:4px 6px 4px 8px; border:1px solid var(--btn-line); border-radius:5px;
+    background:var(--btn-fill); color:var(--fg);
+    font:500 11px/1.2 inherit; font-family:inherit; cursor:pointer; outline:none;
+    transition:border-color .12s, background .12s;
+  }
+  .dd-btn:hover{border-color:color-mix(in srgb, var(--accent) 32%, transparent)}
+  .dd-btn[aria-expanded="true"]{border-color:color-mix(in srgb, var(--accent) 46%, transparent)}
+  .dd-btn:focus-visible{outline:2px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:1px}
+  .dd-lead{display:inline-flex; flex:none; color:var(--muted)}
+  .dd-chev{display:inline-flex; flex:none; color:var(--muted); transition:transform .14s ease}
+  .dd-btn[aria-expanded="true"] .dd-chev{transform:rotate(180deg)}
+  .dd-menu{
+    position:fixed; z-index:60; min-width:150px; padding:4px;
+    background:var(--menu-bg); border:1px solid var(--border); border-radius:8px;
+    box-shadow:var(--menu-shadow);
+  }
+  .dd-opt{
+    display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:6px;
+    font-size:12px; color:var(--fg); cursor:pointer; white-space:nowrap; outline:none;
+  }
+  .dd-opt:hover,.dd-opt.is-active{background:var(--hover)}
+  .dd-check{display:inline-flex; flex:none; width:13px; color:var(--accent); visibility:hidden}
+  .dd-opt[aria-selected="true"] .dd-check{visibility:visible}
+  .dd-opt[aria-selected="true"] .dd-label{color:var(--accent); font-weight:600}
+
+  .search{
+    flex:1 1 auto; min-width:70px;
+    border:1px solid var(--btn-line); border-radius:5px; background:var(--btn-fill);
+    color:var(--fg); font:400 11px/1.2 inherit; font-family:inherit;
+    padding:4px 8px; outline:none; transition:border-color .12s;
+  }
+  .search::placeholder{color:var(--dim)}
+  .search:focus-visible{border-color:var(--accent)}
+
+  .metrics{display:flex; align-items:center; gap:6px; flex:0 0 auto; color:var(--fg); font-size:12px; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .metrics b{color:var(--muted); font-size:10px; font-weight:600; letter-spacing:.02em; text-transform:uppercase; margin-right:4px}
+  .metrics .dotsep{color:var(--dim); margin:0 2px}
+
+  /* icon-only actions — Lucide glyphs at 14px inside the existing 24px btn,
+   * keeping the same 1px frame + 5px radius as the select/search controls */
+  .iconbtn{
+    display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px;
+    border:1px solid var(--btn-line); border-radius:5px; background:var(--btn-fill);
+    color:var(--muted); cursor:pointer; padding:0;
+    transition:background .12s, color .12s, border-color .12s;
+  }
+  .iconbtn:hover{
+    background:var(--hover); color:var(--fg);
+    border-color:color-mix(in srgb, var(--fg) 20%, transparent);
+  }
+  .iconbtn.is-danger{
+    color:var(--danger-ink);
+    border-color:color-mix(in srgb, var(--danger-ink) 36%, transparent);
+  }
+  .iconbtn.is-danger:hover{
+    background:var(--danger-wash);
+    border-color:color-mix(in srgb, var(--danger-ink) 58%, transparent);
+  }
+  .iconbtn[aria-pressed="true"]{
+    background:color-mix(in srgb, var(--accent) 16%, transparent);
+    color:var(--accent);
+    border-color:color-mix(in srgb, var(--accent) 48%, transparent);
+  }
+
+  /* ---------- legacy two-row header, for comparison (same control sizes) ---------- */
+  .tb-cur{flex:0 0 auto; border-bottom:1px solid var(--border)}
+  .tb-cur .hdr{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 12px; border-bottom:1px solid var(--border)}
+  .tb-cur .filt{display:flex; align-items:center; gap:8px; padding:6px 12px; min-width:0}
+  .tb-cur .acts{display:flex; align-items:center; gap:6px}
+  .tb-cur .chip{
+    background:transparent; color:var(--tint); opacity:.45; box-shadow:none;
+    border:1px solid var(--border);
+  }
+  .tb-cur .chip.is-on{opacity:1; background:var(--active); box-shadow:none; border-color:color-mix(in srgb, var(--fill) 45%, transparent)}
+  .tb-cur .chip.is-on:hover{background:var(--hover)}
+
+  /* ---------- log rows ---------- */
+  .rows{flex:1 1 auto; min-height:0; overflow:auto; font-family:var(--font-mono,ui-monospace,"Cascadia Mono","JetBrains Mono",monospace); font-size:11px; line-height:1.45}
+  .r{display:grid; grid-template-columns:64px 44px 68px 1fr; gap:8px; padding:3px 12px; color:var(--muted)}
+  .r:nth-child(even){background:var(--row-line)}
+  .r .t{font-variant-numeric:tabular-nums}
+  .r .l{font-size:10px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; align-self:center}
+  .r .s{color:var(--dim)}
+  .r .m{color:var(--fg); white-space:pre-wrap; word-break:break-word}
+  .r.level-debug .l{color:var(--lv-debug-tint)}
+  .r.level-info  .l{color:var(--lv-info-tint)}
+  .r.level-warn  .l{color:var(--lv-warn-tint)}
+  .r.level-error .l{color:var(--lv-error-tint)}
+  .r.level-error .m{color:var(--danger-ink)}
+
+  .note{font-size:11.5px; color:var(--muted); text-align:center; max-width:800px; line-height:1.6}
+
+  /* narrow drawer: fold low-priority items, never resize the controls */
+  @container (max-width: 800px){
+    .tb .fullreq{display:none}
+  }
+  @container (max-width: 700px){
+    .tb .m-secondary, .tb .rule{display:none}
+  }
+  @container (max-width: 600px){
+    .tb .metrics{display:none}
+    .tb{gap:6px}
+    .tb-left{gap:6px}
+  }
+  @container (max-width: 540px){
+    .dd-label{display:none}   /* icon-only source trigger */
+    .dd-btn{padding:4px 5px}
+  }
+
+  /* Timeline 参照条：同一抽屉里的 text 型动作按钮，共用 --btn-line 强度 */
+  .tlref{
+    display:flex; align-items:center; gap:8px; padding:4px 10px; min-height:34px;
+    margin:0 0 10px;
+    background:var(--drawer); border:1px solid var(--drawer-edge); border-radius:8px;
+  }
+  .tlref .lbl{color:var(--muted); font-size:10px; font-weight:600; letter-spacing:.04em; text-transform:uppercase}
+  .tlref .sp{flex:1 1 auto}
+  .tlbtn{
+    display:inline-flex; align-items:center; justify-content:center; width:26px; height:24px;
+    border:1px solid var(--btn-line); border-radius:5px; background:var(--btn-fill);
+    color:var(--muted); cursor:pointer; padding:0;
+  }
+  .tlbtn:hover{color:var(--fg); border-color:var(--btn-line-hover); background:var(--hover)}
+  .tlbtn.txt{width:auto; padding:0 8px; font-size:11px; font-weight:500; gap:5px}
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <div class="ctl"><span>Theme</span>
+    <div class="seg" id="segTheme">
+      <button data-v="dark" class="is-on">Dark</button>
+      <button data-v="light">Light</button>
+    </div>
+  </div>
+  <div class="ctl"><span>Layout</span>
+    <div class="seg" id="segLayout">
+      <button data-v="A" class="is-on">A 过滤优先</button>
+      <button data-v="B">B 指标优先</button>
+      <button data-v="C">C 紧凑溢出</button>
+      <button data-v="cur">当前两行</button>
+    </div>
+  </div>
+  <div class="ctl"><span>Off state</span>
+    <div class="seg" id="segOff">
+      <button data-v="dim" class="is-on">实心减淡</button>
+      <button data-v="wash">浅底</button>
+      <button data-v="ghost">描边</button>
+    </div>
+  </div>
+  <div class="ctl"><span>Width</span>
+    <div class="seg" id="segW">
+      <button data-v="wide" class="is-on">宽 1120</button>
+      <button data-v="mid">中 860</button>
+      <button data-v="narrow">窄 620</button>
+    </div>
+  </div>
+</div>
+
+<div class="tlref">
+  <span class="lbl">Timeline 参照</span>
+  <span class="sp"></span>
+  <button class="tlbtn" title="Toggle panel height" aria-label="Toggle panel height"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></button>
+  <button class="tlbtn" title="Refresh" aria-label="Refresh"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button>
+  <button class="tlbtn" title="Export timeline as JSON" aria-label="Export"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg></button>
+  <button class="tlbtn" title="Import timeline JSON" aria-label="Import"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg></button>
+</div>
+<div class="host" data-w="wide">
+  <div class="drawer">
+    <div class="chrome">
+      <div class="tabs">
+        <button class="tab"><i class="dot"></i>Timeline</button>
+        <button class="tab"><i class="dot"></i>FSM</button>
+        <button class="tab is-active"><i class="dot"></i>Log</button>
+        <button class="tab"><i class="dot"></i>Tools</button>
+      </div>
+      <button class="xbtn" aria-label="Close detail panel">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div id="tbHost"></div>
+    <div class="rows" id="rows"></div>
+  </div>
+</div>
+
+<p class="note" id="note"></p>
+
+<script>
+const state = { theme:"dark", layout:"A", off:"dim", width:"wide", source:"all" };
+
+const LEVELS = [
+  { k:"debug", on:true }, { k:"info", on:true }, { k:"warn", on:true },
+  { k:"error", on:false },
+];
+
+const SOURCE_OPTIONS = [
+  { value:"all",      short:"All",      label:"All sources" },
+  { value:"main",     short:"Main",     label:"Main process" },
+  { value:"renderer", short:"Renderer", label:"Renderer process" },
+];
+
+const ROWS = [
+  ["14:22:01","debug","renderer","worker pool ready (4 threads, warm)"],
+  ["14:22:03","info","main","session opened · ws_9f2c · claude-sonnet-4.6"],
+  ["14:22:04","info","main","prompt tokens 12,480 / 200,000 (6%)"],
+  ["14:22:06","warn","renderer","clangd cold start 4.8s — falling back to text index"],
+  ["14:22:09","info","main","tool run_dev_task build → exit 0 (38.2s)"],
+  ["14:22:11","debug","main","git backgroundFetch: 0 refs updated"],
+  ["14:22:12","error","main","push rejected (non-fast-forward) — retry queued"],
+  ["14:22:13","warn","renderer","heap 412 MB above soft cap"],
+  ["14:22:15","info","main","stream closed · 1,842 tokens · 3.1s"],
+  ["14:22:18","debug","main","tool catalog refreshed (24 entries)"],
+];
+
+const ICON = {
+  filter:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54z"/></svg>`,
+  chev:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
+  check:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
+  /* Detail 面板统一用原版 Lucide（ui/originalIcons.ts） */
+  download:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>`,
+  /* Folder 没有重制稿 → Lucide 原图 */
+  folder:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`,
+  trash:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`,
+  /* Braces 没有重制稿 → Lucide 原图 */
+  braces:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg>`,
+  dots:`<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg>`,
+};
+
+function levelsHTML(){
+  return `<div class="levels" role="group" aria-label="Levels">${
+    LEVELS.map(l => `<button class="chip lv-${l.k}${l.on ? " is-on" : ""}" data-level="${l.k}" aria-pressed="${l.on}">${l.k}</button>`).join("")
+  }</div>`;
+}
+
+function sourceHTML(){
+  const current = SOURCE_OPTIONS.find(o => o.value === state.source);
+  return `<div class="dd" id="sourceDd">
+    <button class="dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false" title="Source: ${current.label}">
+      <span class="dd-lead">${ICON.filter}</span>
+      <span class="dd-label" id="sourceLabel">${current.short}</span>
+      <span class="dd-chev">${ICON.chev}</span>
+    </button>
+    <div class="dd-menu" role="listbox" aria-label="Source" hidden>
+      ${SOURCE_OPTIONS.map(o => `<div class="dd-opt" role="option" data-value="${o.value}" aria-selected="${o.value === state.source}">
+        <span class="dd-check">${ICON.check}</span><span class="dd-label">${o.label}</span>
+      </div>`).join("")}
+    </div>
+  </div>`;
+}
+
+const searchHTML = `<input class="search" type="search" placeholder="Filter keyword" aria-label="Filter keyword" />`;
+const fullreqHTML = `<button class="iconbtn fullreq" type="button" aria-pressed="false" aria-label="Write full request bodies" title="Write full LLM request bodies to logs/llm-requests-YYYY-MM-DD.jsonl">${ICON.braces}</button>`;
+const metricsHTML = `<span class="metrics"><span><b>CPU</b>12%</span><span class="dotsep">·</span><span class="m-secondary"><b>MEM</b>236 MB</span></span>`;
+function actionIconsHTML(folder = true, rule = true){
+  return `${rule ? '<span class="rule"></span>' : ""}
+    <button class="iconbtn" type="button" aria-label="Save logs" title="Save logs to file">${ICON.download}</button>
+    ${folder ? `<button class="iconbtn" type="button" aria-label="Open log folder" title="Open log folder">${ICON.folder}</button>` : ""}
+    <button class="iconbtn is-danger" type="button" aria-label="Clear logs" title="Clear logs">${ICON.trash}</button>`;
+}
+
+function toolbarHTML(layout){
+  if (layout === "cur") {
+    return `<div class="tb-cur">
+      <div class="hdr">${metricsHTML}<div class="acts">${actionIconsHTML(true, false)}</div></div>
+      <div class="filt">${levelsHTML()}${sourceHTML()}${searchHTML}${fullreqHTML}</div>
+    </div>`;
+  }
+  if (layout === "B") {
+    return `<div class="tb">
+      ${metricsHTML}<span class="rule"></span>
+      <div class="tb-left">${levelsHTML()}${sourceHTML()}${searchHTML}${fullreqHTML}</div>
+      <div class="tb-right">${actionIconsHTML(true, false)}</div>
+    </div>`;
+  }
+  if (layout === "C") {
+    return `<div class="tb">
+      <div class="tb-left">${levelsHTML()}${sourceHTML()}${searchHTML}</div>
+      <div class="tb-right">
+        ${metricsHTML}<span class="rule"></span>
+        ${actionIconsHTML(false, false)}
+        <button class="iconbtn" aria-label="More" title="More">${ICON.dots}</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="tb">
+    <div class="tb-left">${levelsHTML()}${sourceHTML()}${searchHTML}${fullreqHTML}</div>
+    <div class="tb-right">${metricsHTML}${actionIconsHTML(true, true)}</div>
+  </div>`;
+}
+
+const NOTES = {
+  A:"A · 过滤优先：级别 → 来源（自绘下拉）→ 关键字（吃剩余宽度）→ Full request ｜ 右侧 CPU/MEM + Save/Folder/Clear 图标。",
+  B:"B · 指标优先：CPU/MEM 在最左（与现状位置一致），中间过滤组，右侧图标动作组。",
+  C:"C · 紧凑溢出：只留级别 / 来源 / 关键字 + Save / Clear 图标，Folder 与 Full request 收进 ⋯。",
+  cur:"当前两行：指标+动作一行、过滤一行。控件尺寸与 app 一致（chips 3×7/10px，图标按钮 24×24）。",
+};
+
+let openDd = null;
+function closeDd(){
+  if (!openDd) return;
+  openDd.menu.hidden = true;
+  openDd.btn.setAttribute("aria-expanded","false");
+  openDd = null;
+}
+function wireDropdown(){
+  const dd = document.getElementById("sourceDd");
+  if (!dd) return;
+  const btn = dd.querySelector(".dd-btn");
+  const menu = dd.querySelector(".dd-menu");
+  btn.addEventListener("click", () => {
+    if (openDd && openDd.menu === menu) { closeDd(); return; }
+    closeDd();
+    menu.hidden = false;
+    btn.setAttribute("aria-expanded","true");
+    const r = btn.getBoundingClientRect();
+    menu.style.minWidth = `${Math.round(r.width)}px`;
+    menu.style.left = `${Math.round(Math.min(r.left, window.innerWidth - menu.offsetWidth - 8))}px`;
+    const h = menu.offsetHeight;
+    const below = window.innerHeight - r.bottom;
+    menu.style.top = below < h + 8 && r.top > h + 8
+      ? `${Math.round(r.top - h - 5)}px`
+      : `${Math.round(r.bottom + 5)}px`;
+    openDd = { btn, menu };
+  });
+  for (const opt of menu.querySelectorAll(".dd-opt")) {
+    opt.addEventListener("click", () => {
+      state.source = opt.dataset.value;
+      const chosen = SOURCE_OPTIONS.find(o => o.value === state.source);
+      dd.querySelector("#sourceLabel").textContent = chosen.short;
+      btn.title = `Source: ${chosen.label}`;
+      for (const other of menu.querySelectorAll(".dd-opt")) {
+        other.setAttribute("aria-selected", String(other.dataset.value === state.source));
+      }
+      closeDd();
+    });
+  }
+}
+document.addEventListener("pointerdown", (e) => {
+  if (!openDd) return;
+  if (!openDd.menu.contains(e.target) && !openDd.btn.contains(e.target)) closeDd();
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDd(); });
+window.addEventListener("resize", closeDd);
+
+function render(){
+  closeDd();
+  document.documentElement.dataset.theme = state.theme;
+  document.documentElement.dataset.off = state.off;
+  document.querySelector(".host").dataset.w = state.width;
+  document.getElementById("tbHost").innerHTML = toolbarHTML(state.layout);
+  document.getElementById("rows").innerHTML = ROWS.map(([t,l,s,m]) =>
+    `<div class="r level-${l}"><span class="t">${t}</span><span class="l">${l}</span><span class="s">${s}</span><span class="m">${m}</span></div>`
+  ).join("");
+  document.getElementById("note").textContent = NOTES[state.layout];
+
+  for (const btn of document.querySelectorAll("#tbHost .chip")) {
+    btn.addEventListener("click", () => {
+      const on = btn.classList.toggle("is-on");
+      btn.setAttribute("aria-pressed", String(on));
+    });
+  }
+  const fullreq = document.querySelector("#tbHost .fullreq");
+  if (fullreq) fullreq.addEventListener("click", () => {
+    fullreq.setAttribute(
+      "aria-pressed",
+      fullreq.getAttribute("aria-pressed") === "true" ? "false" : "true",
+    );
+  });
+  wireDropdown();
+}
+
+function wire(id, key){
+  document.getElementById(id).addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-v]");
+    if (!btn) return;
+    state[key] = btn.dataset.v;
+    for (const b of btn.parentElement.querySelectorAll("button")) b.classList.toggle("is-on", b === btn);
+    render();
+  });
+}
+wire("segTheme","theme"); wire("segLayout","layout"); wire("segOff","off"); wire("segW","width");
+
+const LAYOUT_PARAM = {
+  "A: filters first": "A",
+  "B: metrics first": "B",
+  "C: compact + overflow": "C",
+  "Keep the current two rows": "cur",
+};
+const OFF_PARAM = { "Dimmed solid": "dim", "Tinted wash": "wash", "Ghost outline": "ghost" };
+
+window.addEventListener("message", (e) => {
+  if (e.data?.type !== "jellybot-demo-params") return;
+  const v = e.data.values || {};
+  if (LAYOUT_PARAM[v.layout]) state.layout = LAYOUT_PARAM[v.layout];
+  if (OFF_PARAM[v.offState]) state.off = OFF_PARAM[v.offState];
+  for (const [id, key, map] of [["segLayout","layout",LAYOUT_PARAM],["segOff","off",OFF_PARAM]]) {
+    const active = state[key];
+    for (const b of document.querySelectorAll("#" + id + " button")) {
+      const mapped = map[b.textContent.trim()] ?? b.dataset.v;
+      b.classList.toggle("is-on", mapped === active);
+    }
+  }
+  render();
+});
+
+render();
+</script>
+</body>
+</html>

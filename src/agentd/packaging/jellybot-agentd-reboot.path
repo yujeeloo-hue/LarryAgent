@@ -1,0 +1,14 @@
+[Unit]
+Description=JellyBot agentd remote-reboot queue watcher
+Documentation=https://jellybot.cloud
+# The agent service cannot sudo (NoNewPrivileges). It drops a request file;
+# this root path unit is what actually reboots the host.
+After=local-fs.target
+
+[Path]
+PathExistsGlob=/var/lib/jellybot-agent/update-queue/reboot.json
+PathChanged=/var/lib/jellybot-agent/update-queue/reboot.json
+Unit=jellybot-agentd-reboot.service
+
+[Install]
+WantedBy=multi-user.target
