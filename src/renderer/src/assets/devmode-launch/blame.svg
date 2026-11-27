@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="240" height="240">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2=".6" y2="1"><stop stop-color="#ffdc4a"/><stop offset=".5" stop-color="#ffbc28"/><stop offset="1" stop-color="#ff9818"/></linearGradient>
+    <linearGradient id="person" x1="0" y1="0" x2=".5" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#fff8ef"/></linearGradient>
+  </defs>
+  <rect x="1.8" y="1.8" width="20.4" height="20.4" rx="3.7" fill="url(#paper)"/>
+  <g fill="url(#person)">
+    <circle cx="12" cy="8.1" r="3.1"/>
+    <path d="M6.2 18.4v-1C6.2 14.7 8.8 13 12 13s5.8 1.7 5.8 4.4v1a.8.8 0 0 1-.8.8H7a.8.8 0 0 1-.8-.8Z"/>
+  </g>
+</svg>

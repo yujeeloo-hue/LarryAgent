@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<style>
+:root {
+  --font-ui: -apple-system, "SF Pro Text", "Helvetica Neue", "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco, "Cascadia Mono", Consolas, monospace;
+  --ease: cubic-bezier(.22, .68, .28, 1);
+  --shadow-insets: 36px 44px 62px;
+  --indent: 28px;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-elevated: #141414;
+  --fg: #e8e8e8; --fg-muted: #9a9a9a; --fg-dim: #6a6a6a;
+  --hover: rgba(255, 255, 255, .06);
+  --accent: #00e5ff; --accent-rgb: 0, 229, 255; --on-accent: #111111;
+  --tint-rgb: 255, 255, 255; --shade-rgb: 0, 0, 0; --shadow-rgb: 0, 0, 0;
+  --button-primary-bg-hover: color-mix(in srgb, var(--accent) 92%, #ffffff);
+  --button-primary-bg-active: color-mix(in srgb, var(--accent) 84%, #ffffff);
+  --button-danger-bg: rgba(248, 81, 73, .14); --button-danger-bg-hover: rgba(248, 81, 73, .2); --button-danger-fg: #ff8580; --button-danger-border: rgba(248, 81, 73, .25);
+  --button-disabled-bg: #303030; --button-disabled-fg: #a3a3a3;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg-elevated: #ffffff;
+  --fg: #17202b; --fg-muted: #536171; --fg-dim: #7a8796;
+  --hover: rgba(0, 122, 255, .07);
+  --accent: #006bd6; --accent-rgb: 0, 107, 214; --on-accent: #ffffff;
+  --tint-rgb: 0, 0, 0; --shade-rgb: 93, 116, 143; --shadow-rgb: 18, 52, 86;
+  --button-primary-bg-hover: color-mix(in srgb, var(--accent) 92%, #ffffff);
+  --button-primary-bg-active: color-mix(in srgb, var(--accent) 88%, #000000);
+  --button-danger-bg: #c93636; --button-danger-bg-hover: #b82f2f; --button-danger-fg: #ffffff; --button-danger-border: transparent;
+  --button-disabled-bg: #e5eaf0; --button-disabled-fg: #647184;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: transparent; overflow: hidden; }
+body { font: 13px/1.5 var(--font-ui); -webkit-font-smoothing: antialiased; color: var(--fg); -webkit-user-select: none; user-select: none; cursor: default; }
+button { font: inherit; color: inherit; }
+img { display: block; flex: none; -webkit-user-drag: none; }
+#root { width: max-content; padding: var(--shadow-insets); }
+
+.surface {
+  background: color-mix(in srgb, var(--bg-elevated) 97%, transparent);
+  border: 1px solid rgba(var(--tint-rgb), .12);
+  box-shadow: inset 0 1px 0 rgba(var(--tint-rgb), .07), 0 14px 32px rgba(var(--shadow-rgb), .45), 0 0 0 .5px rgba(var(--shade-rgb), .3);
+}
+:root[data-theme="light"] .surface { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 14px 32px rgba(var(--shadow-rgb), .2), 0 0 0 .5px rgba(var(--shadow-rgb), .12); }
+
+.tip {
+  width: 300px;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 12px 12px 14px;
+  border-radius: 12px;
+  opacity: 0; transform: translateY(6px) scale(.985); transform-origin: 0 30%;
+  transition: opacity .18s ease, transform .24s var(--ease);
+}
+.tip.show { opacity: 1; transform: none; }
+
+.tip-head { display: flex; align-items: flex-start; gap: 10px; }
+.tip-icon { width: 18px; height: 18px; margin-top: 1px; }
+.tip-title { flex: 1 1 auto; min-width: 0; margin: 0; font-size: 13.5px; font-weight: 600; line-height: 20px; overflow-wrap: anywhere; }
+.min-btn { width: 20px; height: 20px; margin: 0 -2px 0 0; border: 0; border-radius: 6px; background: none; display: grid; place-items: center; cursor: pointer; flex: none; color: var(--fg-dim); }
+.min-btn::before { content: ""; width: 9px; height: 2.2px; border-radius: 1.1px; background: currentColor; }
+.min-btn:hover { background: var(--hover); color: var(--fg); }
+
+.tip-body { margin: -6px 0 0 var(--indent); font-size: 12.5px; line-height: 1.5; color: var(--fg-muted); overflow-wrap: anywhere; white-space: pre-line; }
+.tip-body b { color: var(--fg); font-weight: 550; }
+
+.tip-options { display: flex; flex-direction: column; gap: 4px; margin-left: var(--indent); max-height: 220px; overflow-y: auto; }
+.tip-opt { display: flex; align-items: center; gap: 9px; width: 100%; padding: 6px 9px; border: 1px solid rgba(var(--tint-rgb), .09); border-radius: 7px; background: none; color: var(--fg); text-align: left; cursor: pointer; font-size: 12.5px; }
+.tip-opt:hover { background: rgba(var(--tint-rgb), .045); }
+.tip-opt .radio { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid rgba(var(--tint-rgb), .3); flex: none; display: grid; place-items: center; }
+.tip-opt .label { min-width: 0; overflow-wrap: anywhere; }
+.tip-opt .sub { margin-left: auto; padding-left: 8px; color: var(--fg-dim); font-size: 11.5px; text-align: right; overflow-wrap: anywhere; }
+.tip-opt.on { border-color: rgba(var(--accent-rgb), .45); background: rgba(var(--accent-rgb), .07); }
+.tip-opt.on .radio { border-color: var(--accent); }
+.tip-opt.on .radio::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+
+.tip-foot { display: flex; align-items: center; gap: 6px; margin-left: var(--indent); }
+.tip-meta { flex: 1 1 auto; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.spin { width: 12px; height: 12px; border-radius: 50%; border: 1.6px solid rgba(var(--accent-rgb), .22); border-top-color: var(--accent); animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.count { font: 11px var(--font-mono); color: var(--fg-dim); font-variant-numeric: tabular-nums; }
+.btn { flex: none; height: 26px; padding: 0 11px; border-radius: 7px; border: 1px solid rgba(var(--tint-rgb), .12); background: transparent; color: var(--fg); font: 500 12px/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
+.btn:hover { background: var(--hover); }
+.btn.quiet { border-color: transparent; color: var(--fg-muted); }
+.btn.quiet:hover { color: var(--fg); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.btn.primary:hover { background: var(--button-primary-bg-hover); }
+.btn.primary:active { background: var(--button-primary-bg-active); }
+.btn.danger { background: var(--button-danger-bg); color: var(--button-danger-fg); border-color: var(--button-danger-border); }
+.btn.danger:hover { background: var(--button-danger-bg-hover); }
+.btn:disabled { background: var(--button-disabled-bg); color: var(--button-disabled-fg); border-color: transparent; cursor: default; }
+.tip.answered .btn, .tip.answered .tip-opt { pointer-events: none; opacity: .6; }
+
+.tip.done { width: auto; max-width: 300px; padding: 10px 14px 10px 12px; }
+.tip.done .tip-head { align-items: center; }
+.tip.done .tip-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.pill {
+  max-width: 280px; height: 32px; padding: 0 12px 0 8px; border-radius: 16px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  opacity: 0; transform: translateY(-4px); transition: opacity .18s ease, transform .22s var(--ease);
+}
+.pill.show { opacity: 1; transform: none; }
+.pill .tip-icon { width: 16px; height: 16px; margin: 0; animation: breathe 2.4s ease-in-out infinite; }
+@keyframes breathe { 50% { opacity: .55; } }
+.pill span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pill:hover { border-color: rgba(var(--tint-rgb), .2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tip, .pill { transition-duration: 1ms !important; }
+  .spin, .pill .tip-icon { animation: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const ICONS = {
+  agent: "{{icon:computer-use}}",
+  confirm: "{{icon:tip-confirm}}",
+  done: "{{icon:tip-done}}",
+  neutral: "{{icon:tip-neutral}}",
+};
+const root = document.getElementById("root");
+const padding = getComputedStyle(root);
+const insets = {
+  top: parseFloat(padding.paddingTop), right: parseFloat(padding.paddingRight),
+  bottom: parseFloat(padding.paddingBottom), left: parseFloat(padding.paddingLeft),
+};
+
+let state = null;
+let ticker = 0;
+let hideTimer = 0;
+
+function post(message) {
+  try {
+    if (window.tipsBridge) window.tipsBridge.post(message);
+    else window.webkit.messageHandlers.tips.postMessage(message);
+  } catch (_) {}
+}
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+function rich(value) {
+  return esc(value).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+}
+function icon(name) {
+  return `<img class="tip-icon" src="${ICONS[name] || ICONS.agent}" alt="">`;
+}
+function fmt(seconds) {
+  const s = Math.max(0, Math.ceil(seconds));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+function countText() {
+  if (!state || !state.spec.countdown) return "";
+  return fmt(state.spec.countdown - (Date.now() - state.started) / 1000);
+}
+function report() {
+  const el = root.firstElementChild;
+  if (!el) return;
+  post({ type: "size", w: el.offsetWidth, h: el.offsetHeight, ...insets, mode: state?.mode ?? "done", id: root.dataset.tipId });
+}
+new ResizeObserver(() => report()).observe(root);
+
+function reveal(el) {
+  report();
+  setTimeout(() => el.classList.add("show"), 40);
+}
+function cardMarkup(spec) {
+  const options = Array.isArray(spec.options) && spec.options.length
+    ? `<div class="tip-options" role="radiogroup">${spec.options.map((o, i) => `<button class="tip-opt${state.choice === i ? " on" : ""}" role="radio" aria-checked="${state.choice === i}" data-opt="${i}"><span class="radio"></span><span class="label">${esc(o.label)}</span>${o.sub ? `<span class="sub">${esc(o.sub)}</span>` : ""}</button>`).join("")}</div>`
+    : "";
+  const needsChoice = Boolean(options) && state.choice === null;
+  const meta = `${spec.watching ? `<span class="spin" title="Continues automatically when done"></span>` : ""}${spec.countdown ? `<span class="count" data-count>${countText()}</span>` : ""}`;
+  return `
+    <div class="tip-head">${icon(spec.kind === "confirm" ? "confirm" : "agent")}<p class="tip-title">${esc(spec.title)}</p>
+      <button class="min-btn" data-act="minimize" title="Minimize" aria-label="Minimize"></button></div>
+    ${spec.body ? `<p class="tip-body">${rich(spec.body)}</p>` : ""}
+    ${options}
+    <div class="tip-foot"><span class="tip-meta">${meta}</span>
+      ${spec.secondary ? `<button class="btn quiet" data-act="secondary">${esc(spec.secondary)}</button>` : ""}
+      <button class="btn ${spec.danger ? "danger" : "primary"}" data-act="primary" ${needsChoice ? "disabled" : ""}>${esc(spec.primary || "Done")}</button></div>`;
+}
+function renderCard() {
+  state.mode = "card";
+  root.innerHTML = `<div class="tip surface${state.answered ? " answered show" : ""}" role="dialog" aria-live="polite">${cardMarkup(state.spec)}</div>`;
+  reveal(root.firstElementChild);
+}
+function renderPill() {
+  state.mode = "pill";
+  root.innerHTML = `<div class="pill surface" role="button" tabindex="0" data-act="expand" title="${esc(state.spec.title)}">${icon(state.spec.kind === "confirm" ? "confirm" : "agent")}<span>${esc(state.spec.title)}</span></div>`;
+  reveal(root.firstElementChild);
+}
+function tick() {
+  const node = root.querySelector("[data-count]");
+  if (!node) return;
+  const text = countText();
+  if (node.textContent !== text) node.textContent = text;
+}
+function clearTimers() {
+  clearInterval(ticker);
+  clearTimeout(hideTimer);
+  ticker = 0;
+  hideTimer = 0;
+}
+function fadeOut(id) {
+  const el = root.firstElementChild;
+  if (el) el.classList.remove("show");
+  hideTimer = setTimeout(() => {
+    root.innerHTML = "";
+    post({ type: "hidden", id });
+  }, 200);
+}
+
+root.addEventListener("click", (event) => {
+  if (!state) return;
+  const opt = event.target.closest(".tip-opt");
+  if (opt) {
+    state.choice = Number(opt.dataset.opt);
+    root.querySelectorAll(".tip-opt").forEach((b) => {
+      const on = Number(b.dataset.opt) === state.choice;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-checked", String(on));
+    });
+    const primary = root.querySelector('[data-act="primary"]');
+    if (primary) primary.disabled = false;
+    return;
+  }
+  const act = event.target.closest("[data-act]")?.dataset.act;
+  if (!act) return;
+  if (act === "minimize") { renderPill(); return; }
+  if (act === "expand") { renderCard(); return; }
+  if (state.answered) return;
+  if (act === "primary" || act === "secondary") {
+    state.answered = true;
+    root.firstElementChild?.classList.add("answered");
+    post({ type: "answer", id: state.spec.id, action: act, choice: act === "primary" && state.choice !== null ? state.choice : null });
+  }
+});
+
+window.tips = {
+  show(spec) {
+    clearTimers();
+    root.dataset.tipId = spec.id;
+    state = { spec, started: Date.now(), choice: null, mode: "card", answered: false };
+    renderCard();
+    if (spec.countdown) ticker = setInterval(tick, 250);
+  },
+  settle(view) {
+    if (!state || view.id !== state.spec.id) return;
+    const id = state.spec.id;
+    clearTimers();
+    state = null;
+    root.innerHTML = `<div class="tip surface done show"><div class="tip-head">${icon(view.tone === "neutral" ? "neutral" : "done")}<p class="tip-title">${esc(view.title)}</p></div></div>`;
+    report();
+    hideTimer = setTimeout(() => fadeOut(id), 1100);
+  },
+  hide(request) {
+    const id = request && request.id ? request.id : state ? state.spec.id : null;
+    if (state && id && state.spec.id !== id) return;
+    clearTimers();
+    state = null;
+    fadeOut(id);
+  },
+  theme(theme) {
+    const html = document.documentElement;
+    html.dataset.theme = theme.dark === false ? "light" : "dark";
+    const hex = typeof theme.accent === "string" && /^#[0-9a-f]{6}$/i.test(theme.accent) ? theme.accent : null;
+    const onAccent = typeof theme.onAccent === "string" && /^#[0-9a-f]{6}$/i.test(theme.onAccent) ? theme.onAccent : null;
+    if (hex) {
+      const n = parseInt(hex.slice(1), 16);
+      html.style.setProperty("--accent", hex);
+      html.style.setProperty("--accent-rgb", `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`);
+    } else {
+      html.style.removeProperty("--accent");
+      html.style.removeProperty("--accent-rgb");
+    }
+    if (onAccent) html.style.setProperty("--on-accent", onAccent);
+    else html.style.removeProperty("--on-accent");
+  },
+};
+post({ type: "loaded" });
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 24 24"><defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff8b35"/><stop offset=".52" stop-color="#fa5946"/><stop offset="1" stop-color="#e42e78"/></linearGradient>
+  <linearGradient id="d" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f66347"/><stop offset="1" stop-color="#dc2864"/></linearGradient>
+  <linearGradient id="side" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff9b21"/><stop offset="1" stop-color="#ec6226"/></linearGradient>
+</defs><defs>
+      <clipPath id="build-tile"><rect x="2" y="2" width="20" height="20" rx="5.3"/></clipPath>
+    </defs>
+    <g transform="translate(12 12) scale(1.02) translate(-12 -12)">
+      <rect x="2" y="2" width="20" height="20" rx="5.3" fill="url(#g)"/>
+      <path d="M0 15.8 24 6.3V24H0Z" fill="url(#d)" opacity=".16" clip-path="url(#build-tile)"/>
+      <g transform="translate(12 12) scale(.63) translate(-12 -12)" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m15 12-9.373 9.373a1 1 0 0 1-3.001-3L12 9Z" fill="#ffffff" stroke-width=".8"/>
+          <path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172v-.344a2 2 0 0 0-.586-1.414l-1.657-1.657A6 6 0 0 0 12.516 3H9l1.243 1.243A6 6 0 0 1 12 8.485V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5Z" fill="#ffffff" stroke-width=".8"/>
+          <path d="m18 15 4-4" fill="none" stroke-width="1.3"/>
+        </g>
+    </g></svg>

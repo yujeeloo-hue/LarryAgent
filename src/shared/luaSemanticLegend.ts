@@ -1,0 +1,30 @@
+export const LUA_SEMANTIC_TOKEN_TYPES = [
+  "namespace",
+  "type",
+  "class",
+  "enum",
+  "interface",
+  "struct",
+  "typeParameter",
+  "parameter",
+  "property",
+  "enumMember",
+  "event",
+  "function",
+  "method",
+  "macro",
+  "decorator",
+] as const;
+
+export const LUA_SEMANTIC_TOKEN_MODIFIERS = [
+  "declaration",
+  "definition",
+  "readonly",
+  "static",
+  "abstract",
+  "deprecated",
+  "async",
+  "modification",
+  "documentation",
+  "defaultLibrary",
+] as const;

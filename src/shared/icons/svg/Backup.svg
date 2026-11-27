@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none">
+<g transform="translate(12 12) scale(1.008354) translate(-12 -12)">
+  <defs>
+    
+    
+    
+    <path id="Backup-shape" d="M2 5.4C2 3.5 6 2 11 2s9 1.5 9 3.4v12.8c0 1.9-4 3.4-9 3.4S2 20.1 2 18.2Z" />
+    <clipPath id="Backup-c"><use href="#Backup-shape" /></clipPath>
+    <mask id="Backup-m"><rect width="24" height="24" fill="white" /><path d="M2 7.1c4.8 3.1 13.2 3.1 18 0v1.8c-4.8 3.1-13.2 3.1-18 0Z" fill="black" /><circle cx="17.6" cy="17.6" r="6" fill="black" /></mask>
+    <mask id="Backup-clock"><rect width="24" height="24" fill="white" /><rect x="16.75" y="14" width="1.7" height="4.3" rx=".85" fill="black" /><rect x="17.1" y="16.6" width="3.5" height="1.7" rx=".85" transform="rotate(30 17.6 17.6)" fill="black" /></mask>
+  </defs>
+  <g clip-path="url(#Backup-c)" mask="url(#Backup-m)"><rect width="24" height="24" fill="currentColor" /><path d="M0 15.4 24 8.7V24H0Z" fill="currentColor" opacity=".65" /></g>
+  <circle cx="17.6" cy="17.6" r="4.7" fill="currentColor" mask="url(#Backup-clock)" />
+</g>
+</svg>

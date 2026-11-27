@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <defs>
+    <linearGradient id="dev-gradient" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#eab3ff"/>
+      <stop offset=".53" stop-color="#a46bf6"/>
+      <stop offset="1" stop-color="#6749e9"/>
+    </linearGradient>
+    <clipPath id="dev-surface"><rect x="1.9" y="3" width="20.2" height="18" rx="4.2"/></clipPath>
+    <mask id="dev-cutouts" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+      <rect width="24" height="24" fill="#fff"/>
+      <path id="dev-bracket" d="m9.6 7.4.1.1a1.05 1.05 0 0 1 0 1.5L6.7 12l3 3a1.05 1.05 0 0 1-1.5 1.5l-3.6-3.6a1.25 1.25 0 0 1 0-1.8l3.6-3.6a1.05 1.05 0 0 1 1.4-.1Z" fill="#000"/>
+      <use href="#dev-bracket" transform="translate(24 0) scale(-1 1)"/>
+    </mask>
+  </defs>
+  <g clip-path="url(#dev-surface)" mask="url(#dev-cutouts)">
+    <rect width="24" height="24" fill="url(#dev-gradient)"/>
+    <path d="M0 17.5 24 9.2V24H0Z" fill="#6337cb" opacity=".25"/>
+  </g>
+</svg>

@@ -1,0 +1,19 @@
+import { writeFileSync } from "node:fs";
+import { parseHTML } from "linkedom";
+import { createElement, FolderPlus } from "lucide";
+import { desktopFunctionalIconEntries } from "../src/renderer/src/ui/functionalIconNames.ts";
+
+globalThis.document = parseHTML("<html><body></body></html>").document;
+const artwork = Object.fromEntries([...desktopFunctionalIconEntries, [FolderPlus, "FolderPlus"]].map(([node, name]) => [name,
+  createElement(node, { width: 24, height: 24, "stroke-width": 1.75, "aria-hidden": "true" }).outerHTML,
+]));
+writeFileSync(new URL("../src/shared/icons/originalIcons.ts", import.meta.url), `export const originalIconArtwork = ${JSON.stringify(artwork, null, 2)} as const;
+
+export function originalIconSvg(name: string, size = 16, strokeWidth = 1.75): string {
+  const artwork = originalIconArtwork[name as keyof typeof originalIconArtwork] ?? originalIconArtwork.Wrench;
+  const pixels = Number.isFinite(size) && size > 0 ? size : 16;
+  return artwork.replace(/width="24"/, \`width="\${pixels}"\`).replace(/height="24"/, \`height="\${pixels}"\`)
+    .replace('stroke-width="1.75"', \`stroke-width="\${strokeWidth}"\`);
+}
+`);
+console.log(`Generated ${Object.keys(artwork).length} original icon resources`);

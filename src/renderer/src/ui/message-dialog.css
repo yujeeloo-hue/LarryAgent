@@ -1,0 +1,135 @@
+.message-panel {
+  width: min(382px, calc(100% - 32px));
+  max-width: none;
+  max-height: calc(100% - 20px);
+  padding: 18px 20px 16px;
+  border: 1px solid var(--divider, var(--border));
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  box-shadow: var(--shadow-xl);
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.message-panel[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.message-panel::backdrop {
+  background: var(--scrim);
+}
+
+.message-panel > form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: 0;
+}
+
+.message-panel-content {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: start;
+  gap: 11px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.message-panel-icon {
+  --icon-start: light-dark(#0abdf4, #75f5fc);
+  --icon-end: light-dark(#0765eb, #00aaf3);
+  display: grid;
+  place-items: center;
+  height: 22px;
+}
+
+.message-panel-icon::before {
+  content: "";
+  width: 22px;
+  height: 22px;
+  background: linear-gradient(145deg, var(--icon-start) 8%, var(--icon-end) 92%);
+  mask: var(--panel-artwork) center / contain no-repeat;
+}
+
+.message-panel[data-tone="warning"] .message-panel-icon {
+  --icon-start: light-dark(#ffc42e, #ffdc63);
+  --icon-end: light-dark(#ed6900, #ff8b22);
+}
+
+.message-panel[data-tone="danger"] .message-panel-icon {
+  --icon-start: light-dark(#ff7652, #ff9b72);
+  --icon-end: light-dark(#de233a, #f04153);
+}
+
+.message-panel-copy :is(h2, h3) {
+  margin: 0 0 5px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.message-panel-copy :is(h2, h3):focus {
+  outline: none;
+}
+
+.message-panel-copy p {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.message-panel-copy p + p {
+  margin-top: 6px;
+}
+
+.message-panel-actions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.message-panel-button {
+  min-width: 60px;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 4px 13px;
+  border: 1px solid var(--divider, var(--border));
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.message-panel-button:hover {
+  background: var(--hover);
+}
+
+.message-panel-button:focus-visible {
+  outline: 2px solid var(--button-focus-ring);
+  outline-offset: 2px;
+}
+
+.message-panel-accept {
+  font-weight: 600;
+}
+
+@media (max-width: 395px) {
+  .message-panel {
+    padding-inline: 14px;
+  }
+
+  .message-panel-content {
+    gap: 8px;
+  }
+}

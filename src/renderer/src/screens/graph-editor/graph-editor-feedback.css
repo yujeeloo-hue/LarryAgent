@@ -1,0 +1,48 @@
+.graph-editor-feedback {
+  position: absolute;
+  top: calc(var(--graph-editor-toolbar-height, 40px) + 16px);
+  right: 16px;
+  z-index: var(--z-pop-toast, 62);
+  display: flex;
+  flex-direction: column;
+  width: min(366px, calc(100% - 32px));
+  max-height: calc(100% - var(--graph-editor-toolbar-height, 40px) - 32px);
+  overflow: hidden;
+  color: var(--fg);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  box-shadow: var(--shadow-lg);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.graph-editor-feedback[hidden], .graph-editor-feedback [hidden] { display: none !important; }
+.graph-editor-feedback-head { display: flex; align-items: flex-start; gap: 10px; padding: 13px 13px 10px; flex: none; }
+.graph-editor-feedback-icon { display: flex; align-items: center; justify-content: center; width: 29px; height: 29px; flex: none; border-radius: 8px; color: var(--danger-text); background: var(--danger-bg); }
+.graph-editor-feedback[data-tone="warning"] .graph-editor-feedback-icon { color: var(--warn-text); background: var(--warn-bg); }
+.graph-editor-feedback[data-tone="success"] .graph-editor-feedback-icon { color: var(--success-text); background: var(--success-bg); }
+.graph-editor-feedback[data-tone="info"] .graph-editor-feedback-icon, .graph-editor-feedback[data-tone="loading"] .graph-editor-feedback-icon { color: var(--accent); background: rgba(var(--accent-rgb), .12); }
+.graph-editor-feedback[data-tone="loading"] .graph-editor-feedback-icon svg { animation: graph-feedback-spin .9s linear infinite; }
+.graph-editor-feedback-copy { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.graph-editor-feedback-title { font-size: 13px; font-weight: 600; }
+.graph-editor-feedback-description { margin: 3px 0 0; color: var(--fg-muted); white-space: pre-wrap; }
+.graph-editor-feedback-close { display: inline-flex; align-items: center; justify-content: center; flex: none; margin: -2px -2px 0 0; padding: 2px; border: 0; border-radius: 4px; background: transparent; color: var(--fg-muted); cursor: pointer; }
+.graph-editor-feedback-close:hover { background: var(--hover); }
+.graph-editor-feedback-actions { display: flex; gap: 10px; padding: 0 13px 12px 52px; flex: none; }
+.graph-editor-feedback-action { display: inline-flex; align-items: center; gap: 5px; padding: 0; border: 0; background: transparent; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
+.graph-editor-feedback-details { padding: 0 13px 12px; border-top: 1px solid var(--border); overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
+.graph-editor-feedback-issue { display: block; width: 100%; padding: 11px 0; text-align: left; background: transparent; color: var(--fg); border: 0; border-bottom: 1px solid var(--border); font: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.graph-editor-feedback-issue:last-child { border-bottom: 0; padding-bottom: 1px; }
+.graph-editor-feedback-issue-title { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.graph-editor-feedback-issue-title svg { flex: none; color: var(--danger-text); }
+.graph-editor-feedback-issue[data-severity="warning"] .graph-editor-feedback-issue-title svg { color: var(--warn-text); }
+.graph-editor-feedback-issue-message { display: block; margin: 3px 0 0 19px; color: var(--fg-muted); white-space: pre-wrap; }
+.graph-editor-feedback-issue-location { display: flex; align-items: center; gap: 4px; margin: 5px 0 0 19px; color: var(--accent); font-size: 11px; }
+.graph-editor-feedback-progress { height: 2px; background: var(--border); flex: none; }
+.graph-editor-feedback-progress span { display: block; height: 100%; background: var(--success); transform-origin: left; animation: graph-feedback-dismiss linear forwards; }
+@keyframes graph-feedback-spin { to { transform: rotate(360deg); } }
+@keyframes graph-feedback-dismiss { to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .graph-editor-feedback-icon svg, .graph-editor-feedback-progress span { animation: none !important; }
+}

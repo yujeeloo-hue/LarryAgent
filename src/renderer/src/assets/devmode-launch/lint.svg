@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="240" height="240">
+  <defs>
+    <linearGradient id="bristles" x1="17" y1="12" x2="7" y2="2" gradientUnits="userSpaceOnUse"><stop stop-color="#ffdc92"/><stop offset="1" stop-color="#e3a85d"/></linearGradient>
+    <linearGradient id="handle" x1="15" y1="21" x2="7" y2="12" gradientUnits="userSpaceOnUse"><stop stop-color="#69bbff"/><stop offset=".48" stop-color="#438cf4"/><stop offset="1" stop-color="#2455cd"/></linearGradient>
+    <linearGradient id="sheen" x1="0" y1="10.1" x2="0" y2="4.9" gradientUnits="userSpaceOnUse"><stop stop-color="#fff" stop-opacity=".83"/><stop offset="1" stop-color="#f5ecff" stop-opacity=".15"/></linearGradient>
+    <linearGradient id="paint" x1="17" y1="7.2" x2="7" y2="2" gradientUnits="userSpaceOnUse"><stop stop-color="#ffffff"/><stop offset=".49" stop-color="#f7f9fc"/><stop offset="1" stop-color="#e1e9f3"/></linearGradient>
+    <clipPath id="bristle-shape"><path d="M17 2a1 1 0 0 1 1 1v9H6V3a1 1 0 0 1 1-1z"/></clipPath>
+  </defs>
+  <g transform="translate(12 0) scale(1.26 1) translate(-12 0) rotate(180 12 12)">
+    <path d="M6 12a1 1 0 0 0-1 1v1a2 2 0 0 0 2 2h2a1 1 0 0 1 1 1v2.9a2 2 0 1 0 4 0V17a1 1 0 0 1 1-1h2a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1" fill="url(#handle)"/>
+    <path d="M17 2a1 1 0 0 1 1 1v9H6V3a1 1 0 0 1 1-1z" fill="url(#bristles)"/>
+    <path d="M4 1h16v5.9c-3.4.9-5.2-.8-8.2-.2C8.7 7.3 7 7.8 4 6.9Z" fill="url(#paint)" clip-path="url(#bristle-shape)"/>
+    <path d="M16.4 10.1v-5.2" fill="none" stroke="url(#sheen)" stroke-width="1.37" stroke-linecap="round"/>
+  </g>
+</svg>

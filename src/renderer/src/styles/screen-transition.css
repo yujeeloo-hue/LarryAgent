@@ -1,0 +1,33 @@
+.app-shell-main::view-transition {
+  pointer-events: none;
+}
+
+.app-shell-main::view-transition-group(root) {
+  animation-duration: 220ms;
+}
+
+.app-shell-main::view-transition-old(root) {
+  animation: main-screen-out 160ms ease-out both;
+  mix-blend-mode: normal;
+}
+
+.app-shell-main::view-transition-new(root) {
+  animation: main-screen-in 220ms cubic-bezier(.2, .7, .2, 1) both;
+  mix-blend-mode: normal;
+}
+
+@keyframes main-screen-out {
+  to { opacity: 0; transform: translateY(-2px); }
+}
+
+@keyframes main-screen-in {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell-main::view-transition-group(root),
+  .app-shell-main::view-transition-old(root),
+  .app-shell-main::view-transition-new(root) {
+    animation: none;
+  }
+}

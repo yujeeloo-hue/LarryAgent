@@ -1,0 +1,72 @@
+
+.app-brand-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3.5px;
+  user-select: none;
+  pointer-events: none;
+}
+
+html.platform-win32 .app-brand-icon-dog {
+  flex: 0 0 16px;
+  border-radius: 0;
+  color: var(--fg);
+  background-color: currentColor;
+  -webkit-mask-image: var(--dog-head-mask);
+  mask-image: var(--dog-head-mask);
+  -webkit-mask-size: 115%;
+  mask-size: 115%;
+  -webkit-mask-position: center calc(50% + 1px);
+  mask-position: center calc(50% + 1px);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.title-bar-actions.has-caption {
+  padding-right: 0;
+  align-self: stretch;
+}
+
+.title-bar-caption-group {
+  display: flex;
+  align-self: stretch;
+  margin-left: 2px;
+}
+
+.title-bar-caption-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  align-self: stretch;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.title-bar-caption-btn:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.title-bar-caption-btn:active {
+  background: var(--active);
+}
+
+.title-bar-caption-btn.caption-close:hover {
+  background: var(--win-close-red);
+  color: #fff;
+}
+
+.title-bar-caption-btn.caption-close:active {
+  background: var(--win-close-red);
+  color: #fff;
+}
+
+.title-bar-caption-btn svg {
+  display: block;
+}

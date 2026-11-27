@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none">
+  <defs>
+    <mask id="DecisionModel-m" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+      <rect width="24" height="24" fill="white"/>
+      <rect x="6.725" y="10.925" width="6.11" height="2.15" rx="1.075" transform="rotate(45 7.8 12)" fill="black"/>
+      <rect x="9.525" y="13.725" width="10.07" height="2.15" rx="1.075" transform="rotate(-45 10.6 14.8)" fill="black"/>
+    </mask>
+  </defs>
+  <g mask="url(#DecisionModel-m)">
+    <rect x="4.2" y="4.2" width="15.6" height="15.6" rx="3.8" transform="rotate(45 12 12)"/>
+  </g>
+</svg>
